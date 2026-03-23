@@ -1,16 +1,17 @@
 "use server";
 
-import crypto from "crypto";
 import fs from "fs/promises";
 import { join } from "path";
 
 import {
   CharacterCard,
+  encodeCharacterCard,
   parseCharacterCard,
   writeCharacterToBuffer,
 } from "@/lib/character-card-parser";
 import { CHARACTER_CARD_DIRECTORY, DEFAULT_AVATAR_PATH } from "@/lib/constants";
 import { WORKING_DIRECTORY } from "@/lib/env-variables";
+import { createImageHash } from "@/lib/image";
 import { prisma } from "@/lib/prisma";
 
 const CHARACTER_CARD_PATH = join(WORKING_DIRECTORY, CHARACTER_CARD_DIRECTORY);
@@ -93,11 +94,7 @@ export async function createCharacter({
   await fs.writeFile(filePath, encodedImageBuffer);
 
   // write create character index in DB
-  const pngHash = crypto
-    .createHash("md5")
-    .update(imageBuffer)
-    .digest("hex")
-    .slice(0, 8);
+  const pngHash = createImageHash(imageBuffer);
   const characterEntity = await prisma.character
     .create({
       data: {
@@ -113,4 +110,74 @@ export async function createCharacter({
     });
 
   return { entity: characterEntity, card: characterCard };
+}
+
+export async function deleteCharacter(id: string) {
+  const character = await getCharacterById(id);
+  if (!character) {
+    throw "Character does not exist";
+  }
+  // remove entity
+  await prisma.character.delete({ where: { id } });
+  // remove image
+  await fs.rm(join(WORKING_DIRECTORY, character.entity.png));
+}
+
+export interface UpdateCharacterParameters {
+  id: string;
+  update: {
+    card?: Partial<CharacterCard>;
+    image?: File;
+  };
+}
+
+export async function updateCharacter({
+  id,
+  update,
+}: UpdateCharacterParameters) {
+  const orgCharacter = await getCharacterById(id);
+  if (!orgCharacter) throw "Character does not exist";
+  const cardPath = join(WORKING_DIRECTORY, orgCharacter.entity.png);
+  const updatedCard: CharacterCard = { ...orgCharacter.card, ...update.card };
+
+  let pngHash;
+  if (update.image) {
+    //overwrite image
+    const imageBuffer = Buffer.from(await update.image.arrayBuffer());
+    const encodedImageBuffer = writeCharacterToBuffer(
+      imageBuffer,
+      JSON.stringify(updatedCard),
+    );
+    await fs.writeFile(cardPath, encodedImageBuffer);
+    pngHash = createImageHash(encodedImageBuffer);
+  } else {
+    //overwrite image metadata
+    await encodeCharacterCard({ cardPath, characterCard: updatedCard });
+  }
+
+  // Update DB
+  let characterEntity;
+  if (
+    (update.card && orgCharacter.entity.name !== update.card.name) ||
+    update.image
+  ) {
+    characterEntity = await prisma.character.update({
+      data: {
+        name: update.card?.name,
+        pngHash: pngHash,
+      },
+      where: {
+        id,
+      },
+    });
+  } else {
+    characterEntity = orgCharacter.entity;
+  }
+
+  const updatedCharacter: CharacterRecord = {
+    entity: characterEntity,
+    card: updatedCard,
+  };
+
+  return updatedCharacter;
 }

@@ -25,6 +25,7 @@ export function FieldTagList<T extends FieldValues>({
           <TagList
             value={field.value}
             onChange={field.onChange}
+            name={name}
             options={options}
           />
         </Field>

@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { buildCharacterImageUrl } from "@/lib/image";
 import { ActionResponse } from "@/lib/types";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useActionState } from "react";
@@ -30,7 +31,7 @@ interface CharacterListParams {
   characters: { id: string; name: string; pngHash: string }[];
 }
 
-const initialState: ActionResponse<{ id: string }> = {
+export const initialState: ActionResponse<{ id: string }> = {
   success: undefined,
 };
 
@@ -43,8 +44,6 @@ export function CharacterList({ characters }: CharacterListParams) {
   const form = useForm<ImportFromPngForm>({
     resolver: zodResolver(importFromPngFormSchema),
   });
-
-  console.log("errors", form.formState.errors);
 
   return (
     <div>
@@ -77,7 +76,10 @@ export function CharacterList({ characters }: CharacterListParams) {
                 <DialogClose asChild>
                   <Button variant="outline">Cancel</Button>
                 </DialogClose>
-                <Button type="submit" disabled={pending}>
+                <Button
+                  type="submit"
+                  disabled={pending || !form.formState.isValid}
+                >
                   {pending ? "Importing..." : "Import"}
                 </Button>
               </DialogFooter>

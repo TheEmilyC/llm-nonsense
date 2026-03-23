@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 interface TagListProps {
   value?: string[];
   onChange: (tags: string[]) => void;
+  name?: string;
   options?: string[];
   placeholder?: string;
   className?: string;
@@ -17,6 +18,7 @@ interface TagListProps {
 export function TagList({
   value = [],
   onChange,
+  name,
   options = [],
   placeholder = "Add tag…",
   className,
@@ -91,6 +93,9 @@ export function TagList({
 
   return (
     <div ref={containerRef} className={cn("relative", className)}>
+      {name && value.map((tag) => (
+        <input key={tag} type="hidden" name={name} value={tag} />
+      ))}
       <div
         className="flex flex-wrap gap-1.5 min-h-9 w-full rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-xs focus-within:ring-[3px] focus-within:ring-ring/50 focus-within:border-ring cursor-text"
         onClick={() => inputRef.current?.focus()}

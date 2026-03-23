@@ -39,8 +39,10 @@ export function ImageUpload({
           <Image
             src={imagePreview || imageSrc || ""}
             alt={"Character Image"}
-            fill
-            className="object-cover"
+            width={144}
+            height={192}
+            className="object-cover w-full h-full"
+            loading="eager"
           />
         ) : (
           <span className="text-xs text-muted-foreground text-center px-2">
