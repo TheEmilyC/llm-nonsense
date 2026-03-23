@@ -5,8 +5,8 @@ import { Story } from "../../../generated/client";
 
 export interface CreateStoryParams {
   newStory: {
-    personaId?: string;
-    characterId?: string;
+    personaId: string;
+    characterId: string;
     name: string;
   };
 }

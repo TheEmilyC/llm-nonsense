@@ -1,5 +1,6 @@
 "use client";
 
+import { storyFormSchema, StoryFormValues } from "@/app/story/validators";
 import { CardOption, CardSelector } from "@/components/card-selector";
 import { FieldInput } from "@/components/form-fields/field-input";
 import { Field, FieldError } from "@/components/ui/field";
@@ -7,27 +8,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Globe, UserCircle, Users } from "lucide-react";
 import { startTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
-import z from "zod";
-
-const baseSchema = z.object({
-  characterId: z.string(),
-  personaId: z.string(),
-  worldId: z.string().optional(),
-  assignedLorebook: z.string().optional(),
-});
-
-export const storyFormSchema = z.discriminatedUnion("mode", [
-  baseSchema.extend({
-    mode: z.literal("create"),
-    name: z.string().optional(),
-  }),
-  baseSchema.extend({
-    mode: z.literal("edit"),
-    name: z.string().min(1),
-  }),
-]);
-
-export type StoryFormValues = z.infer<typeof storyFormSchema>;
 
 interface StoryFormParams {
   formId: string;
@@ -101,7 +81,9 @@ export function StoryForm({
                   selectedId={field.value}
                   onChange={(char) => field.onChange(char.id)}
                 />
-                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
               </Field>
             )}
           />
@@ -119,7 +101,9 @@ export function StoryForm({
                   selectedId={field.value}
                   onChange={(per) => field.onChange(per.id)}
                 />
-                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
               </Field>
             )}
           />
@@ -137,7 +121,9 @@ export function StoryForm({
                   selectedId={field.value}
                   onChange={(world) => field.onChange(world.id)}
                 />
-                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
               </Field>
             )}
           />

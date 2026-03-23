@@ -62,11 +62,12 @@ export async function updateStoryAction(
   formData: FormData,
 ): Promise<ActionResponse<null>> {
   const formParseResult = storyFormSchema.safeParse({
+    mode: formData.get("mode"),
     name: formData.get("name"),
     characterId: formData.get("characterId"),
     personaId: formData.get("personaId"),
-    worldId: formData.get("worldId"),
-    assignedLorebook: formData.get("assignedLorebook"),
+    worldId: formData.get("worldId") ?? undefined,
+    assignedLorebook: formData.get("assignedLorebook") ?? undefined,
   });
   if (!formParseResult.success) {
     console.error(formParseResult.error);
@@ -90,7 +91,10 @@ export async function updateStoryAction(
   return { success: true, data: null };
 }
 
-export async function deleteStoryAction(prevState: unknown, storyId: string) {
+export async function deleteStoryAction(
+  prevState: unknown,
+  storyId: string,
+): Promise<ActionResponse<null>> {
   const idParseResult = dbIdValidator.safeParse(storyId);
   if (!idParseResult.success) {
     notFound();
@@ -101,7 +105,7 @@ export async function deleteStoryAction(prevState: unknown, storyId: string) {
     await deleteStory(id);
   } catch (err) {
     console.error(err);
-    return { success: false, mesage: "Failed to delete story" };
+    return { success: false, message: "Failed to delete story" };
   }
   redirect("/story");
 }
