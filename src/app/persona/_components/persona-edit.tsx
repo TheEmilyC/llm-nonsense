@@ -1,30 +1,24 @@
 "use client";
 
-import { CharacterForm } from "@/app/character/_components/character-form";
+import { PersonaForm } from "@/app/persona/_components/persona-form";
 import {
-  deleteCharacterAction,
-  updateCharacterAction,
-} from "@/app/character/actions";
+  deletePersonaAction,
+  updatePersonaAction,
+} from "@/app/persona/actions";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { ActionResponse } from "@/lib/types";
 import { startTransition, useActionState } from "react";
 
-const FORM_ID = "form-edit-character";
+const FORM_ID = "form-edit-persona";
 
-export interface CharacterEditParams {
-  character: {
+interface PersonaEditParams {
+  persona: {
     id: string;
-    imageUrl: string;
     name: string;
-    tags: string[];
     description: string;
-    personality: string;
-    scenario: string;
-    first_mes: string;
-    mes_example: string;
-    creator_notes: string;
+    imageUrl: string;
   };
 }
 
@@ -32,41 +26,40 @@ export const initialState: ActionResponse<null> = {
   success: undefined,
 };
 
-export function CharacterEdit({ character }: CharacterEditParams) {
+export function PersonaEdit({ persona }: PersonaEditParams) {
   const [deleteState, deleteCharacter, isDeletePending] = useActionState(
-    deleteCharacterAction,
+    deletePersonaAction,
     initialState,
   );
   const [updateState, updateCharacter, isUpdatePending] = useActionState(
-    updateCharacterAction.bind(null, character.id),
+    updatePersonaAction.bind(null, persona.id),
     initialState,
   );
-
   const isPending = isDeletePending || isUpdatePending;
 
-  async function deleteHandler() {
-    if (!confirm(`Delete "${character?.name}"? This cannot be undone.`)) return;
-    startTransition(() => deleteCharacter(character.id));
+  async function onDeleteHandler() {
+    if (!confirm(`Delete "${persona?.name}"? This cannot be undone.`)) return;
+    startTransition(() => deleteCharacter(persona.id));
   }
 
   return (
     <div>
       <Header
-        pageTitle={character.name}
-        backLinkDestination="/character"
-        backLinkLabel="Character"
+        pageTitle={persona.name}
+        backLinkDestination="/persona"
+        backLinkLabel="Persona"
       >
         <Button
           size="sm"
           type="button"
           variant="destructive"
           disabled={isPending}
-          onClick={deleteHandler}
+          onClick={onDeleteHandler}
         >
           {isDeletePending ? "Deleting..." : "Delete"}
         </Button>
         <Button size="sm" type="submit" form={FORM_ID} disabled={isPending}>
-          {isUpdatePending ? "Saving..." : "Save"}
+          {isPending ? "Saving..." : "Save"}
         </Button>
       </Header>
       <Content>
@@ -76,10 +69,10 @@ export function CharacterEdit({ character }: CharacterEditParams) {
         {updateState.success === false && (
           <p className="text-destructive">{updateState.message}</p>
         )}
-        <CharacterForm
+        <PersonaForm
           formId={FORM_ID}
-          defaultValues={character}
-          imageSrc={character.imageUrl}
+          defaultValues={persona}
+          imageSrc={persona.imageUrl}
           formAction={updateCharacter}
         />
       </Content>

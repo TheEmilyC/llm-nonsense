@@ -1,5 +1,5 @@
 import { ImageUpload } from "@/components/image-upload";
-import { Field, FieldLabel } from "@/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Control, Controller, FieldValues, Path } from "react-hook-form";
 
 interface FieldImageUploadParams<T extends FieldValues> {
@@ -30,6 +30,7 @@ export function FieldImageUpload<T extends FieldValues>({
             acceptedFormats={acceptedFormats}
             name={name}
           />
+          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
         </Field>
       )}
     />

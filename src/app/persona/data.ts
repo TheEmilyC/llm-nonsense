@@ -7,6 +7,7 @@ import { DEFAULT_AVATAR_PATH, PERSONA_DIRECTORY } from "@/lib/constants";
 import { WORKING_DIRECTORY } from "@/lib/env-variables";
 import { createImageHash } from "@/lib/image";
 import { prisma } from "@/lib/prisma";
+import { Persona } from "../../../generated/client";
 
 const PERSONA_PATH = join(WORKING_DIRECTORY, PERSONA_DIRECTORY);
 
@@ -52,19 +53,21 @@ export async function createPersona({
   return personaEntity;
 }
 
-export interface SavePersonaImageParams {
-  image: File | undefined;
-  personaName: string;
-}
+export type SavePersonaImageParams =
+  | {
+      image: File | undefined;
+      personaName: string;
+    }
+  | { filePath: string; image: File | undefined };
 
-export async function savePersonaImage({
-  image,
-  personaName,
-}: SavePersonaImageParams): Promise<{
+export async function savePersonaImage(
+  params: SavePersonaImageParams,
+): Promise<{
   fileName: string;
   filePath: string;
   imageHash: string;
 }> {
+  const image = params.image;
   // Save image
   await fs.mkdir(PERSONA_PATH, { recursive: true });
   let fileExtension: string;
@@ -79,10 +82,66 @@ export async function savePersonaImage({
     );
   }
 
-  const fileName = `${Date.now()}_${personaName}${fileExtension}`;
-  const filePath = path.join(PERSONA_PATH, fileName);
+  let fileName: string;
+  let filePath: string;
+  if ("personaName" in params) {
+    fileName = `${Date.now()}_${params.personaName}${fileExtension}`;
+    filePath = path.join(PERSONA_PATH, fileName);
+  } else {
+    fileName = path.basename(params.filePath);
+    filePath = params.filePath;
+  }
   const imageHash = createImageHash(buffer);
   await fs.writeFile(filePath, buffer);
 
   return { fileName, filePath, imageHash };
+}
+
+export async function deletePersona(id: string): Promise<void> {
+  const persona = await getPersonaById(id);
+  if (!persona) throw "Persona does not exist";
+  // remove entity
+  await prisma.persona.delete({ where: { id } });
+  // remove image
+  await fs.rm(join(WORKING_DIRECTORY, persona.image));
+}
+
+interface UpdatePersonaParams {
+  id: string;
+  update: { name?: string; description?: string };
+  image?: File;
+}
+
+export async function updatePersona({
+  id,
+  update,
+  image,
+}: UpdatePersonaParams) {
+  const orgPersona = await getPersonaById(id);
+  if (!orgPersona) throw "Persona does not exist";
+
+  const entityUpdate: Partial<Persona> = {};
+  if (image) {
+    const { imageHash } = await savePersonaImage({
+      filePath: orgPersona.image,
+      image,
+    });
+    entityUpdate.imageHash = imageHash;
+  }
+  if (update.name !== undefined && update.name !== orgPersona.name) {
+    entityUpdate.name = update.name;
+  }
+  if (
+    update.description !== undefined &&
+    update.description !== orgPersona.description
+  ) {
+    entityUpdate.description = update.description;
+  }
+
+  const personaEntity = await prisma.persona.update({
+    data: entityUpdate,
+    where: { id },
+  });
+
+  return personaEntity;
 }

@@ -32,10 +32,7 @@ export function PersonaForm({
     },
   });
 
-  console.log("errors", form.formState.errors);
-
   const onSubmitHandler: SubmitHandler<PersonaFormValues> = async (data) => {
-    console.log("data", data);
     // Required for client side validation to fire
     const formData = new FormData();
     formData.append("name", data.name);

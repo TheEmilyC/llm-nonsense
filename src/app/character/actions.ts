@@ -16,7 +16,7 @@ import {
 import { ActionResponse } from "@/lib/types";
 import { dbIdValidator } from "@/lib/validators";
 import { refresh } from "next/cache";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import z from "zod";
 
 export async function importCharacterFromPNG(
@@ -57,8 +57,13 @@ export async function importCharacterFromPNG(
 
 export async function deleteCharacterAction(
   prevState: unknown,
-  id: string,
+  characterId: string,
 ): Promise<ActionResponse<null>> {
+  const idParseResult = dbIdValidator.safeParse(characterId);
+  if (!idParseResult.success) {
+    notFound();
+  }
+  const id = idParseResult.data;
   try {
     await deleteCharacter(id);
   } catch (err) {
@@ -91,8 +96,8 @@ export async function updateCharacterAction(
   }
   const idParseResult = dbIdValidator.safeParse(characterId);
   if (!idParseResult.success) {
-    console.error(z.treeifyError(idParseResult.error));
-    return { success: false, message: "Malformed character data" };
+    console.error(z.prettifyError(idParseResult.error));
+    notFound();
   }
   const id = idParseResult.data;
   const { image, ...card } = formParseResult.data;
