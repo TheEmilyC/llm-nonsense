@@ -10,7 +10,7 @@ interface FieldImageUploadParams<T extends FieldValues> {
   acceptedFormats: "png" | "image";
 }
 
-export function FieldImageUploadField<T extends FieldValues>({
+export function FieldImageUpload<T extends FieldValues>({
   name,
   control,
   label,

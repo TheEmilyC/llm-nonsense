@@ -7,7 +7,7 @@ import {
   characterFormSchema,
   CharacterFormValues,
 } from "@/app/character/validators";
-import { FieldImageUploadField } from "@/components/form-fields/field-image-upload";
+import { FieldImageUpload } from "@/components/form-fields/field-image-upload";
 import { FieldInputField } from "@/components/form-fields/field-input";
 import { FieldTagList } from "@/components/form-fields/field-taglist";
 import { FieldTextareaField } from "@/components/form-fields/field-textarea";
@@ -42,7 +42,7 @@ export function CharacterForm({
     },
   });
 
-  const onSubmit: SubmitHandler<CharacterFormValues> = async (data) => {
+  const onSubmitHandler: SubmitHandler<CharacterFormValues> = async (data) => {
     // Required for client side validation to fire
     const formData = new FormData();
     formData.append("name", data.name);
@@ -60,11 +60,11 @@ export function CharacterForm({
   };
 
   return (
-    <form id={formId} onSubmit={form.handleSubmit(onSubmit)}>
+    <form id={formId} onSubmit={form.handleSubmit(onSubmitHandler)}>
       <FieldGroup>
         <div className="grid grid-cols-3 gap-4">
           <div className="col-span-1">
-            <FieldImageUploadField
+            <FieldImageUpload
               control={form.control}
               name="image"
               label=""

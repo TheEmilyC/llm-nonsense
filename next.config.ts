@@ -11,6 +11,9 @@ const nextConfig: NextConfig = {
       {
         pathname: "/api/character/**",
       },
+      {
+        pathname: "/api/persona/**",
+      },
     ],
   },
 };

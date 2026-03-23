@@ -111,7 +111,6 @@ export async function createCharacterAction(
   _prevState: unknown,
   formData: FormData,
 ): Promise<ActionResponse<null>> {
-  console.log("formData", formData);
   const imageFile = formData.get("image") as File | null;
   const formParseResult = characterFormSchema.safeParse({
     name: formData.get("name"),

@@ -1,0 +1,75 @@
+"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { SubmitHandler, useForm } from "react-hook-form";
+
+import { personaFormSchema, PersonaFormValues } from "@/app/persona/validators";
+import { FieldImageUpload } from "@/components/form-fields/field-image-upload";
+import { FieldInputField } from "@/components/form-fields/field-input";
+import { FieldTextareaField } from "@/components/form-fields/field-textarea";
+import { FieldGroup } from "@/components/ui/field";
+import { startTransition } from "react";
+
+interface PersonaFormProps {
+  formId: string;
+  defaultValues?: PersonaFormValues;
+  imageSrc?: string;
+  formAction: (formData: FormData) => void;
+}
+
+export function PersonaForm({
+  formId,
+  defaultValues,
+  imageSrc,
+  formAction,
+}: PersonaFormProps) {
+  const form = useForm<PersonaFormValues>({
+    resolver: zodResolver(personaFormSchema),
+    mode: "onTouched",
+    defaultValues: defaultValues || {
+      name: "",
+      description: "",
+    },
+  });
+
+  console.log("errors", form.formState.errors);
+
+  const onSubmitHandler: SubmitHandler<PersonaFormValues> = async (data) => {
+    console.log("data", data);
+    // Required for client side validation to fire
+    const formData = new FormData();
+    formData.append("name", data.name);
+    formData.append("description", data.description);
+    if (data.image) formData.append("image", data.image);
+    startTransition(() => formAction(formData));
+  };
+
+  return (
+    <form id={formId} onSubmit={form.handleSubmit(onSubmitHandler)}>
+      <FieldGroup>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="col-span-1">
+            <FieldImageUpload
+              control={form.control}
+              name="image"
+              label=""
+              acceptedFormats="image"
+              initialImgSrc={imageSrc}
+            />
+          </div>
+          <div className="col-span-2 flex flex-col gap-4">
+            <FieldInputField control={form.control} name="name" label="Name" />
+          </div>
+          <div className="col-span-3 flex flex-col gap-4">
+            <FieldTextareaField
+              control={form.control}
+              name="description"
+              label="Description"
+              rows={8}
+            />
+          </div>
+        </div>
+      </FieldGroup>
+    </form>
+  );
+}

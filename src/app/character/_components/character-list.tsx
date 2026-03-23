@@ -6,7 +6,7 @@ import {
 } from "@/app/character/validators";
 import { CardTile } from "@/components/card-tile";
 import { Content } from "@/components/content";
-import { FieldImageUploadField } from "@/components/form-fields/field-image-upload";
+import { FieldImageUpload } from "@/components/form-fields/field-image-upload";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,7 +63,7 @@ export function CharacterList({ characters }: CharacterListParams) {
                   embedded
                 </DialogDescription>
               </DialogHeader>
-              <FieldImageUploadField
+              <FieldImageUpload
                 control={form.control}
                 name="png"
                 label=""

@@ -61,40 +61,11 @@ export async function createCharacter({
   characterCard,
   image,
 }: CreateCharacterParameters): Promise<CharacterRecord> {
-  // Get image buffer
-  let imageBuffer;
-  if (image instanceof File)
-    imageBuffer = Buffer.from(await image.arrayBuffer());
-  else if (image instanceof Buffer) imageBuffer = image;
-  else
-    imageBuffer = await fs.readFile(
-      join(WORKING_DIRECTORY, DEFAULT_AVATAR_PATH),
-    );
-
-  const encodedImageBuffer = writeCharacterToBuffer(
-    imageBuffer,
-    JSON.stringify(characterCard),
-  );
-
-  // save image
-  await fs.mkdir(CHARACTER_CARD_PATH, { recursive: true });
-  let fileName = `${characterCard.name}.png`;
-  let filePath = join(CHARACTER_CARD_PATH, fileName);
-  let counter = 1;
-  while (
-    await fs
-      .access(filePath)
-      .then(() => true)
-      .catch(() => false)
-  ) {
-    fileName = `${characterCard.name}${counter}.png`;
-    filePath = join(CHARACTER_CARD_PATH, fileName);
-    counter++;
-  }
-  await fs.writeFile(filePath, encodedImageBuffer);
-
+  const { fileName, filePath, pngHash } = await saveCharacterImage({
+    characterCard,
+    image,
+  });
   // write create character index in DB
-  const pngHash = createImageHash(imageBuffer);
   const characterEntity = await prisma.character
     .create({
       data: {
@@ -180,4 +151,49 @@ export async function updateCharacter({
   };
 
   return updatedCharacter;
+}
+
+export interface SaveCharacterImageParams {
+  characterCard: CharacterCard;
+  image: File | Buffer | undefined;
+}
+
+export async function saveCharacterImage({
+  characterCard,
+  image,
+}: SaveCharacterImageParams) {
+  // Get image buffer
+  let imageBuffer;
+  if (image instanceof File)
+    imageBuffer = Buffer.from(await image.arrayBuffer());
+  else if (image instanceof Buffer) imageBuffer = image;
+  else
+    imageBuffer = await fs.readFile(
+      join(WORKING_DIRECTORY, DEFAULT_AVATAR_PATH),
+    );
+
+  const encodedImageBuffer = writeCharacterToBuffer(
+    imageBuffer,
+    JSON.stringify(characterCard),
+  );
+
+  // save image
+  await fs.mkdir(CHARACTER_CARD_PATH, { recursive: true });
+  let fileName = `${characterCard.name}.png`;
+  let filePath = join(CHARACTER_CARD_PATH, fileName);
+  let counter = 1;
+  while (
+    await fs
+      .access(filePath)
+      .then(() => true)
+      .catch(() => false)
+  ) {
+    fileName = `${characterCard.name}${counter}.png`;
+    filePath = join(CHARACTER_CARD_PATH, fileName);
+    counter++;
+  }
+  await fs.writeFile(filePath, encodedImageBuffer);
+  const pngHash = createImageHash(imageBuffer);
+
+  return { fileName, filePath, pngHash };
 }
