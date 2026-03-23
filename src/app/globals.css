@@ -9,7 +9,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -63,15 +62,15 @@
   --muted-foreground: oklch(0.556 0 0);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  --destructive: oklch(0.58 0.22 27);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --chart-1: oklch(0.809 0.105 251.813);
+  --chart-2: oklch(0.623 0.214 259.815);
+  --chart-3: oklch(0.546 0.245 262.881);
+  --chart-4: oklch(0.488 0.243 264.376);
+  --chart-5: oklch(0.424 0.199 265.638);
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -84,47 +83,111 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* ── Base palette (dark) ───────────────────────────────────────────────── */
+  --background: hsl(260 14% 10%); /* #17161C — deep charcoal-violet         */
+  --foreground: hsl(252 8% 87%); /* #DCDAE2 — warm off-white               */
+
+  /* ── Cards & elevated surfaces ─────────────────────────────────────────── */
+  --card: hsl(260 12% 14%); /* #211F28 — lifted surface               */
+  --card-foreground: hsl(252 8% 87%);
+
+  /* ── Popovers ──────────────────────────────────────────────────────────── */
+  --popover: hsl(260 12% 14%);
+  --popover-foreground: hsl(252 8% 87%);
+
+  /* ── Primary action (brighter violet for dark bg) ──────────────────────── */
+  --primary: hsl(258 42% 70%); /* #9B8DD8 — lifted violet for contrast   */
+  --primary-foreground: hsl(260 14% 10%);
+
+  /* ── Secondary surfaces ────────────────────────────────────────────────── */
+  --secondary: hsl(260 10% 15%); /* #1F1E26                                */
+  --secondary-foreground: hsl(252 8% 87%);
+
+  /* ── Muted ─────────────────────────────────────────────────────────────── */
+  --muted: hsl(260 10% 17%); /* #28262F                                */
+  --muted-foreground: hsl(
+    256 6% 57%
+  ); /* #8D8A98                                */
+
+  /* ── Accents ───────────────────────────────────────────────────────────── */
+  --accent: hsl(260 10% 20%); /* subtle hover on dark                   */
+  --accent-foreground: hsl(252 8% 87%);
+
+  /* ── Destructive ───────────────────────────────────────────────────────── */
+  --destructive: hsl(0 60% 55%);
+  --destructive-foreground: hsl(0 0% 100%);
+
+  /* ── Borders & inputs ──────────────────────────────────────────────────── */
+  --border: hsl(258 6% 24%); /* #3A3842 — subtle but present           */
+  --input: hsl(258 6% 24%);
+  --ring: hsl(258 42% 70%);
+
+  /* ── Charts (brighter for dark backgrounds) ────────────────────────────── */
+  --chart-1: hsl(258 42% 70%);
+  --chart-2: hsl(220 35% 65%);
+  --chart-3: hsl(280 25% 68%);
+  --chart-4: hsl(200 30% 60%);
+  --chart-5: hsl(240 18% 72%);
+
+  /* ── Sidebar ───────────────────────────────────────────────────────────── */
+  --sidebar: hsl(260 12% 12%);
+  --sidebar-foreground: hsl(252 8% 87%);
+  --sidebar-primary: hsl(258 42% 70%);
+  --sidebar-primary-foreground: hsl(260 14% 10%);
+  --sidebar-accent: hsl(260 10% 20%);
+  --sidebar-accent-foreground: hsl(252 8% 87%);
+  --sidebar-border: hsl(258 6% 20%);
+  --sidebar-ring: hsl(258 42% 70%);
 }
+
+/*
+ * ============================================================================
+ *  BASE STYLES
+ * ============================================================================
+ */
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  html {
-    @apply font-sans;
+}
+
+/*
+ * ============================================================================
+ *  READING COMFORT UTILITIES (optional — use in your reading-heavy views)
+ * ============================================================================
+ *
+ *  .reading-body    → optimized line-height + max-width for prose
+ *  .reading-surface → subtle background tint that's easier on eyes than white
+ *
+ *  Usage:
+ *    <div className="reading-surface">
+ *      <article className="reading-body">
+ *        <Markdown>{content}</Markdown>
+ *      </article>
+ *    </div>
+ */
+
+@layer utilities {
+  .reading-body {
+    /* max-width: 68ch; */
+    line-height: 1.75;
+    letter-spacing: 0.005em;
+    overflow-wrap: break-word;
+  }
+
+  .reading-surface {
+    background-color: hsl(var(--card));
+    border-radius: calc(var(--radius) + 2px);
+    padding: 1.5rem;
   }
 }

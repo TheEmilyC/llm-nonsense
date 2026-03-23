@@ -1,3 +1,7 @@
 ignoredBuiltDependencies:
+  - '@prisma/engines'
+  - better-sqlite3
+  - msw
+  - prisma
   - sharp
   - unrs-resolver
