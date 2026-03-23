@@ -1,6 +1,7 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { startTransition } from "react";
+import { SubmitHandler, useForm } from "react-hook-form";
 
 import {
   characterFormSchema,
@@ -28,6 +29,7 @@ export function CharacterForm({
 }: CharacterFormProps) {
   const form = useForm<CharacterFormValues>({
     resolver: zodResolver(characterFormSchema),
+    mode: "onTouched",
     defaultValues: defaultValues || {
       name: "",
       tags: [],
@@ -40,8 +42,25 @@ export function CharacterForm({
     },
   });
 
+  const onSubmit: SubmitHandler<CharacterFormValues> = async (data) => {
+    // Required for client side validation to fire
+    const formData = new FormData();
+    formData.append("name", data.name);
+    formData.append("description", data.description);
+    formData.append("personality", data.personality);
+    formData.append("scenario", data.scenario);
+    formData.append("first_mes", data.first_mes);
+    formData.append("mes_example", data.mes_example);
+    formData.append("creator_notes", data.creator_notes);
+    if (data.image) formData.append("image", data.image);
+    if (data.tags.length > 0) {
+      data.tags.forEach((tag) => formData.append("tags", tag));
+    }
+    startTransition(() => formAction(formData));
+  };
+
   return (
-    <form id={formId} action={formAction}>
+    <form id={formId} onSubmit={form.handleSubmit(onSubmit)}>
       <FieldGroup>
         <div className="grid grid-cols-3 gap-4">
           <div className="col-span-1">

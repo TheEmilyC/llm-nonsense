@@ -54,7 +54,7 @@ export async function getCharacterById(
 
 export interface CreateCharacterParameters {
   characterCard: CharacterCard;
-  image: File | Buffer | null;
+  image: File | Buffer | undefined;
 }
 
 export async function createCharacter({

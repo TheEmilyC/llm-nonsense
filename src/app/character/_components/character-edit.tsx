@@ -9,7 +9,7 @@ import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
 import { ActionResponse } from "@/lib/types";
-import { useActionState } from "react";
+import { startTransition, useActionState } from "react";
 
 const FORM_ID = "form-edit-character";
 
@@ -46,7 +46,7 @@ export function CharacterEdit({ character }: CharacterEditParams) {
 
   async function deleteHandler() {
     if (!confirm(`Delete "${character?.name}"? This cannot be undone.`)) return;
-    deleteCharacter(character.id);
+    startTransition(() => deleteCharacter(character.id));
   }
 
   return (
