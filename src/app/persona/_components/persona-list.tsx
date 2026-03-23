@@ -1,11 +1,10 @@
 "use client";
 
-import Link from "next/link";
-
 import { CardTile } from "@/components/card-tile";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface PersonaListParams {
   personas: { id: string; name: string; imageUrl: string }[];

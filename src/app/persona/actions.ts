@@ -64,12 +64,12 @@ export async function updatePersonaAction(
 
   try {
     await updatePersona({ id, update, image });
-    refresh();
-    return { success: true, data: null };
   } catch (err) {
     console.error(err);
     return { success: false, message: "Persona update failed" };
   }
+  refresh();
+  return { success: true, data: null };
 }
 
 export async function deletePersonaAction(

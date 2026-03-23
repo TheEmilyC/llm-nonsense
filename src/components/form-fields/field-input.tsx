@@ -9,7 +9,7 @@ interface FieldInputFieldParams<T extends FieldValues> {
   placeholder?: string;
 }
 
-export function FieldInputField<T extends FieldValues>({
+export function FieldInput<T extends FieldValues>({
   name,
   label,
   control,

@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "lint:fix": "eslint:fix"
+    "lint:fix": "eslint:fix",
+    "db:migrate": "dlx prisma migrate dev",
+    "db:generate": "dlx prisma generate"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

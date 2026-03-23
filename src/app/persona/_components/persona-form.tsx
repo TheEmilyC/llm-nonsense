@@ -1,14 +1,13 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { SubmitHandler, useForm } from "react-hook-form";
-
 import { personaFormSchema, PersonaFormValues } from "@/app/persona/validators";
 import { FieldImageUpload } from "@/components/form-fields/field-image-upload";
-import { FieldInputField } from "@/components/form-fields/field-input";
+import { FieldInput } from "@/components/form-fields/field-input";
 import { FieldTextareaField } from "@/components/form-fields/field-textarea";
 import { FieldGroup } from "@/components/ui/field";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { startTransition } from "react";
+import { SubmitHandler, useForm } from "react-hook-form";
 
 interface PersonaFormProps {
   formId: string;
@@ -55,7 +54,7 @@ export function PersonaForm({
             />
           </div>
           <div className="col-span-2 flex flex-col gap-4">
-            <FieldInputField control={form.control} name="name" label="Name" />
+            <FieldInput control={form.control} name="name" label="Name" />
           </div>
           <div className="col-span-3 flex flex-col gap-4">
             <FieldTextareaField

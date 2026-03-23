@@ -8,7 +8,7 @@ import {
   CharacterFormValues,
 } from "@/app/character/validators";
 import { FieldImageUpload } from "@/components/form-fields/field-image-upload";
-import { FieldInputField } from "@/components/form-fields/field-input";
+import { FieldInput } from "@/components/form-fields/field-input";
 import { FieldTagList } from "@/components/form-fields/field-taglist";
 import { FieldTextareaField } from "@/components/form-fields/field-textarea";
 import { FieldGroup } from "@/components/ui/field";
@@ -73,7 +73,7 @@ export function CharacterForm({
             />
           </div>
           <div className="col-span-2 flex flex-col gap-4">
-            <FieldInputField control={form.control} name="name" label="Name" />
+            <FieldInput control={form.control} name="name" label="Name" />
             <FieldTagList control={form.control} name="tags" label="Tags" />
           </div>
           <div className="col-span-3 flex flex-col gap-4">

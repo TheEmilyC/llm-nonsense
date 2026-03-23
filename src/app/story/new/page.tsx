@@ -1,0 +1,60 @@
+import { getCharacterList } from "@/app/character/data";
+import { getPersonaList } from "@/app/persona/data";
+import { StoryNew } from "@/app/story/_components/story-new";
+import { buildCharacterImageUrl, buildPersonaImageUrl } from "@/lib/image";
+import { dbIdValidator } from "@/lib/validators";
+import z from "zod";
+
+type NewStoryPageParams = {
+  searchParams: Promise<{
+    characterId?: string;
+    personaId?: string;
+    worldId?: string;
+  }>;
+};
+
+const newStoryParamsSchema = z.object({
+  characterId: dbIdValidator.optional(),
+  personaId: dbIdValidator.optional(),
+  worldId: dbIdValidator.optional(),
+});
+
+export default async function NewStoryPage({
+  searchParams,
+}: NewStoryPageParams) {
+  const [characterList, personaList, lorebookIndex, params] = await Promise.all(
+    //[getCharacterList(), getPersonaList(), getLorebookIndex(), searchParams],
+    [getCharacterList(), getPersonaList(), [], searchParams],
+  );
+
+  const characters = characterList.map((char) => ({
+    id: char.id,
+    name: char.name,
+    imageUrl: buildCharacterImageUrl({ id: char.id, pngHash: char.pngHash }),
+  }));
+  const personas = personaList.map((per) => ({
+    id: per.id,
+    name: per.name,
+    imageUrl: buildPersonaImageUrl({ id: per.id, imgHash: per.imageHash }),
+  }));
+  const { characterId, personaId, worldId } =
+    newStoryParamsSchema.parse(params);
+
+  return (
+    <StoryNew
+      characters={characters}
+      personas={personas}
+      initialCharacterId={characterId}
+      initialPersonaId={personaId}
+      initialWorldId={worldId}
+    //   currentLorebook={{
+    //     status: lorebookIndex.status,
+    //     name:
+    //       lorebookIndex.status === LorebookStatus.IndexMissing ||
+    //       lorebookIndex.status === LorebookStatus.Ready
+    //         ? lorebookIndex.name
+    //         : "",
+    //   }}
+    />
+  );
+}

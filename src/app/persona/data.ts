@@ -19,7 +19,7 @@ export async function getPersonaById(id: string) {
   return await prisma.persona.findUnique({ where: { id } });
 }
 
-export interface CreatePersonaParameters {
+export interface CreatePersonaParams {
   persona: {
     name: string;
     description: string;
@@ -30,7 +30,7 @@ export interface CreatePersonaParameters {
 export async function createPersona({
   persona,
   image,
-}: CreatePersonaParameters) {
+}: CreatePersonaParams) {
   const { fileName, filePath, imageHash } = await savePersonaImage({
     image,
     personaName: persona.name,
