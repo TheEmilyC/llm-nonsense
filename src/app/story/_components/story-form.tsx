@@ -1,14 +1,20 @@
 "use client";
 
-import { LorebookStatus } from "@/app/lorebook/types";
-import { storyFormSchema, StoryFormValues } from "@/app/story/validators";
 import { CurrentLorebook } from "@/app/lorebook/_components/current-lorebook";
+import { LorebookStatus } from "@/app/lorebook/schema";
+import { storyFormSchema, StoryFormValues } from "@/app/story/schema";
 import { CardOption, CardSelector } from "@/components/card-selector";
 import { FieldInput } from "@/components/form-fields/field-input";
 import { Badge } from "@/components/ui/badge";
 import { Field, FieldError } from "@/components/ui/field";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertTriangle, BookOpen, Globe, UserCircle, Users } from "lucide-react";
+import {
+  AlertTriangle,
+  BookOpen,
+  Globe,
+  UserCircle,
+  Users,
+} from "lucide-react";
 import { startTransition, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 

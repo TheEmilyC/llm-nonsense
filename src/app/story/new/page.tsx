@@ -1,6 +1,6 @@
 import { getCharacterList } from "@/app/character/data";
 import { getLorebook } from "@/app/lorebook/data";
-import { LorebookStatus } from "@/app/lorebook/types";
+import { LorebookStatus } from "@/app/lorebook/schema";
 import { getPersonaList } from "@/app/persona/data";
 import { StoryNew } from "@/app/story/_components/story-new";
 import { buildCharacterImageUrl, buildPersonaImageUrl } from "@/lib/image";
@@ -25,9 +25,12 @@ export default async function NewStoryPage({
   searchParams,
 }: NewStoryPageParams) {
   const [characterList, personaList, lorebookResult, params] =
-    await Promise.all(
-      [getCharacterList(), getPersonaList(), getLorebook(), searchParams],
-    );
+    await Promise.all([
+      getCharacterList(),
+      getPersonaList(),
+      getLorebook(),
+      searchParams,
+    ]);
 
   const characters = characterList.map((char) => ({
     id: char.id,

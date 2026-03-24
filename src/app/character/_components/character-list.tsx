@@ -3,7 +3,7 @@ import { importCharacterFromPNG } from "@/app/character/actions";
 import {
   ImportFromPngForm,
   importFromPngFormSchema,
-} from "@/app/character/validators";
+} from "@/app/character/schema";
 import { CardTile } from "@/components/card-tile";
 import { Content } from "@/components/content";
 import { FieldImageUpload } from "@/components/form-fields/field-image-upload";

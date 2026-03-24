@@ -1,8 +1,7 @@
 "use server";
 
 import { createLorebookIndex, getLorebook } from "@/app/lorebook/data";
-import { Lorebook } from "@/app/lorebook/types";
-import { initializeLorebookFormSchema } from "@/app/lorebook/validators";
+import { initializeLorebookFormSchema, Lorebook } from "@/app/lorebook/schema";
 import { ActionResponse } from "@/lib/action-utils";
 
 export async function initializeLorebookAction(
@@ -28,7 +27,10 @@ export async function initializeLorebookAction(
     return { success: true, data: lorebook };
   } catch (err) {
     console.error(err);
-    return { success: false, message: "Lorebook initialized but failed to fetch status" };
+    return {
+      success: false,
+      message: "Lorebook initialized but failed to fetch status",
+    };
   }
 }
 

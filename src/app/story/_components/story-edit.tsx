@@ -1,7 +1,7 @@
 "use client";
 
 import { createChatFromStory } from "@/app/chat/actions";
-import { LorebookStatus } from "@/app/lorebook/types";
+import { LorebookStatus } from "@/app/lorebook/schema";
 import { StoryForm } from "@/app/story/_components/story-form";
 import { deleteStoryAction, updateStoryAction } from "@/app/story/actions";
 import { CardOption } from "@/components/card-selector";

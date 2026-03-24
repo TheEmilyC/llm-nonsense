@@ -1,6 +1,6 @@
 "use client";
 
-import { LorebookStatus } from "@/app/lorebook/types";
+import { LorebookStatus } from "@/app/lorebook/schema";
 import { StoryForm } from "@/app/story/_components/story-form";
 import { createStoryAction } from "@/app/story/actions";
 import { CardOption } from "@/components/card-selector";

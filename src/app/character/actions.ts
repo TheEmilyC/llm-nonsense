@@ -8,7 +8,7 @@ import {
 import {
   characterFormSchema,
   importFromPngFormSchema,
-} from "@/app/character/validators";
+} from "@/app/character/schema";
 import { ActionResponse } from "@/lib/action-utils";
 import {
   characterCardSchema,

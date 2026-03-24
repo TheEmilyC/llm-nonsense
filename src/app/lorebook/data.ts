@@ -1,10 +1,11 @@
-import { Lorebook, LorebookStatus } from "@/app/lorebook/types";
 import {
   GetLorebookIndexResposne,
   getLorebookIndexResposneSchema,
+  Lorebook,
+  LorebookStatus,
   ObsidianValutResponse,
   obsidianValutResponseSchema,
-} from "@/app/lorebook/validators";
+} from "@/app/lorebook/schema";
 import {
   LOREBOOK_NEVER_TAG,
   LOREBOOK_TAG,

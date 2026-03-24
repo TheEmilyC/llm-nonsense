@@ -1,6 +1,6 @@
 import { getCharacterById } from "@/app/character/data";
 import { createChatMessage, getMessagesForChat } from "@/app/chat/data";
-import { MessagePart } from "@/app/chat/validators";
+import { MessagePart } from "@/app/chat/schema";
 import {
   assemblePrompts,
   constructPromptMessages,

@@ -1,7 +1,7 @@
 "use client";
 
 import { useChatMessages } from "@/app/chat/hooks";
-import { ChatViewParams } from "@/app/chat/validators";
+import { ChatViewParams } from "@/app/chat/schema";
 import { Chat } from "@/components/chat";
 import { Header } from "@/components/header";
 

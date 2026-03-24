@@ -4,11 +4,12 @@ import {
   initializeLorebookAction,
   refreshLorebookConnectionAction,
 } from "@/app/lorebook/actions";
-import { Lorebook, LorebookStatus } from "@/app/lorebook/types";
 import {
   initializeLorebookFormSchema,
   InitializeLorebookFormValues,
-} from "@/app/lorebook/validators";
+  Lorebook,
+  LorebookStatus,
+} from "@/app/lorebook/schema";
 import { FieldInput } from "@/components/form-fields/field-input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

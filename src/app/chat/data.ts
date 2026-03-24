@@ -1,4 +1,4 @@
-import { MessagePart } from "@/app/chat/validators";
+import { MessagePart } from "@/app/chat/schema";
 import { prisma } from "@/lib/prisma";
 import { MessageRole } from "../../../generated/enums";
 

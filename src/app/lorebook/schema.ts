@@ -1,5 +1,36 @@
 import z from "zod";
 
+export enum LorebookStatus {
+  ServerUnavailable = "server-unavailable",
+  NotInitialized = "not-initalized",
+  IndexMissing = "index-missing",
+  Ready = "ready",
+}
+
+const indexEntrySchema = z.object({
+  filename: z.string(),
+  name: z.string(),
+  summary: z.string(),
+  tags: z.string().array(),
+  keys: z.string().array(),
+});
+
+export const lorebookSchema = z.discriminatedUnion("status", [
+  z.object({ status: z.literal(LorebookStatus.ServerUnavailable) }),
+  z.object({ status: z.literal(LorebookStatus.NotInitialized) }),
+  z.object({
+    status: z.literal(LorebookStatus.IndexMissing),
+    name: z.string(),
+  }),
+  z.object({
+    status: z.literal(LorebookStatus.Ready),
+    name: z.string(),
+    index: indexEntrySchema.array(),
+  }),
+]);
+
+export type Lorebook = z.infer<typeof lorebookSchema>;
+
 export const initializeLorebookFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
 });
@@ -41,4 +72,3 @@ export const getLorebookIndexResposneSchema = z.union([
 export type GetLorebookIndexResposne = z.infer<
   typeof getLorebookIndexResposneSchema
 >;
-

@@ -3,7 +3,7 @@
 import { getCharacterById } from "@/app/character/data";
 import { getPersonaById } from "@/app/persona/data";
 import { createStory, deleteStory, updateStory } from "@/app/story/data";
-import { storyFormSchema, StoryFormValues } from "@/app/story/validators";
+import { storyFormSchema, StoryFormValues } from "@/app/story/schema";
 import { ActionResponse } from "@/lib/action-utils";
 import { dbIdValidator } from "@/lib/validators";
 import { refresh } from "next/cache";

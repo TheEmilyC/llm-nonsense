@@ -1,6 +1,6 @@
 "use client";
 
-import { personaFormSchema, PersonaFormValues } from "@/app/persona/validators";
+import { personaFormSchema, PersonaFormValues } from "@/app/persona/schema";
 import { FieldImageUpload } from "@/components/form-fields/field-image-upload";
 import { FieldInput } from "@/components/form-fields/field-input";
 import { FieldTextareaField } from "@/components/form-fields/field-textarea";
