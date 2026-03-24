@@ -1,6 +1,7 @@
 "use client";
 
 import { createChatFromStory } from "@/app/chat/actions";
+import { LorebookStatus } from "@/app/lorebook/types";
 import { StoryForm } from "@/app/story/_components/story-form";
 import { deleteStoryAction, updateStoryAction } from "@/app/story/actions";
 import { CardOption } from "@/components/card-selector";
@@ -22,6 +23,10 @@ interface StoryEditParams {
   characters?: CardOption[];
   personas?: CardOption[];
   worlds?: CardOption[];
+  currentLorebook: {
+    status: LorebookStatus;
+    name?: string;
+  };
 }
 
 export const initialState: ActionResponse<null> = {
@@ -33,6 +38,7 @@ export function StoryEdit({
   characters,
   personas,
   worlds,
+  currentLorebook,
 }: StoryEditParams) {
   const [deleteState, deleteStory, isDeletePending] = useActionState(
     deleteStoryAction,
@@ -99,6 +105,7 @@ export function StoryEdit({
           characters={characters}
           personas={personas}
           worlds={worlds}
+          currentLorebook={currentLorebook}
         />
       </Content>
     </div>

@@ -1,4 +1,6 @@
 import { getCharacterList } from "@/app/character/data";
+import { getLorebook } from "@/app/lorebook/data";
+import { LorebookStatus } from "@/app/lorebook/types";
 import { getPersonaList } from "@/app/persona/data";
 import { StoryEdit } from "@/app/story/_components/story-edit";
 import { getStoryById } from "@/app/story/data";
@@ -16,11 +18,13 @@ const storyPageParamsSchema = z.object({
 });
 
 export default async function StoryPage({ params }: StoryPageParams) {
-  const [characterList, personaList, routeParams] = await Promise.all([
-    getCharacterList(),
-    getPersonaList(),
-    params,
-  ]);
+  const [characterList, personaList, lorebookResult, routeParams] =
+    await Promise.all([
+      getCharacterList(),
+      getPersonaList(),
+      getLorebook(),
+      params,
+    ]);
   const { id } = storyPageParamsSchema.parse(routeParams);
   const story = await getStoryById(id);
   if (!story) notFound();
@@ -35,8 +39,20 @@ export default async function StoryPage({ params }: StoryPageParams) {
     name: per.name,
     imageUrl: buildPersonaImageUrl({ id: per.id, imgHash: per.imageHash }),
   }));
+  const lorebook = {
+    status: lorebookResult.status,
+    name:
+      lorebookResult.status === LorebookStatus.Ready
+        ? lorebookResult.name
+        : undefined,
+  };
 
   return (
-    <StoryEdit story={story} characters={characters} personas={personas} />
+    <StoryEdit
+      story={story}
+      characters={characters}
+      personas={personas}
+      currentLorebook={lorebook}
+    />
   );
 }

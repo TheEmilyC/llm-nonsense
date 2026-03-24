@@ -1,5 +1,6 @@
 "use client";
 
+import { LorebookStatus } from "@/app/lorebook/types";
 import { StoryForm } from "@/app/story/_components/story-form";
 import { createStoryAction } from "@/app/story/actions";
 import { CardOption } from "@/components/card-selector";
@@ -18,10 +19,10 @@ interface StoryNewParams {
   initialCharacterId?: string;
   initialPersonaId?: string;
   initialWorldId?: string;
-  //   currentLorebook: {
-  //     status: LorebookStatus;
-  //     name?: string;
-  //   };
+  currentLorebook: {
+    status: LorebookStatus;
+    name?: string;
+  };
 }
 
 export const initialState: ActionResponse<null> = {
@@ -33,6 +34,7 @@ export function StoryNew({
   personas,
   initialCharacterId,
   initialPersonaId,
+  currentLorebook,
 }: StoryNewParams) {
   const [state, createStory, isPending] = useActionState(
     createStoryAction,
@@ -64,7 +66,7 @@ export function StoryNew({
             characterId: initialCharacterId,
             personaId: initialPersonaId,
           }}
-          //currentLorebook={currentLorebook}
+          currentLorebook={currentLorebook}
         />
       </Content>
     </div>
