@@ -1,12 +1,13 @@
 "use client";
 
+import { createChatFromStory } from "@/app/chat/actions";
 import { StoryForm } from "@/app/story/_components/story-form";
 import { deleteStoryAction, updateStoryAction } from "@/app/story/actions";
 import { CardOption } from "@/components/card-selector";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-import { ActionResponse } from "@/lib/types";
+import { ActionResponse } from "@/lib/action-utils";
 import { startTransition, useActionState } from "react";
 
 const FORM_ID = "form-edit-story";
@@ -41,9 +42,12 @@ export function StoryEdit({
     updateStoryAction.bind(null, story.id),
     initialState,
   );
+  const [createChatState, createChat, isCreateChatPending] = useActionState(
+    createChatFromStory,
+    initialState,
+  );
 
-  const isPending = isDeletePending || isUpdatePending;
-  const createChatIsPending = false;
+  const isPending = isDeletePending || isUpdatePending || isCreateChatPending;
 
   async function onDeleteHandler() {
     if (!confirm(`Delete "${story.name}"? This cannot be undone.`)) return;
@@ -51,7 +55,7 @@ export function StoryEdit({
   }
 
   async function handleNewChat(): Promise<void> {
-    //TODO: reimplement
+    startTransition(() => createChat(story.id));
   }
 
   return (
@@ -71,7 +75,7 @@ export function StoryEdit({
           {isDeletePending ? "Deleting..." : "Delete"}
         </Button>
         <Button size="sm" onClick={handleNewChat} disabled={isPending}>
-          {createChatIsPending ? "Starting Chat..." : "New Chat"}
+          {isCreateChatPending ? "Starting Chat..." : "New Chat"}
         </Button>
         <Button size="sm" type="submit" form={FORM_ID} disabled={isPending}>
           {isUpdatePending ? "Saving..." : "Save"}
@@ -83,6 +87,9 @@ export function StoryEdit({
         )}
         {updateState.success === false && (
           <p className="text-destructive">{updateState.message}</p>
+        )}
+        {createChatState.success === false && (
+          <p className="text-destructive">{createChatState.message}</p>
         )}
         <StoryForm
           formId={FORM_ID}

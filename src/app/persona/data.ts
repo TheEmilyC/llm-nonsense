@@ -11,12 +11,18 @@ import { Persona } from "../../../generated/client";
 
 const PERSONA_PATH = join(WORKING_DIRECTORY, PERSONA_DIRECTORY);
 
-export async function getPersonaList() {
+export async function getPersonaList(): Promise<Persona[]> {
   return await prisma.persona.findMany();
 }
 
-export async function getPersonaById(id: string) {
+export async function getPersonaById(id: string): Promise<Persona | null> {
   return await prisma.persona.findUnique({ where: { id } });
+}
+
+export async function getPersonaByIdOrFail(id: string): Promise<Persona> {
+  const result = await getPersonaById(id);
+  if (!result) throw `Persona ID:${id} does not exist`;
+  return result;
 }
 
 export interface CreatePersonaParams {
@@ -30,7 +36,7 @@ export interface CreatePersonaParams {
 export async function createPersona({
   persona,
   image,
-}: CreatePersonaParams) {
+}: CreatePersonaParams): Promise<Persona> {
   const { fileName, filePath, imageHash } = await savePersonaImage({
     image,
     personaName: persona.name,
@@ -60,13 +66,15 @@ export type SavePersonaImageParams =
     }
   | { filePath: string; image: File | undefined };
 
-export async function savePersonaImage(
-  params: SavePersonaImageParams,
-): Promise<{
+export interface SavePersonaImageResult {
   fileName: string;
   filePath: string;
   imageHash: string;
-}> {
+}
+
+export async function savePersonaImage(
+  params: SavePersonaImageParams,
+): Promise<SavePersonaImageResult> {
   const image = params.image;
   // Save image
   await fs.mkdir(PERSONA_PATH, { recursive: true });
@@ -116,7 +124,7 @@ export async function updatePersona({
   id,
   update,
   image,
-}: UpdatePersonaParams) {
+}: UpdatePersonaParams): Promise<Persona> {
   const orgPersona = await getPersonaById(id);
   if (!orgPersona) throw "Persona does not exist";
 

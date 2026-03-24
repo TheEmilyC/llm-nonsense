@@ -12,7 +12,7 @@ export interface CreateStoryParams {
 }
 
 export async function createStory({ newStory }: CreateStoryParams) {
-  const story = prisma.story.create({
+  const story = await prisma.story.create({
     data: {
       name: newStory.name,
       characterId: newStory.characterId,
@@ -32,6 +32,12 @@ export async function getStoryList() {
 
 export async function getStoryById(id: string) {
   return await prisma.story.findUnique({ where: { id } });
+}
+
+export async function getStoryByIdOrFail(id: string) {
+  const result = await getStoryById(id);
+  if (!result) throw `Story ID:${id} does not exist`;
+  return result;
 }
 
 export interface UpdateStoryParams {

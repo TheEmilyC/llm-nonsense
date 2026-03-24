@@ -52,6 +52,14 @@ export async function getCharacterById(
   return { entity, card };
 }
 
+export async function getCharacterByIdOrFail(
+  id: string,
+): Promise<CharacterRecord> {
+  const result = await getCharacterById(id);
+  if (!result) throw `Character ID:${id} does not exist`;
+  return result;
+}
+
 export interface CreateCharacterParameters {
   characterCard: CharacterCard;
   image: File | Buffer | undefined;

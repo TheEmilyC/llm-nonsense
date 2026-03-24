@@ -9,7 +9,7 @@ import {
   updatePersona,
 } from "@/app/persona/data";
 import { personaFormSchema } from "@/app/persona/validators";
-import { ActionResponse } from "@/lib/types";
+import { ActionResponse } from "@/lib/action-utils";
 import { dbIdValidator } from "@/lib/validators";
 import { refresh } from "next/cache";
 

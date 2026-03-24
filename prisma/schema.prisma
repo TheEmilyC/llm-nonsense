@@ -72,7 +72,7 @@ model ChatMessage {
   role       MessageRole
   /// [ChatMessageMeta]
   metadata   Json?
-  /// [ChatMessagePart[]]
+  /// [ChatMessageParts]
   parts      Json
   createdAt  DateTime    @default(now())
   modifiedAt DateTime    @default(now())

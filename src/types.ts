@@ -4,7 +4,7 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace PrismaJson {
     type ChatMessageMeta = { unused: string };
-    type ChatMessagePart = UIMessagePart<UIDataTypes, UITools>;
+    type ChatMessageParts = UIMessagePart<UIDataTypes, UITools>[];
   }
 }
 

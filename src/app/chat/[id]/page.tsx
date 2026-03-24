@@ -39,7 +39,7 @@ export default async function ChatPage({ params }: Props) {
     id: chatDTO.story.character.id,
     name: chatDTO.story.character.name,
     avatarSrc: buildCharacterImageUrl({
-      id: chatDTO.story.persona.id,
+      id: chatDTO.story.character.id,
       pngHash: chatDTO.story.character.pngHash,
     }),
   };

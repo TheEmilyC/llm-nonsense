@@ -19,8 +19,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ActionResponse } from "@/lib/action-utils";
 import { buildCharacterImageUrl } from "@/lib/image";
-import { ActionResponse } from "@/lib/types";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";

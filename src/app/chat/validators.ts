@@ -1,5 +1,6 @@
 import { UIDataTypes, UIMessagePart, UITools } from "ai";
 import z from "zod";
+import { MessageRole } from "../../../generated/enums";
 
 export type MessagePart = UIMessagePart<UIDataTypes, UITools>;
 export const messagePartSchema = z.custom<MessagePart>();
@@ -23,7 +24,7 @@ export const chatViewParamsSchema = z.object({
         id: z.string(),
         chatId: z.string(),
         metadata: z.record(z.string(), z.unknown()).nullable(),
-        role: z.enum(["user", "assistant", "system"]),
+        role: z.enum(MessageRole),
         parts: z.custom<MessagePart>().array(),
         createdAt: z.date(),
       })

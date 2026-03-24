@@ -5,7 +5,7 @@ import { createCharacterAction } from "@/app/character/actions";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-import { ActionResponse } from "@/lib/types";
+import { ActionResponse } from "@/lib/action-utils";
 import { useActionState } from "react";
 
 const FORM_ID = "form-new-character";

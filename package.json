@@ -13,8 +13,10 @@
     "db:generate": "dlx prisma generate"
   },
   "dependencies": {
+    "@ai-sdk/deepseek": "^2.0.26",
     "@ai-sdk/react": "^3.0.139",
     "@hookform/resolvers": "^5.2.2",
+    "@openrouter/ai-sdk-provider": "^2.3.3",
     "@prisma/adapter-better-sqlite3": "^7.5.0",
     "@prisma/client": "^7.5.0",
     "ai": "^6.0.134",

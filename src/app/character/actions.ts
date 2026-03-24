@@ -9,11 +9,11 @@ import {
   characterFormSchema,
   importFromPngFormSchema,
 } from "@/app/character/validators";
+import { ActionResponse } from "@/lib/action-utils";
 import {
   characterCardSchema,
   readCharacterFromBuffer,
 } from "@/lib/character-card-parser";
-import { ActionResponse } from "@/lib/types";
 import { dbIdValidator } from "@/lib/validators";
 import { refresh } from "next/cache";
 import { notFound, redirect } from "next/navigation";

@@ -4,7 +4,7 @@ import { getCharacterById } from "@/app/character/data";
 import { getPersonaById } from "@/app/persona/data";
 import { createStory, deleteStory, updateStory } from "@/app/story/data";
 import { storyFormSchema, StoryFormValues } from "@/app/story/validators";
-import { ActionResponse } from "@/lib/types";
+import { ActionResponse } from "@/lib/action-utils";
 import { dbIdValidator } from "@/lib/validators";
 import { refresh } from "next/cache";
 import { notFound, redirect } from "next/navigation";
