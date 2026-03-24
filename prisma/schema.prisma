@@ -1,0 +1,79 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated"
+}
+
+generator json {
+  provider = "prisma-json-types-generator"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Character {
+  id         String   @id @default(cuid())
+  name       String
+  png        String
+  pngHash    String
+  Stories    Story[]
+  createdAt  DateTime @default(now())
+  modifiedAt DateTime @default(now())
+}
+
+model Persona {
+  id          String   @id @default(cuid())
+  name        String
+  image       String
+  imageHash   String
+  description String
+  stories     Story[]
+  createdAt   DateTime @default(now())
+  modifiedAt  DateTime @default(now())
+}
+
+model Story {
+  id          String    @id @default(cuid())
+  name        String
+  characterId String
+  character   Character @relation(fields: [characterId], references: [id])
+  personaId   String
+  persona     Persona   @relation(fields: [personaId], references: [id])
+  chats       Chat[]
+  createdAt   DateTime  @default(now())
+  modifiedAt  DateTime  @default(now())
+}
+
+model Chat {
+  id         String        @id @default(cuid())
+  name       String
+  storyId    String
+  story      Story         @relation(fields: [storyId], references: [id])
+  messages   ChatMessage[]
+  createdAt  DateTime      @default(now())
+  modifiedAt DateTime      @default(now())
+}
+
+enum MessageRole {
+  user
+  system
+  assistant
+}
+
+model ChatMessage {
+  id         String      @id @default(cuid())
+  chatId     String
+  chat       Chat        @relation(fields: [chatId], references: [id])
+  role       MessageRole
+  /// [ChatMessageMeta]
+  metadata   Json?
+  /// [ChatMessageParts]
+  parts      Json
+  createdAt  DateTime    @default(now())
+  modifiedAt DateTime    @default(now())
+}
