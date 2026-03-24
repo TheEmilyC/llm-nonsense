@@ -59,14 +59,21 @@ model Chat {
   modifiedAt DateTime      @default(now())
 }
 
+enum MessageRole {
+  user
+  system
+  assistant
+}
+
 model ChatMessage {
-  id         String   @id @default(cuid())
+  id         String      @id @default(cuid())
   chatId     String
-  chat       Chat     @relation(fields: [chatId], references: [id])
+  chat       Chat        @relation(fields: [chatId], references: [id])
+  role       MessageRole
   /// [ChatMessageMeta]
   metadata   Json?
-  /// [ChatMessagePart]
+  /// [ChatMessagePart[]]
   parts      Json
-  createdAt  DateTime @default(now())
-  modifiedAt DateTime @default(now())
+  createdAt  DateTime    @default(now())
+  modifiedAt DateTime    @default(now())
 }
