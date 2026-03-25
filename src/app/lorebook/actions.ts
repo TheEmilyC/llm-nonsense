@@ -1,16 +1,17 @@
 "use server";
 
 import { createLorebookIndex, getLorebook } from "@/app/lorebook/data";
-import { initializeLorebookFormSchema, Lorebook } from "@/app/lorebook/schema";
-import { ActionResponse } from "@/lib/action-utils";
+import {
+  initializeLorebookFormSchema,
+  InitializeLorebookFormValues,
+  LorebookDto,
+  toLorebookDto,
+} from "@/app/lorebook/schema";
 
 export async function initializeLorebookAction(
-  _prevState: unknown,
-  formData: FormData,
-): Promise<ActionResponse<Lorebook>> {
-  const parseResult = initializeLorebookFormSchema.safeParse({
-    name: formData.get("name"),
-  });
+  data: InitializeLorebookFormValues,
+) {
+  const parseResult = initializeLorebookFormSchema.safeParse(data);
   if (!parseResult.success) {
     return { success: false, message: parseResult.error.issues[0].message };
   }
@@ -34,14 +35,7 @@ export async function initializeLorebookAction(
   }
 }
 
-export async function refreshLorebookConnectionAction(): Promise<
-  ActionResponse<Lorebook>
-> {
-  try {
-    const lorebook = await getLorebook();
-    return { success: true, data: lorebook };
-  } catch (err) {
-    console.error(err);
-    return { success: false, message: "Failed to connect to lorebook server" };
-  }
+export async function getLorebookAction(): Promise<LorebookDto> {
+  const lorebook = await getLorebook();
+  return toLorebookDto(lorebook);
 }

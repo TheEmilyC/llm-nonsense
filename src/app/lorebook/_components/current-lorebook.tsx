@@ -1,13 +1,14 @@
 "use client";
 
 import {
-  initializeLorebookAction,
-  refreshLorebookConnectionAction,
-} from "@/app/lorebook/actions";
+  useInitializeLorebook,
+  useLorebook,
+  useRefreshLorebookConnection,
+} from "@/app/lorebook/hooks";
 import {
   initializeLorebookFormSchema,
   InitializeLorebookFormValues,
-  Lorebook,
+  LorebookDto,
   LorebookStatus,
 } from "@/app/lorebook/schema";
 import { FieldInput } from "@/components/form-fields/field-input";
@@ -21,47 +22,29 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ActionResponse } from "@/lib/action-utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RefreshCw } from "lucide-react";
-import { startTransition, useActionState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 
 interface CurrentLorebookProps {
-  initialLorebook: { status: LorebookStatus; name?: string };
-  onChange?: (lorebook: { status: LorebookStatus; name?: string }) => void;
+  initialLorebook: LorebookDto;
 }
 
-export function CurrentLorebook({
-  initialLorebook,
-  onChange,
-}: CurrentLorebookProps) {
-  const [lorebookState, retryLorebook, isRetrying] = useActionState(
-    refreshLorebookConnectionAction,
-    { success: undefined },
-  );
+export function CurrentLorebook({ initialLorebook }: CurrentLorebookProps) {
+  const { lorebook, isLoading } = useLorebook({ initialLorebook });
+  const {
+    refreshLorebook,
+    isPending: refreshIsPending,
+    error: refreshError,
+  } = useRefreshLorebookConnection();
+  const {
+    initializeLorebook,
+    isPending: intializeIsPending,
+    error: initializeError,
+  } = useInitializeLorebook();
 
-  const [initState, initAction, isInitializing] = useActionState<
-    ActionResponse<Lorebook>,
-    FormData
-  >(initializeLorebookAction, { success: undefined });
-
-  const effectiveLorebook: { status: LorebookStatus; name?: string } =
-    initState.success === true
-      ? initState.data
-      : lorebookState.success === true
-        ? lorebookState.data
-        : initialLorebook;
-
-  useEffect(() => {
-    if (lorebookState.success === true) onChange?.(lorebookState.data);
-  }, [lorebookState, onChange]);
-
-  useEffect(() => {
-    if (initState.success === true) {
-      onChange?.(initState.data);
-    }
-  }, [initState, onChange]);
+  const isPending = refreshIsPending || intializeIsPending || isLoading;
+  const error = refreshError || initializeError;
 
   const form = useForm<InitializeLorebookFormValues>({
     resolver: zodResolver(initializeLorebookFormSchema),
@@ -69,9 +52,11 @@ export function CurrentLorebook({
   });
 
   function onSubmitHandler(data: InitializeLorebookFormValues) {
-    const formData = new FormData();
-    formData.append("name", data.name);
-    startTransition(() => initAction(formData));
+    initializeLorebook(data);
+  }
+
+  if (!lorebook) {
+    return <></>;
   }
 
   return (
@@ -82,17 +67,20 @@ export function CurrentLorebook({
           type="button"
           variant="ghost"
           size="icon-xs"
-          disabled={isRetrying}
-          onClick={() => startTransition(() => retryLorebook())}
+          disabled={isPending}
+          onClick={() => refreshLorebook()}
           title="Retry connection"
         >
-          <RefreshCw className={isRetrying ? "animate-spin" : undefined} />
+          <RefreshCw
+            className={refreshIsPending ? "animate-spin" : undefined}
+          />
         </Button>
       </span>
       <div className="mt-1">
-        {effectiveLorebook.status === LorebookStatus.Ready ? (
-          <Badge variant="secondary">{effectiveLorebook.name}</Badge>
-        ) : effectiveLorebook.status === LorebookStatus.ServerUnavailable ? (
+        {error && <p className="text-destructive">{error}</p>}
+        {lorebook.status === LorebookStatus.Ready ? (
+          <Badge variant="secondary">{lorebook.name}</Badge>
+        ) : lorebook.status === LorebookStatus.ServerUnavailable ? (
           <Badge variant="destructive">Server unavailable</Badge>
         ) : (
           <Dialog>
@@ -118,7 +106,7 @@ export function CurrentLorebook({
                   placeholder="My Lorebook"
                 />
                 <DialogFooter showCloseButton className="mt-4">
-                  <Button type="submit" disabled={isInitializing}>
+                  <Button type="submit" disabled={isPending}>
                     Initialize
                   </Button>
                 </DialogFooter>

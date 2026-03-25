@@ -1,6 +1,6 @@
 "use client";
 
-import { LorebookStatus } from "@/app/lorebook/schema";
+import { LorebookDto } from "@/app/lorebook/schema";
 import { StoryForm } from "@/app/story/_components/story-form";
 import { createStoryAction } from "@/app/story/actions";
 import { CardOption } from "@/components/card-selector";
@@ -19,10 +19,7 @@ interface StoryNewParams {
   initialCharacterId?: string;
   initialPersonaId?: string;
   initialWorldId?: string;
-  currentLorebook: {
-    status: LorebookStatus;
-    name?: string;
-  };
+  currentLorebook: LorebookDto;
 }
 
 export const initialState: ActionResponse<null> = {

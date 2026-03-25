@@ -1,5 +1,7 @@
 import z from "zod";
 
+export const LOREBOOK_CACHE = "lorebook";
+
 export enum LorebookStatus {
   ServerUnavailable = "server-unavailable",
   NotInitialized = "not-initalized",
@@ -15,21 +17,43 @@ const indexEntrySchema = z.object({
   keys: z.string().array(),
 });
 
+const lorebookServerUnavailableSchema = z.object({
+  status: z.literal(LorebookStatus.ServerUnavailable),
+});
+const lorebookNotInitializedSchema = z.object({
+  status: z.literal(LorebookStatus.NotInitialized),
+});
+const lorebookIndexMissingSchema = z.object({
+  status: z.literal(LorebookStatus.IndexMissing),
+  name: z.string(),
+});
+const lorebookReadySchema = z.object({
+  status: z.literal(LorebookStatus.Ready),
+  name: z.string(),
+  index: indexEntrySchema.array(),
+});
+
 export const lorebookSchema = z.discriminatedUnion("status", [
-  z.object({ status: z.literal(LorebookStatus.ServerUnavailable) }),
-  z.object({ status: z.literal(LorebookStatus.NotInitialized) }),
-  z.object({
-    status: z.literal(LorebookStatus.IndexMissing),
-    name: z.string(),
-  }),
-  z.object({
-    status: z.literal(LorebookStatus.Ready),
-    name: z.string(),
-    index: indexEntrySchema.array(),
-  }),
+  lorebookServerUnavailableSchema,
+  lorebookNotInitializedSchema,
+  lorebookIndexMissingSchema,
+  lorebookReadySchema,
 ]);
 
 export type Lorebook = z.infer<typeof lorebookSchema>;
+
+export const lorebookDtoSchema = z.discriminatedUnion("status", [
+  lorebookServerUnavailableSchema,
+  lorebookNotInitializedSchema,
+  lorebookIndexMissingSchema,
+  lorebookReadySchema.omit({ index: true }),
+]);
+
+export type LorebookDto = z.infer<typeof lorebookDtoSchema>;
+
+export function toLorebookDto(lorebook: Lorebook): LorebookDto {
+  return lorebookDtoSchema.parse(lorebook);
+}
 
 export const initializeLorebookFormSchema = z.object({
   name: z.string().min(1, "Name is required"),

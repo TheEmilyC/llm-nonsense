@@ -1,6 +1,6 @@
 import { getCharacterList } from "@/app/character/data";
 import { getLorebook } from "@/app/lorebook/data";
-import { LorebookStatus } from "@/app/lorebook/schema";
+import { toLorebookDto } from "@/app/lorebook/schema";
 import { getPersonaList } from "@/app/persona/data";
 import { StoryEdit } from "@/app/story/_components/story-edit";
 import { getStoryById } from "@/app/story/data";
@@ -39,13 +39,7 @@ export default async function StoryPage({ params }: StoryPageParams) {
     name: per.name,
     imageUrl: buildPersonaImageUrl({ id: per.id, imgHash: per.imageHash }),
   }));
-  const lorebook = {
-    status: lorebookResult.status,
-    name:
-      lorebookResult.status === LorebookStatus.Ready
-        ? lorebookResult.name
-        : undefined,
-  };
+  const lorebook = toLorebookDto(lorebookResult);
 
   return (
     <StoryEdit

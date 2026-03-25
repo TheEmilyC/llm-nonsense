@@ -1,7 +1,7 @@
 "use client";
 
 import { createChatFromStory } from "@/app/chat/actions";
-import { LorebookStatus } from "@/app/lorebook/schema";
+import { LorebookDto } from "@/app/lorebook/schema";
 import { StoryForm } from "@/app/story/_components/story-form";
 import { deleteStoryAction, updateStoryAction } from "@/app/story/actions";
 import { CardOption } from "@/components/card-selector";
@@ -23,10 +23,7 @@ interface StoryEditParams {
   characters?: CardOption[];
   personas?: CardOption[];
   worlds?: CardOption[];
-  currentLorebook: {
-    status: LorebookStatus;
-    name?: string;
-  };
+  currentLorebook: LorebookDto;
 }
 
 export const initialState: ActionResponse<null> = {

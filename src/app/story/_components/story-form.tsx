@@ -1,7 +1,8 @@
 "use client";
 
 import { CurrentLorebook } from "@/app/lorebook/_components/current-lorebook";
-import { LorebookStatus } from "@/app/lorebook/schema";
+import { useLorebook } from "@/app/lorebook/hooks";
+import { LorebookDto, LorebookStatus } from "@/app/lorebook/schema";
 import { storyFormSchema, StoryFormValues } from "@/app/story/schema";
 import { CardOption, CardSelector } from "@/components/card-selector";
 import { FieldInput } from "@/components/form-fields/field-input";
@@ -26,10 +27,7 @@ interface StoryFormParams {
   isEdit?: boolean;
   defaultValues?: Partial<StoryFormValues>;
   formAction: (formData: FormData) => void;
-  currentLorebook: {
-    status: LorebookStatus;
-    name?: string;
-  };
+  currentLorebook: LorebookDto;
 }
 
 export function StoryForm({
@@ -50,18 +48,13 @@ export function StoryForm({
       name: defaultValues?.name ?? "",
     },
   });
-
-  const [effectiveLorebook, setEffectiveLorebook] = useState(currentLorebook);
-
+  const { lorebook, isLoading, error } = useLorebook({});
   const assignedLorebook = defaultValues?.assignedLorebook;
   const currentLorebookName =
-    effectiveLorebook.status === LorebookStatus.Ready
-      ? effectiveLorebook.name
-      : "";
+    lorebook?.status === LorebookStatus.Ready ? lorebook.name : undefined;
+
   const lorebookMismatch =
-    !!assignedLorebook &&
-    !!currentLorebookName &&
-    assignedLorebook !== currentLorebookName;
+    !!assignedLorebook && assignedLorebook !== currentLorebookName;
 
   const [replaceWithCurrent, setReplaceWithCurrent] = useState(false);
 
@@ -178,10 +171,7 @@ export function StoryForm({
                 )}
               </div>
             </div>
-            <CurrentLorebook
-              initialLorebook={currentLorebook}
-              onChange={setEffectiveLorebook}
-            />
+            <CurrentLorebook initialLorebook={currentLorebook} />
           </div>
 
           {lorebookMismatch && (
@@ -200,7 +190,9 @@ export function StoryForm({
                 onChange={(e) => handleReplaceToggle(e.target.checked)}
                 className="size-4 rounded border-border accent-primary"
               />
-              Replace assigned lorebook with current on save
+              {assignedLorebook
+                ? "Replace assigned lorebook with current on story"
+                : "Assigned lorebook to story"}
             </label>
           )}
         </div>
