@@ -6,13 +6,13 @@ import { getPersonaByIdOrFail } from "@/app/persona/data";
 import { getStoryById } from "@/app/story/data";
 import { ActionResponse } from "@/lib/action-utils";
 import { constructPromptMessages } from "@/lib/ai/prompt-manager";
+import { HttpStatus } from "@/lib/http";
 import { dbIdValidator } from "@/lib/validators";
 import { createIdGenerator } from "ai";
-import { notFound, redirect } from "next/navigation";
 
 export async function createChatFromStoryAction(
   storyId: string,
-): Promise<ActionResponse<void>> {
+): Promise<ActionResponse<{ id: string }>> {
   const idParseResult = dbIdValidator.safeParse(storyId);
   if (!idParseResult.success) {
     console.error(idParseResult.error);
@@ -25,7 +25,8 @@ export async function createChatFromStoryAction(
   } catch (err) {
     console.error(err);
   }
-  if (!story) return notFound();
+  if (!story)
+    return { success: false, error: "not found", status: HttpStatus.NOT_FOUND };
 
   let chat;
   try {
@@ -68,6 +69,5 @@ export async function createChatFromStoryAction(
     console.error(err);
     return { success: false, error: "Failed to create chat" };
   }
-
-  redirect(`/chat/${chat.id}`);
+  return { success: true, data: { id: chat.id } };
 }
