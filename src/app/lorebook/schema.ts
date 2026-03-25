@@ -1,6 +1,6 @@
 import z from "zod";
 
-export const LOREBOOK_CACHE = "lorebook";
+export const LOREBOOK_CACHE_KEY = "lorebook";
 
 export enum LorebookStatus {
   ServerUnavailable = "server-unavailable",

@@ -7,20 +7,21 @@ import {
   LorebookDto,
   toLorebookDto,
 } from "@/app/lorebook/schema";
+import { ActionResponse } from "@/lib/action-utils";
 
 export async function initializeLorebookAction(
   data: InitializeLorebookFormValues,
-) {
+): Promise<ActionResponse<LorebookDto>> {
   const parseResult = initializeLorebookFormSchema.safeParse(data);
   if (!parseResult.success) {
-    return { success: false, message: parseResult.error.issues[0].message };
+    return { success: false, error: parseResult.error.issues[0].message };
   }
 
   try {
     await createLorebookIndex({ lorebook: { name: parseResult.data.name } });
   } catch (err) {
     console.error(err);
-    return { success: false, message: "Failed to initialize lorebook" };
+    return { success: false, error: "Failed to initialize lorebook" };
   }
 
   try {
@@ -30,12 +31,19 @@ export async function initializeLorebookAction(
     console.error(err);
     return {
       success: false,
-      message: "Lorebook initialized but failed to fetch status",
+      error: "Lorebook initialized but failed to fetch status",
     };
   }
 }
 
-export async function getLorebookAction(): Promise<LorebookDto> {
-  const lorebook = await getLorebook();
-  return toLorebookDto(lorebook);
+export async function getLorebookAction(): Promise<
+  ActionResponse<LorebookDto>
+> {
+  try {
+    const lorebook = await getLorebook();
+    return { success: true, data: toLorebookDto(lorebook) };
+  } catch (err) {
+    console.error(err);
+    return { success: false, error: "Failed to fetch lorebook" };
+  }
 }

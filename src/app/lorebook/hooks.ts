@@ -6,7 +6,7 @@ import {
 } from "@/app/lorebook/actions";
 import {
   InitializeLorebookFormValues,
-  LOREBOOK_CACHE,
+  LOREBOOK_CACHE_KEY,
   LorebookDto,
 } from "@/app/lorebook/schema";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -19,10 +19,16 @@ export function useInitializeLorebook() {
     isPending,
     error,
   } = useMutation({
-    mutationFn: (data: InitializeLorebookFormValues) =>
-      initializeLorebookAction(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [LOREBOOK_CACHE] });
+    mutationFn: async (data: InitializeLorebookFormValues) => {
+      const result = await initializeLorebookAction(data);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData([LOREBOOK_CACHE_KEY], data);
     },
   });
 
@@ -43,9 +49,16 @@ export function useLorebook({ initialLorebook }: UseLorebookParams) {
     isLoading,
     error,
   } = useQuery({
-    queryKey: [LOREBOOK_CACHE],
+    queryKey: [LOREBOOK_CACHE_KEY],
     initialData: initialLorebook,
-    queryFn: getLorebookAction,
+    queryFn: async () => {
+      const results = await getLorebookAction();
+      if (!results.success) {
+        throw new Error(results.error);
+      }
+
+      return results.data;
+    },
   });
 
   return {
@@ -63,9 +76,15 @@ export function useRefreshLorebookConnection() {
     isPending,
     error,
   } = useMutation({
-    mutationFn: () => getLorebookAction(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [LOREBOOK_CACHE] });
+    mutationFn: async () => {
+      const result = await getLorebookAction();
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData([LOREBOOK_CACHE_KEY], data);
     },
   });
 
