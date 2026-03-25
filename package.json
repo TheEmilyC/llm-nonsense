@@ -9,8 +9,8 @@
     "start": "next start",
     "lint": "eslint",
     "lint:fix": "eslint:fix",
-    "db:migrate": "dlx prisma migrate dev",
-    "db:generate": "dlx prisma generate"
+    "db-generate": "pnpm dlx prisma generate",
+    "db-migrate": "pnpm dlx prisma migrate dev --name"
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^2.0.26",

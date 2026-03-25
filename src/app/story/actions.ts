@@ -71,7 +71,7 @@ export async function updateStoryAction(
   const id = idParseResult.data;
   const { ...update } = formParseResult.data;
 
-  let updatedStory: StoryDto;
+  let updatedStory;
   try {
     updatedStory = await updateStory({ id, update });
   } catch (err) {

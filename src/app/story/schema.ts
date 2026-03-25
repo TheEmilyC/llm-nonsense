@@ -7,7 +7,7 @@ const baseSchema = z.object({
   characterId: z.string(),
   personaId: z.string(),
   worldId: z.string().optional(),
-  assignedLorebook: z.string().optional(),
+  lorebook: z.string().optional(),
 });
 
 export const storyFormSchema = z.discriminatedUnion("mode", [

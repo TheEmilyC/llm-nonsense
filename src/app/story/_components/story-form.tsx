@@ -49,7 +49,7 @@ export function StoryForm({
     },
   });
   const { lorebook, error } = useLorebook({});
-  const assignedLorebook = defaultValues?.assignedLorebook;
+  const assignedLorebook = defaultValues?.lorebook;
   const currentLorebookName =
     lorebook?.status === LorebookStatus.Ready ? lorebook.name : undefined;
 
@@ -60,10 +60,7 @@ export function StoryForm({
 
   function handleReplaceToggle(checked: boolean) {
     setReplaceWithCurrent(checked);
-    form.setValue(
-      "assignedLorebook",
-      checked ? currentLorebookName : assignedLorebook,
-    );
+    form.setValue("lorebook", checked ? currentLorebookName : assignedLorebook);
   }
 
   return (
@@ -163,7 +160,7 @@ export function StoryForm({
             <CurrentLorebook initialLorebook={currentLorebook} />
           </div>
 
-          {lorebookMismatch && (
+          {currentLorebookName && lorebookMismatch && (
             <div className="flex items-center gap-2 rounded-md bg-yellow-500/10 px-3 py-2 text-sm text-yellow-600 dark:text-yellow-400">
               <AlertTriangle className="size-4 shrink-0" />
               Assigned lorebook &ldquo;{assignedLorebook}&rdquo; differs from
@@ -171,7 +168,7 @@ export function StoryForm({
             </div>
           )}
 
-          {currentLorebookName && (
+          {currentLorebookName && currentLorebookName !== assignedLorebook && (
             <label className="flex cursor-pointer items-center gap-2 text-sm">
               <input
                 type="checkbox"
@@ -181,7 +178,7 @@ export function StoryForm({
               />
               {assignedLorebook
                 ? "Replace assigned lorebook with current on story"
-                : "Assigned lorebook to story"}
+                : "Assign lorebook to story"}
             </label>
           )}
         </div>

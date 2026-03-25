@@ -42,11 +42,9 @@ export async function getStoryByIdOrFail(id: string) {
 
 export interface UpdateStoryParams {
   id: string;
-  update: {
-    name?: string;
-    characterId?: string;
-    personaId?: string;
-  };
+  update: Partial<
+    Pick<Story, "name" | "characterId" | "personaId" | "lorebook">
+  >;
 }
 
 export async function updateStory({ id, update }: UpdateStoryParams) {
@@ -73,6 +71,11 @@ export async function updateStory({ id, update }: UpdateStoryParams) {
     update.personaId !== orgStory.personaId
   ) {
     entityUpdate.personaId = update.personaId;
+    updateRequired = true;
+  }
+
+  if (update.lorebook !== undefined && update.lorebook !== orgStory.lorebook) {
+    entityUpdate.lorebook = update.lorebook;
     updateRequired = true;
   }
 
