@@ -1,5 +1,5 @@
 "use client";
-import { importCharacterFromPNG } from "@/app/character/actions";
+import { useImportCharacterFromPNG } from "@/app/character/hooks";
 import {
   ImportFromPngForm,
   importFromPngFormSchema,
@@ -19,31 +19,29 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ActionResponse } from "@/lib/action-utils";
 import { buildCharacterImageUrl } from "@/lib/image";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { useActionState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
 interface CharacterListParams {
   characters: { id: string; name: string; pngHash: string }[];
 }
 
-export const initialState: ActionResponse<{ id: string }> = {
-  success: undefined,
-};
-
 export function CharacterList({ characters }: CharacterListParams) {
-  const [state, formAction, pending] = useActionState(
-    importCharacterFromPNG,
-    initialState,
-  );
+  const router = useRouter();
+  const { importCharacter, isPending } = useImportCharacterFromPNG();
 
   const form = useForm<ImportFromPngForm>({
     resolver: zodResolver(importFromPngFormSchema),
   });
+
+  async function onSubmitHandler(data: ImportFromPngForm) {
+    const { id } = await importCharacter(data);
+    router.push(`/character/${id}`);
+  }
 
   return (
     <div>
@@ -55,7 +53,7 @@ export function CharacterList({ characters }: CharacterListParams) {
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-sm">
-            <form action={formAction}>
+            <form onSubmit={form.handleSubmit(onSubmitHandler)}>
               <DialogHeader>
                 <DialogTitle>Import from PNG</DialogTitle>
                 <DialogDescription>
@@ -69,18 +67,15 @@ export function CharacterList({ characters }: CharacterListParams) {
                 label=""
                 acceptedFormats="png"
               />
-              {state?.success === false && (
-                <p className="text-sm text-destructive">{state.message}</p>
-              )}
               <DialogFooter>
                 <DialogClose asChild>
                   <Button variant="outline">Cancel</Button>
                 </DialogClose>
                 <Button
                   type="submit"
-                  disabled={pending || !form.formState.isValid}
+                  disabled={isPending || !form.formState.isValid}
                 >
-                  {pending ? "Importing..." : "Import"}
+                  {isPending ? "Importing..." : "Import"}
                 </Button>
               </DialogFooter>
             </form>

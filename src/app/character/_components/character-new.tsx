@@ -1,24 +1,23 @@
 "use client";
 
 import { CharacterForm } from "@/app/character/_components/character-form";
-import { createCharacterAction } from "@/app/character/actions";
+import { useCreateCharacter } from "@/app/character/hooks";
+import { CharacterFormValues } from "@/app/character/schema";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-import { ActionResponse } from "@/lib/action-utils";
-import { useActionState } from "react";
+import { useRouter } from "next/navigation";
 
 const FORM_ID = "form-new-character";
 
-export const initialState: ActionResponse<null> = {
-  success: undefined,
-};
-
 export function CharacterNew() {
-  const [state, createCharacter, pending] = useActionState(
-    createCharacterAction,
-    initialState,
-  );
+  const router = useRouter();
+  const { createCharacter, isPending } = useCreateCharacter();
+
+  async function onSubmitHandler(data: CharacterFormValues) {
+    const { id } = await createCharacter(data);
+    router.push(`/character/${id}`);
+  }
 
   return (
     <div>
@@ -27,15 +26,12 @@ export function CharacterNew() {
         backLinkDestination="/character"
         backLinkLabel="Characters"
       >
-        <Button size="sm" type="submit" form={FORM_ID} disabled={pending}>
-          {pending ? "Saving..." : "Save"}
+        <Button size="sm" type="submit" form={FORM_ID} disabled={isPending}>
+          {isPending ? "Saving..." : "Save"}
         </Button>
       </Header>
       <Content>
-        {state.success === false && (
-          <p className="text-destructive">{state.message}</p>
-        )}
-        <CharacterForm formId={FORM_ID} formAction={createCharacter} />
+        <CharacterForm formId={FORM_ID} onSubmit={onSubmitHandler} />
       </Content>
     </div>
   );

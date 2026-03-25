@@ -1,52 +1,34 @@
 "use client";
 
 import { CharacterForm } from "@/app/character/_components/character-form";
-import {
-  deleteCharacterAction,
-  updateCharacterAction,
-} from "@/app/character/actions";
+import { useDeleteCharacter, useUpdateCharacter } from "@/app/character/hooks";
+import { CharacterDto, CharacterFormValues } from "@/app/character/schema";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-import { ActionResponse } from "@/lib/action-utils";
-import { startTransition, useActionState } from "react";
+import { useRouter } from "next/navigation";
 
 const FORM_ID = "form-edit-character";
 
 export interface CharacterEditParams {
-  character: {
-    id: string;
-    imageUrl: string;
-    name: string;
-    tags: string[];
-    description: string;
-    personality: string;
-    scenario: string;
-    first_mes: string;
-    mes_example: string;
-    creator_notes: string;
-  };
+  character: CharacterDto;
 }
 
-export const initialState: ActionResponse<null> = {
-  success: undefined,
-};
-
 export function CharacterEdit({ character }: CharacterEditParams) {
-  const [deleteState, deleteCharacter, isDeletePending] = useActionState(
-    deleteCharacterAction,
-    initialState,
-  );
-  const [updateState, updateCharacter, isUpdatePending] = useActionState(
-    updateCharacterAction.bind(null, character.id),
-    initialState,
-  );
+  const router = useRouter();
+  const { deleteCharacter, isPending: isDeletePending } = useDeleteCharacter();
+  const { updateCharacter, isPending: isUpdatePending } = useUpdateCharacter();
 
   const isPending = isDeletePending || isUpdatePending;
 
   async function deleteHandler() {
     if (!confirm(`Delete "${character?.name}"? This cannot be undone.`)) return;
-    startTransition(() => deleteCharacter(character.id));
+    await deleteCharacter({ characterId: character.id });
+    router.push(`/character`);
+  }
+
+  async function onSubmitHandler(data: CharacterFormValues) {
+    await updateCharacter({ characterId: character.id, data });
   }
 
   return (
@@ -70,17 +52,11 @@ export function CharacterEdit({ character }: CharacterEditParams) {
         </Button>
       </Header>
       <Content>
-        {deleteState.success === false && (
-          <p className="text-destructive">{deleteState.message}</p>
-        )}
-        {updateState.success === false && (
-          <p className="text-destructive">{updateState.message}</p>
-        )}
         <CharacterForm
           formId={FORM_ID}
           defaultValues={character}
           imageSrc={character.imageUrl}
-          formAction={updateCharacter}
+          onSubmit={onSubmitHandler}
         />
       </Content>
     </div>

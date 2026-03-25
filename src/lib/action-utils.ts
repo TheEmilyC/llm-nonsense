@@ -1,7 +1,15 @@
+import { ApiError } from "@/lib/errors";
+
 export type ActionResponse<T> =
   | { success: true; data: T }
-  | { success: false; message: string }
-  | { success: undefined };
+  | { success: false; error: string };
+
+export function unwrapAction<T>(result: ActionResponse<T>): T {
+  if (!result.success) {
+    throw new ApiError(result.error);
+  }
+  return result.data;
+}
 
 export async function withActionError<T>(
   fn: () => Promise<ActionResponse<T>>,
@@ -10,7 +18,8 @@ export async function withActionError<T>(
     return await fn();
   } catch (err) {
     console.error(err);
-    const message = err instanceof Error ? err.message : "An unexpected error occurred";
-    return { success: false, message };
+    const error =
+      err instanceof Error ? err.message : "An unexpected error occurred";
+    return { success: false, error };
   }
 }

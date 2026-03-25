@@ -3,6 +3,7 @@
 import fs from "fs/promises";
 import { join } from "path";
 
+import { CharacterListItem, CharacterRecord } from "@/app/character/schema";
 import {
   CharacterCard,
   encodeCharacterCard,
@@ -15,24 +16,6 @@ import { createImageHash } from "@/lib/image";
 import { prisma } from "@/lib/prisma";
 
 const CHARACTER_CARD_PATH = join(WORKING_DIRECTORY, CHARACTER_CARD_DIRECTORY);
-
-export interface CharacterListItem {
-  id: string;
-  name: string;
-  pngHash: string;
-}
-
-export interface CharacterRecord {
-  entity: {
-    id: string;
-    name: string;
-    png: string;
-    pngHash: string;
-    createdAt: Date;
-    modifiedAt: Date;
-  };
-  card: CharacterCard;
-}
 
 export async function getCharacterList(): Promise<CharacterListItem[]> {
   const characterList = await prisma.character.findMany();
