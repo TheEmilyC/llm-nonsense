@@ -3,27 +3,25 @@
 import { getCharacterById } from "@/app/character/data";
 import { getPersonaById } from "@/app/persona/data";
 import { createStory, deleteStory, updateStory } from "@/app/story/data";
-import { storyFormSchema, StoryFormValues } from "@/app/story/schema";
+import {
+  StoryDto,
+  storyFormSchema,
+  StoryFormValues,
+  toStoryDto,
+} from "@/app/story/schema";
 import { ActionResponse } from "@/lib/action-utils";
+import { HttpStatus } from "@/lib/http";
 import { dbIdValidator } from "@/lib/validators";
-import { refresh } from "next/cache";
-import { notFound, redirect } from "next/navigation";
 
 export async function createStoryAction(
-  _prevState: unknown,
-  formData: FormData,
-): Promise<ActionResponse<null>> {
-  const formParseResult = storyFormSchema.safeParse({
-    mode: formData.get("mode"),
-    name: formData.get("name"),
-    characterId: formData.get("characterId"),
-    personaId: formData.get("personaId"),
-  } as StoryFormValues);
-  if (!formParseResult.success) {
-    console.error(formParseResult.error);
-    return { success: false, message: "Malformed story data" };
+  data: StoryFormValues,
+): Promise<ActionResponse<{ newStoryId: string }>> {
+  const dataParseResult = storyFormSchema.safeParse(data);
+  if (!dataParseResult.success) {
+    console.error(dataParseResult.error);
+    return { success: false, error: "Malformed story data" };
   }
-  const newStory = formParseResult.data;
+  const newStory = dataParseResult.data;
 
   let name: string = "";
   if (!newStory.name) {
@@ -49,55 +47,47 @@ export async function createStoryAction(
   let story;
   try {
     story = await createStory({ newStory: { ...newStory, name } });
+    return { success: true, data: { newStoryId: story.id } };
   } catch (err) {
     console.error(err);
-    return { success: false, message: "Create story failed" };
+    return { success: false, error: "Create story failed" };
   }
-  redirect(`/story/${story.id}`);
 }
 
 export async function updateStoryAction(
   storyId: string,
-  _prevState: unknown,
-  formData: FormData,
-): Promise<ActionResponse<null>> {
-  const formParseResult = storyFormSchema.safeParse({
-    mode: formData.get("mode"),
-    name: formData.get("name"),
-    characterId: formData.get("characterId"),
-    personaId: formData.get("personaId"),
-    worldId: formData.get("worldId") ?? undefined,
-    assignedLorebook: formData.get("assignedLorebook") ?? undefined,
-  });
+  data: StoryFormValues,
+): Promise<ActionResponse<StoryDto>> {
+  const formParseResult = storyFormSchema.safeParse(data);
   if (!formParseResult.success) {
     console.error(formParseResult.error);
-    return { success: false, message: "Malformed story data" };
+    return { success: false, error: "Malformed story data" };
   }
   const idParseResult = dbIdValidator.safeParse(storyId);
   if (!idParseResult.success) {
     console.error(idParseResult.error);
-    return { success: false, message: "Malformed persona data" };
+    return { success: false, error: "Malformed story data" };
   }
   const id = idParseResult.data;
   const { ...update } = formParseResult.data;
 
+  let updatedStory: StoryDto;
   try {
-    await updateStory({ id, update });
+    updatedStory = await updateStory({ id, update });
   } catch (err) {
     console.error(err);
-    return { success: false, message: "Story update failed" };
+    return { success: false, error: "Story update failed" };
   }
-  refresh();
-  return { success: true, data: null };
+
+  return { success: true, data: toStoryDto(updatedStory) };
 }
 
 export async function deleteStoryAction(
-  prevState: unknown,
   storyId: string,
 ): Promise<ActionResponse<null>> {
   const idParseResult = dbIdValidator.safeParse(storyId);
   if (!idParseResult.success) {
-    notFound();
+    return { success: false, error: "not found", status: HttpStatus.NOT_FOUND };
   }
   const id = idParseResult.data;
 
@@ -105,7 +95,7 @@ export async function deleteStoryAction(
     await deleteStory(id);
   } catch (err) {
     console.error(err);
-    return { success: false, message: "Failed to delete story" };
+    return { success: false, error: "Failed to delete story" };
   }
-  redirect("/story");
+  return { success: true, data: null };
 }

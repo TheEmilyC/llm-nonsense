@@ -1,11 +1,14 @@
 // src/providers/query-provider.tsx
 "use client";
-import { ApiError } from "@/lib/errors";
+
+import { ApiError } from "@/lib/error";
+import { HttpStatus } from "@/lib/http";
 import {
   MutationCache,
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -14,6 +17,7 @@ export default function QueryProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -28,6 +32,10 @@ export default function QueryProvider({
             //Check if the mutation opted out of global errors
             if (mutation.meta?.silent) return;
             if (error instanceof ApiError) {
+              if (error.status === HttpStatus.NOT_FOUND) {
+                router.push("/not-found");
+                return;
+              }
               toast.error(error.message);
             }
             toast.error("An unexpected error has occured");

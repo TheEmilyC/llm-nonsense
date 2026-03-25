@@ -1,4 +1,7 @@
 import z from "zod";
+import { Story } from "../../../generated/client";
+
+export const STORY_CACHE_KEY = "story";
 
 const baseSchema = z.object({
   characterId: z.string(),
@@ -18,3 +21,17 @@ export const storyFormSchema = z.discriminatedUnion("mode", [
   }),
 ]);
 export type StoryFormValues = z.infer<typeof storyFormSchema>;
+
+export const storyDtoSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  characterId: z.string().min(1),
+  personaId: z.string().min(1),
+  createdAt: z.date(),
+  modifiedAt: z.date(),
+});
+export type StoryDto = z.infer<typeof storyDtoSchema>;
+
+export function toStoryDto(story: Story) {
+  return storyDtoSchema.parse(story);
+}

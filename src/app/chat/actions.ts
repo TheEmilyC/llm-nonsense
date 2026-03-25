@@ -10,14 +10,13 @@ import { dbIdValidator } from "@/lib/validators";
 import { createIdGenerator } from "ai";
 import { notFound, redirect } from "next/navigation";
 
-export async function createChatFromStory(
-  _prevState: unknown,
+export async function createChatFromStoryAction(
   storyId: string,
-): Promise<ActionResponse<null>> {
+): Promise<ActionResponse<void>> {
   const idParseResult = dbIdValidator.safeParse(storyId);
   if (!idParseResult.success) {
     console.error(idParseResult.error);
-    return { success: false, message: "Malformed persona data" };
+    return { success: false, error: "Malformed persona data" };
   }
 
   let story;
@@ -67,7 +66,7 @@ export async function createChatFromStory(
     chat = newChat;
   } catch (err) {
     console.error(err);
-    return { success: false, message: "Failed to create chat" };
+    return { success: false, error: "Failed to create chat" };
   }
 
   redirect(`/chat/${chat.id}`);

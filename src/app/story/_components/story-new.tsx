@@ -2,13 +2,13 @@
 
 import { LorebookDto } from "@/app/lorebook/schema";
 import { StoryForm } from "@/app/story/_components/story-form";
-import { createStoryAction } from "@/app/story/actions";
+import { useCreateStory } from "@/app/story/hooks";
+import { StoryFormValues } from "@/app/story/schema";
 import { CardOption } from "@/components/card-selector";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-import { ActionResponse } from "@/lib/action-utils";
-import { useActionState } from "react";
+import { useRouter } from "next/navigation";
 
 const FORM_ID = "form-new-story";
 
@@ -22,10 +22,6 @@ interface StoryNewParams {
   currentLorebook: LorebookDto;
 }
 
-export const initialState: ActionResponse<null> = {
-  success: undefined,
-};
-
 export function StoryNew({
   characters,
   personas,
@@ -33,10 +29,13 @@ export function StoryNew({
   initialPersonaId,
   currentLorebook,
 }: StoryNewParams) {
-  const [state, createStory, isPending] = useActionState(
-    createStoryAction,
-    initialState,
-  );
+  const router = useRouter();
+  const { createStory, isPending, error } = useCreateStory();
+
+  async function onSubmitHandler(data: StoryFormValues) {
+    const { newStoryId } = await createStory(data);
+    router.push(`/story/${newStoryId}`);
+  }
 
   return (
     <div>
@@ -51,14 +50,12 @@ export function StoryNew({
       </Header>
 
       <Content>
-        {state.success === false && (
-          <p className="text-destructive">{state.message}</p>
-        )}
+        {error && <p className="text-destructive">{error}</p>}
         <StoryForm
           formId={FORM_ID}
           characters={characters}
           personas={personas}
-          formAction={createStory}
+          onSubmit={onSubmitHandler}
           defaultValues={{
             characterId: initialCharacterId,
             personaId: initialPersonaId,

@@ -1,15 +1,15 @@
 "use client";
 
-import { createChatFromStory } from "@/app/chat/actions";
+import { useCreateChatFromStory } from "@/app/chat/hooks";
 import { LorebookDto } from "@/app/lorebook/schema";
 import { StoryForm } from "@/app/story/_components/story-form";
-import { deleteStoryAction, updateStoryAction } from "@/app/story/actions";
+import { useDeleteStory, useUpdateStory } from "@/app/story/hooks";
+import { StoryFormValues } from "@/app/story/schema";
 import { CardOption } from "@/components/card-selector";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-import { ActionResponse } from "@/lib/action-utils";
-import { startTransition, useActionState } from "react";
+import { useRouter } from "next/navigation";
 
 const FORM_ID = "form-edit-story";
 
@@ -26,10 +26,6 @@ interface StoryEditParams {
   currentLorebook: LorebookDto;
 }
 
-export const initialState: ActionResponse<null> = {
-  success: undefined,
-};
-
 export function StoryEdit({
   story,
   characters,
@@ -37,28 +33,27 @@ export function StoryEdit({
   worlds,
   currentLorebook,
 }: StoryEditParams) {
-  const [deleteState, deleteStory, isDeletePending] = useActionState(
-    deleteStoryAction,
-    initialState,
-  );
-  const [updateState, updateStory, isUpdatePending] = useActionState(
-    updateStoryAction.bind(null, story.id),
-    initialState,
-  );
-  const [createChatState, createChat, isCreateChatPending] = useActionState(
-    createChatFromStory,
-    initialState,
-  );
+  const router = useRouter();
+  const { deleteStory, isPending: isDeletePending } = useDeleteStory();
+  const { updateStory, isPending: isUpdatePending } = useUpdateStory();
+  const { createChatFromStory: createChat, isPending: isCreateChatPending } =
+    useCreateChatFromStory();
 
   const isPending = isDeletePending || isUpdatePending || isCreateChatPending;
 
   async function onDeleteHandler() {
     if (!confirm(`Delete "${story.name}"? This cannot be undone.`)) return;
-    startTransition(() => deleteStory(story.id));
+    await deleteStory({ storyId: story.id });
+    router.push(`/story`);
   }
 
   async function handleNewChat(): Promise<void> {
-    startTransition(() => createChat(story.id));
+    const { id } = await createChat({ storyId: story.id });
+    router.push(`/chat/${id}`);
+  }
+
+  async function onSubmitHandler(data: StoryFormValues) {
+    await updateStory({ storyId: story.id, data });
   }
 
   return (
@@ -85,20 +80,11 @@ export function StoryEdit({
         </Button>
       </Header>
       <Content>
-        {deleteState.success === false && (
-          <p className="text-destructive">{deleteState.message}</p>
-        )}
-        {updateState.success === false && (
-          <p className="text-destructive">{updateState.message}</p>
-        )}
-        {createChatState.success === false && (
-          <p className="text-destructive">{createChatState.message}</p>
-        )}
         <StoryForm
           formId={FORM_ID}
           isEdit
           defaultValues={story}
-          formAction={updateStory}
+          onSubmit={onSubmitHandler}
           characters={characters}
           personas={personas}
           worlds={worlds}

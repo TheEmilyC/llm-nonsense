@@ -1,6 +1,26 @@
+import { createChatFromStoryAction } from "@/app/chat/actions";
+import { unwrapAction } from "@/lib/action-utils";
 import { useChat } from "@ai-sdk/react";
+import { useMutation } from "@tanstack/react-query";
 import { DefaultChatTransport, UIMessage } from "ai";
 import { useState } from "react";
+
+export function useCreateChatFromStory() {
+  const {
+    mutateAsync: createChatFromStory,
+    isPending,
+    error,
+  } = useMutation({
+    mutationFn: async ({ storyId }: { storyId: string }) =>
+      unwrapAction(await createChatFromStoryAction(storyId)),
+  });
+
+  return {
+    createChatFromStory,
+    isPending,
+    error: error ? (error as Error).message : null,
+  };
+}
 
 export function useChatMessages(chatId: string, initialMessages: UIMessage[]) {
   const { messages, sendMessage, status } = useChat({

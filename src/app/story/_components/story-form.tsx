@@ -16,7 +16,7 @@ import {
   UserCircle,
   Users,
 } from "lucide-react";
-import { startTransition, useState } from "react";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 interface StoryFormParams {
@@ -26,7 +26,7 @@ interface StoryFormParams {
   worlds?: CardOption[];
   isEdit?: boolean;
   defaultValues?: Partial<StoryFormValues>;
-  formAction: (formData: FormData) => void;
+  onSubmit: (data: StoryFormValues) => void;
   currentLorebook: LorebookDto;
 }
 
@@ -37,7 +37,7 @@ export function StoryForm({
   personas,
   worlds,
   isEdit,
-  formAction,
+  onSubmit,
   currentLorebook,
 }: StoryFormParams) {
   const form = useForm<StoryFormValues>({
@@ -48,7 +48,7 @@ export function StoryForm({
       name: defaultValues?.name ?? "",
     },
   });
-  const { lorebook, isLoading, error } = useLorebook({});
+  const { lorebook, error } = useLorebook({});
   const assignedLorebook = defaultValues?.assignedLorebook;
   const currentLorebookName =
     lorebook?.status === LorebookStatus.Ready ? lorebook.name : undefined;
@@ -66,20 +66,8 @@ export function StoryForm({
     );
   }
 
-  async function onSubmitHandler(data: StoryFormValues) {
-    const formData = new FormData();
-    for (const [key, value] of Object.entries(data)) {
-      if (value !== undefined) formData.append(key, value);
-    }
-    startTransition(() => formAction(formData));
-  }
-
   return (
-    <form
-      id={formId}
-      onSubmit={form.handleSubmit(onSubmitHandler)}
-      action={formAction}
-    >
+    <form id={formId} onSubmit={form.handleSubmit(onSubmit)}>
       <div className="grid grid-cols-3 gap-4">
         {/* NAME ROW */}
         <div className="col-span-3">
@@ -155,6 +143,7 @@ export function StoryForm({
 
         {/* LOREBOOK ROW */}
         <div className="col-span-3 space-y-2 rounded-lg border border-border p-4">
+          {error && <p className="text-destructive">{error}</p>}
           <div className="flex items-center gap-2 text-sm font-medium">
             <BookOpen className="size-4" />
             Lorebook

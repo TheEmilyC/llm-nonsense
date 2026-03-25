@@ -1,12 +1,12 @@
-import { ApiError } from "@/lib/errors";
+import { ApiError } from "@/lib/error";
 
 export type ActionResponse<T> =
   | { success: true; data: T }
-  | { success: false; error: string };
+  | { success: false; error: string; status?: number };
 
 export function unwrapAction<T>(result: ActionResponse<T>): T {
   if (!result.success) {
-    throw new ApiError(result.error);
+    throw new ApiError(result.error, result.status);
   }
   return result.data;
 }
