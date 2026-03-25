@@ -2,7 +2,7 @@ import z from "zod";
 
 import { PersonaEdit } from "@/app/persona/_components/persona-edit";
 import { getPersonaById } from "@/app/persona/data";
-import { buildPersonaImageUrl } from "@/lib/image";
+import { toPersonaDto } from "@/app/persona/schema";
 import { dbIdValidator } from "@/lib/validators";
 import { notFound } from "next/navigation";
 
@@ -19,17 +19,5 @@ export default async function PersonaEditPage({ params }: PersonaPageParams) {
   const persona = await getPersonaById(id);
   if (!persona) notFound();
 
-  return (
-    <PersonaEdit
-      persona={{
-        id: persona.id,
-        name: persona.name,
-        description: persona.description,
-        imageUrl: buildPersonaImageUrl({
-          id: persona.id,
-          imgHash: persona.imageHash,
-        }),
-      }}
-    />
-  );
+  return <PersonaEdit persona={toPersonaDto(persona)} />;
 }

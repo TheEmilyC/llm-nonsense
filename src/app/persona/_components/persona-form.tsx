@@ -6,21 +6,20 @@ import { FieldInput } from "@/components/form-fields/field-input";
 import { FieldTextareaField } from "@/components/form-fields/field-textarea";
 import { FieldGroup } from "@/components/ui/field";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { startTransition } from "react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 
 interface PersonaFormProps {
   formId: string;
   defaultValues?: PersonaFormValues;
   imageSrc?: string;
-  formAction: (formData: FormData) => void;
+  onSubmit: (data: PersonaFormValues) => void;
 }
 
 export function PersonaForm({
   formId,
   defaultValues,
   imageSrc,
-  formAction,
+  onSubmit,
 }: PersonaFormProps) {
   const form = useForm<PersonaFormValues>({
     resolver: zodResolver(personaFormSchema),
@@ -31,17 +30,8 @@ export function PersonaForm({
     },
   });
 
-  const onSubmitHandler: SubmitHandler<PersonaFormValues> = async (data) => {
-    // Required for client side validation to fire
-    const formData = new FormData();
-    formData.append("name", data.name);
-    formData.append("description", data.description);
-    if (data.image) formData.append("image", data.image);
-    startTransition(() => formAction(formData));
-  };
-
   return (
-    <form id={formId} onSubmit={form.handleSubmit(onSubmitHandler)}>
+    <form id={formId} onSubmit={form.handleSubmit(onSubmit)}>
       <FieldGroup>
         <div className="grid grid-cols-3 gap-4">
           <div className="col-span-1">

@@ -1,45 +1,34 @@
 "use client";
 
 import { PersonaForm } from "@/app/persona/_components/persona-form";
-import {
-  deletePersonaAction,
-  updatePersonaAction,
-} from "@/app/persona/actions";
+import { useDeletePersona, useUpdatePersona } from "@/app/persona/hooks";
+import { PersonaDto, PersonaFormValues } from "@/app/persona/schema";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-import { ActionResponse } from "@/lib/action-utils";
-import { startTransition, useActionState } from "react";
+import { useRouter } from "next/navigation";
 
 const FORM_ID = "form-edit-persona";
 
 interface PersonaEditParams {
-  persona: {
-    id: string;
-    name: string;
-    description: string;
-    imageUrl: string;
-  };
+  persona: PersonaDto;
 }
 
-export const initialState: ActionResponse<null> = {
-  success: undefined,
-};
-
 export function PersonaEdit({ persona }: PersonaEditParams) {
-  const [deleteState, deleteCharacter, isDeletePending] = useActionState(
-    deletePersonaAction,
-    initialState,
-  );
-  const [updateState, updateCharacter, isUpdatePending] = useActionState(
-    updatePersonaAction.bind(null, persona.id),
-    initialState,
-  );
+  const router = useRouter();
+  const { deletePersona, isPending: isDeletePending } = useDeletePersona();
+  const { updatePersona, isPending: isUpdatePending } = useUpdatePersona();
+
   const isPending = isDeletePending || isUpdatePending;
 
-  async function onDeleteHandler() {
+  async function deleteHandler() {
     if (!confirm(`Delete "${persona?.name}"? This cannot be undone.`)) return;
-    startTransition(() => deleteCharacter(persona.id));
+    await deletePersona({ personaId: persona.id });
+    router.push(`/persona`);
+  }
+
+  async function onSubmitHandler(data: PersonaFormValues) {
+    await updatePersona({ personaId: persona.id, data });
   }
 
   return (
@@ -54,26 +43,20 @@ export function PersonaEdit({ persona }: PersonaEditParams) {
           type="button"
           variant="destructive"
           disabled={isPending}
-          onClick={onDeleteHandler}
+          onClick={deleteHandler}
         >
           {isDeletePending ? "Deleting..." : "Delete"}
         </Button>
         <Button size="sm" type="submit" form={FORM_ID} disabled={isPending}>
-          {isPending ? "Saving..." : "Save"}
+          {isUpdatePending ? "Saving..." : "Save"}
         </Button>
       </Header>
       <Content>
-        {deleteState.success === false && (
-          <p className="text-destructive">{deleteState.message}</p>
-        )}
-        {updateState.success === false && (
-          <p className="text-destructive">{updateState.message}</p>
-        )}
         <PersonaForm
           formId={FORM_ID}
           defaultValues={persona}
           imageSrc={persona.imageUrl}
-          formAction={updateCharacter}
+          onSubmit={onSubmitHandler}
         />
       </Content>
     </div>
