@@ -2,9 +2,10 @@ import {
   GetLorebookIndexResposne,
   getLorebookIndexResposneSchema,
   Lorebook,
+  lorebookFileResponseSchema,
   LorebookStatus,
-  ObsidianValutResponse,
-  obsidianValutResponseSchema,
+  ObsidianMetadataResponse,
+  obsidianMetadataResponseSchema,
 } from "@/app/lorebook/schema";
 import {
   LOREBOOK_NEVER_TAG,
@@ -32,13 +33,13 @@ export async function createLorebookIndex({
   });
 
   if (!response.ok) {
-    throw "Failed to create lorebook index";
+    throw new Error("Failed to create lorebook index");
   }
 
   return true;
 }
 
-export async function getLorebookMetadata(): Promise<ObsidianValutResponse | null> {
+export async function getLorebookMetadata(): Promise<ObsidianMetadataResponse | null> {
   const response = await fetch(`${OBSIDIAN_URL}/vault/llmn.json`, {
     headers: {
       Authorization: `Bearer ${OBSIDIAN_API_KEY}`,
@@ -51,16 +52,16 @@ export async function getLorebookMetadata(): Promise<ObsidianValutResponse | nul
     return null;
   }
 
-  const metadata = obsidianValutResponseSchema.parse(await response.json());
+  const metadata = obsidianMetadataResponseSchema.parse(await response.json());
 
-  if (!metadata) throw "undefined lorebook metadata";
+  if (!metadata) throw new Error("undefined lorebook metadata");
 
   return metadata;
 }
 
 export async function getLorebook({ debug = false } = {}): Promise<Lorebook> {
   // Get metadata
-  let metadata: ObsidianValutResponse;
+  let metadata: ObsidianMetadataResponse;
   try {
     const result = await getLorebookMetadata();
     if (!result) {
@@ -71,7 +72,7 @@ export async function getLorebook({ debug = false } = {}): Promise<Lorebook> {
       console.error(
         `unexpected lorebook metadata error. Error code: ${result.errorCode} Message: ${result.message}`,
       );
-      throw "failed to fetch lorebook index";
+      throw new Error("failed to fetch lorebook index");
     }
     metadata = result;
   } catch (err) {
@@ -94,7 +95,7 @@ export async function getLorebook({ debug = false } = {}): Promise<Lorebook> {
       console.error(
         `Lorebook index request failed. Status:${indexResponse.status} Status Text: ${indexResponse.statusText}`,
       );
-      throw "failed to fetch lorebook index";
+      throw new Error("failed to fetch lorebook index");
     }
     index = getLorebookIndexResposneSchema.parse(await indexResponse.json());
   } catch (err) {
@@ -113,6 +114,8 @@ export async function getLorebook({ debug = false } = {}): Promise<Lorebook> {
           summary: idx.result.summary ?? "",
           tags: idx.result.tags,
           keys: idx.result.keys ?? [],
+          constant: idx.result.constant,
+          position: idx.result.position ?? 10,
         }))
       : [],
   };
@@ -120,4 +123,31 @@ export async function getLorebook({ debug = false } = {}): Promise<Lorebook> {
     console.debug("Lorebook Index", JSON.stringify(lorebook, null, 2));
   }
   return lorebook;
+}
+
+export async function getLorebookEntry(fileName: string) {
+  //"use cache";
+  //cacheLife("hours");
+  //cacheTag("lorebook");
+  console.log(`getLorebookEntry:${fileName}`);
+  const response = await fetch(`${OBSIDIAN_URL}/vault/${fileName}`, {
+    headers: {
+      Authorization: `Bearer ${OBSIDIAN_API_KEY}`,
+      Accept: "application/vnd.olrapi.note+json",
+    },
+  });
+
+  const file = lorebookFileResponseSchema.parse(await response.json());
+  console.log("file", file);
+  if ("errorCode" in file) {
+    throw new Error(
+      `Lorebook file request failed. Status${response.status} StatusText: ${response.statusText}`,
+    );
+  }
+
+  return file;
+}
+
+export async function getLorebookEntryList(files: string[]) {
+  return Promise.all(files.map((file) => getLorebookEntry(file)));
 }
