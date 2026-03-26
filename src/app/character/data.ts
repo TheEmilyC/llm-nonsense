@@ -37,7 +37,7 @@ export async function getCharacterById(
   id: string,
 ): Promise<CharacterRecord | null> {
   "use cache";
-  cacheTag(CHARACTER_CACHE_KEY);
+  cacheTag(`${CHARACTER_CACHE_KEY}-${id}`);
 
   const entity = await prisma.character.findUnique({ where: { id } });
   if (!entity) return null;
@@ -95,6 +95,7 @@ export async function deleteCharacter(id: string) {
   // remove image
   await fs.rm(join(WORKING_DIRECTORY, character.entity.png));
   revalidateTag(CHARACTER_CACHE_KEY, "max");
+  revalidateTag(`${CHARACTER_CACHE_KEY}-${id}`, "max");
 }
 
 export interface UpdateCharacterParameters {
@@ -154,6 +155,7 @@ export async function updateCharacter({
   };
 
   revalidateTag(CHARACTER_CACHE_KEY, "max");
+  revalidateTag(`${CHARACTER_CACHE_KEY}-${id}`, "max");
   return updatedCharacter;
 }
 
