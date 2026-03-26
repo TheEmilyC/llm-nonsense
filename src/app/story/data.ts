@@ -1,6 +1,8 @@
 "use server";
 
+import { STORY_CACHE_KEY } from "@/app/story/schema";
 import { prisma } from "@/lib/prisma";
+import { cacheTag, revalidateTag } from "next/cache";
 import { Story } from "../../../generated/client";
 
 export interface CreateStoryParams {
@@ -19,10 +21,14 @@ export async function createStory({ newStory }: CreateStoryParams) {
       personaId: newStory.personaId,
     },
   });
+  revalidateTag(STORY_CACHE_KEY, "max");
   return story;
 }
 
 export async function getStoryList() {
+  "use cache";
+  cacheTag(STORY_CACHE_KEY);
+
   const stories = await prisma.story.findMany();
   return stories.map((story) => ({
     id: story.id,
@@ -31,12 +37,15 @@ export async function getStoryList() {
 }
 
 export async function getStoryById(id: string) {
+  "use cache";
+  cacheTag(`${STORY_CACHE_KEY}-${id}`);
+
   return await prisma.story.findUnique({ where: { id } });
 }
 
 export async function getStoryByIdOrFail(id: string) {
   const result = await getStoryById(id);
-  if (!result) throw `Story ID:${id} does not exist`;
+  if (!result) throw new Error(`Story ID:${id} does not exist`);
   return result;
 }
 
@@ -49,7 +58,7 @@ export interface UpdateStoryParams {
 
 export async function updateStory({ id, update }: UpdateStoryParams) {
   const orgStory = await getStoryById(id);
-  if (!orgStory) throw "Story does not exist";
+  if (!orgStory) throw new Error("Story does not exist");
 
   const entityUpdate: Partial<Story> = {};
   let updateRequired = false;
@@ -79,16 +88,23 @@ export async function updateStory({ id, update }: UpdateStoryParams) {
     updateRequired = true;
   }
 
+  let story;
   if (updateRequired) {
-    return prisma.story.update({
+    story = await prisma.story.update({
       data: entityUpdate,
       where: { id },
     });
   } else {
-    return orgStory;
+    story = orgStory;
   }
+
+  revalidateTag(STORY_CACHE_KEY, "max");
+  revalidateTag(`${STORY_CACHE_KEY}-${id}`, "max");
+  return story;
 }
 
 export async function deleteStory(id: string) {
   await prisma.story.delete({ where: { id } });
+  revalidateTag(STORY_CACHE_KEY, "max");
+  revalidateTag(`${STORY_CACHE_KEY}-${id}`, "max");
 }

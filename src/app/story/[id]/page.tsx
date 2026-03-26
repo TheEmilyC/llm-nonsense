@@ -7,6 +7,7 @@ import { getStoryById } from "@/app/story/data";
 import { buildCharacterImageUrl, buildPersonaImageUrl } from "@/lib/image";
 import { dbIdValidator } from "@/lib/validators";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import z from "zod";
 
 interface StoryPageParams {
@@ -17,7 +18,7 @@ const storyPageParamsSchema = z.object({
   id: dbIdValidator,
 });
 
-export default async function StoryPage({ params }: StoryPageParams) {
+async function StoryPageContent({ params }: StoryPageParams) {
   const [characterList, personaList, lorebookResult, routeParams] =
     await Promise.all([
       getCharacterList(),
@@ -48,5 +49,13 @@ export default async function StoryPage({ params }: StoryPageParams) {
       personas={personas}
       currentLorebook={lorebook}
     />
+  );
+}
+
+export default function StoryPage({ params }: StoryPageParams) {
+  return (
+    <Suspense>
+      <StoryPageContent params={params} />
+    </Suspense>
   );
 }
