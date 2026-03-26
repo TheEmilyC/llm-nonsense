@@ -9,8 +9,8 @@
     "start": "next start",
     "lint": "eslint",
     "lint:fix": "eslint:fix",
-    "db:migrate": "dlx prisma migrate dev",
-    "db:generate": "dlx prisma generate"
+    "db-generate": "pnpm dlx prisma generate",
+    "db-migrate": "pnpm dlx prisma migrate dev --name"
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^2.0.26",
@@ -19,6 +19,7 @@
     "@openrouter/ai-sdk-provider": "^2.3.3",
     "@prisma/adapter-better-sqlite3": "^7.5.0",
     "@prisma/client": "^7.5.0",
+    "@tanstack/react-query": "^5.95.2",
     "ai": "^6.0.134",
     "better-sqlite3": "^12.8.0",
     "class-variance-authority": "^0.7.1",

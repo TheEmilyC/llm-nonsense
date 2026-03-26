@@ -1,5 +1,5 @@
 import { constructChatResponse } from "@/app/api/chat/[id]/service";
-import { messagePartSchema } from "@/app/chat/validators";
+import { messagePartSchema } from "@/app/chat/schema";
 import z from "zod";
 
 interface Params {

@@ -1,6 +1,6 @@
 "use server";
 
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import z from "zod";
 
 import {
@@ -8,24 +8,23 @@ import {
   deletePersona,
   updatePersona,
 } from "@/app/persona/data";
-import { personaFormSchema } from "@/app/persona/validators";
+import {
+  PersonaDto,
+  personaFormSchema,
+  PersonaFormValues,
+  toPersonaDto,
+} from "@/app/persona/schema";
 import { ActionResponse } from "@/lib/action-utils";
 import { dbIdValidator } from "@/lib/validators";
 import { refresh } from "next/cache";
 
 export async function createPersonaAction(
-  _prevState: unknown,
-  formData: FormData,
-): Promise<ActionResponse<null>> {
-  const imageFile = formData.get("image") as File | null;
-  const formParseResult = personaFormSchema.safeParse({
-    name: formData.get("name"),
-    description: formData.get("description"),
-    image: imageFile && imageFile.size > 0 ? imageFile : undefined,
-  });
+  data: PersonaFormValues,
+): Promise<ActionResponse<{ id: string }>> {
+  const formParseResult = personaFormSchema.safeParse(data);
   if (!formParseResult.success) {
     console.error(z.prettifyError(formParseResult.error));
-    return { success: false, message: "Malformed persona data" };
+    return { success: false, error: "Malformed persona data" };
   }
   const { image, ...persona } = formParseResult.data;
 
@@ -34,46 +33,39 @@ export async function createPersonaAction(
     newPersona = await createPersona({ image, persona });
   } catch (err) {
     console.error(err);
-    return { success: false, message: "Persona create failed" };
+    return { success: false, error: "Persona create failed" };
   }
-  redirect(`/persona/${newPersona.id}`);
+  return { success: true, data: { id: newPersona.id } };
 }
 
 export async function updatePersonaAction(
   personaId: string,
-  _prevState: unknown,
-  formData: FormData,
-): Promise<ActionResponse<null>> {
-  const imageFile = formData.get("image") as File | null;
-  const formParseResult = personaFormSchema.safeParse({
-    name: formData.get("name"),
-    description: formData.get("description"),
-    image: imageFile && imageFile.size > 0 ? imageFile : undefined,
-  });
+  data: PersonaFormValues,
+): Promise<ActionResponse<PersonaDto>> {
+  const formParseResult = personaFormSchema.safeParse(data);
   if (!formParseResult.success) {
     console.error(z.prettifyError(formParseResult.error));
-    return { success: false, message: "Malformed persona data" };
+    return { success: false, error: "Malformed persona data" };
   }
   const idParseResult = dbIdValidator.safeParse(personaId);
   if (!idParseResult.success) {
     console.error(z.prettifyError(idParseResult.error));
-    return { success: false, message: "Malformed persona data" };
+    return { success: false, error: "Malformed persona data" };
   }
   const id = idParseResult.data;
   const { image, ...update } = formParseResult.data;
 
   try {
-    await updatePersona({ id, update, image });
+    const updated = await updatePersona({ id, update, image });
+    refresh();
+    return { success: true, data: toPersonaDto(updated) };
   } catch (err) {
     console.error(err);
-    return { success: false, message: "Persona update failed" };
+    return { success: false, error: "Persona update failed" };
   }
-  refresh();
-  return { success: true, data: null };
 }
 
 export async function deletePersonaAction(
-  prevState: unknown,
   personaId: string,
 ): Promise<ActionResponse<null>> {
   const idParseResult = dbIdValidator.safeParse(personaId);
@@ -85,7 +77,7 @@ export async function deletePersonaAction(
     await deletePersona(id);
   } catch (err) {
     console.error(err);
-    return { success: false, message: "failed to delete persona" };
+    return { success: false, error: "failed to delete persona" };
   }
-  redirect("/persona");
+  return { success: true, data: null };
 }

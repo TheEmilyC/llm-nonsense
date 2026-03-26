@@ -4,6 +4,11 @@ import fs from "fs/promises";
 import { join } from "path";
 
 import {
+  CHARACTER_CACHE_KEY,
+  CharacterListItem,
+  CharacterRecord,
+} from "@/app/character/schema";
+import {
   CharacterCard,
   encodeCharacterCard,
   parseCharacterCard,
@@ -13,28 +18,13 @@ import { CHARACTER_CARD_DIRECTORY, DEFAULT_AVATAR_PATH } from "@/lib/constants";
 import { WORKING_DIRECTORY } from "@/lib/env-variables";
 import { createImageHash } from "@/lib/image";
 import { prisma } from "@/lib/prisma";
+import { cacheTag, revalidateTag } from "next/cache";
 
 const CHARACTER_CARD_PATH = join(WORKING_DIRECTORY, CHARACTER_CARD_DIRECTORY);
 
-export interface CharacterListItem {
-  id: string;
-  name: string;
-  pngHash: string;
-}
-
-export interface CharacterRecord {
-  entity: {
-    id: string;
-    name: string;
-    png: string;
-    pngHash: string;
-    createdAt: Date;
-    modifiedAt: Date;
-  };
-  card: CharacterCard;
-}
-
 export async function getCharacterList(): Promise<CharacterListItem[]> {
+  "use cache";
+  cacheTag(CHARACTER_CACHE_KEY);
   const characterList = await prisma.character.findMany();
   return characterList.map((char) => ({
     id: char.id,
@@ -46,6 +36,9 @@ export async function getCharacterList(): Promise<CharacterListItem[]> {
 export async function getCharacterById(
   id: string,
 ): Promise<CharacterRecord | null> {
+  "use cache";
+  cacheTag(`${CHARACTER_CACHE_KEY}-${id}`);
+
   const entity = await prisma.character.findUnique({ where: { id } });
   if (!entity) return null;
   const card = await parseCharacterCard(join(WORKING_DIRECTORY, entity.png));
@@ -56,7 +49,7 @@ export async function getCharacterByIdOrFail(
   id: string,
 ): Promise<CharacterRecord> {
   const result = await getCharacterById(id);
-  if (!result) throw `Character ID:${id} does not exist`;
+  if (!result) throw new Error(`Character ID:${id} does not exist`);
   return result;
 }
 
@@ -88,18 +81,21 @@ export async function createCharacter({
       throw err;
     });
 
+  revalidateTag(CHARACTER_CACHE_KEY, "max");
   return { entity: characterEntity, card: characterCard };
 }
 
 export async function deleteCharacter(id: string) {
   const character = await getCharacterById(id);
   if (!character) {
-    throw "Character does not exist";
+    throw new Error("Character does not exist");
   }
   // remove entity
   await prisma.character.delete({ where: { id } });
   // remove image
   await fs.rm(join(WORKING_DIRECTORY, character.entity.png));
+  revalidateTag(CHARACTER_CACHE_KEY, "max");
+  revalidateTag(`${CHARACTER_CACHE_KEY}-${id}`, "max");
 }
 
 export interface UpdateCharacterParameters {
@@ -115,7 +111,7 @@ export async function updateCharacter({
   update,
 }: UpdateCharacterParameters) {
   const orgCharacter = await getCharacterById(id);
-  if (!orgCharacter) throw "Character does not exist";
+  if (!orgCharacter) throw new Error("Character does not exist");
   const cardPath = join(WORKING_DIRECTORY, orgCharacter.entity.png);
   const updatedCard: CharacterCard = { ...orgCharacter.card, ...update.card };
 
@@ -158,6 +154,8 @@ export async function updateCharacter({
     card: updatedCard,
   };
 
+  revalidateTag(CHARACTER_CACHE_KEY, "max");
+  revalidateTag(`${CHARACTER_CACHE_KEY}-${id}`, "max");
   return updatedCharacter;
 }
 

@@ -11,6 +11,16 @@ export const profileSchema = z.object({
   avatarSrc: z.string(),
 });
 
+export const chatMessageSchema = z.object({
+  id: z.string(),
+  chatId: z.string(),
+  metadata: z.record(z.string(), z.unknown()).nullable(),
+  role: z.enum(MessageRole),
+  parts: z.custom<MessagePart>().array(),
+  createdAt: z.date(),
+});
+export type ChatMessage = z.infer<typeof chatMessageSchema>;
+
 export const chatViewParamsSchema = z.object({
   chat: z.object({
     id: z.string(),
@@ -19,17 +29,7 @@ export const chatViewParamsSchema = z.object({
       id: z.string(),
       name: z.string(),
     }),
-    messages: z
-      .object({
-        id: z.string(),
-        chatId: z.string(),
-        metadata: z.record(z.string(), z.unknown()).nullable(),
-        role: z.enum(MessageRole),
-        parts: z.custom<MessagePart>().array(),
-        createdAt: z.date(),
-      })
-      .array()
-      .optional(),
+    messages: chatMessageSchema.array().optional(),
   }),
   character: profileSchema,
   persona: profileSchema,

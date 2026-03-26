@@ -2,9 +2,10 @@ import z from "zod";
 
 import { PersonaEdit } from "@/app/persona/_components/persona-edit";
 import { getPersonaById } from "@/app/persona/data";
-import { buildPersonaImageUrl } from "@/lib/image";
+import { toPersonaDto } from "@/app/persona/schema";
 import { dbIdValidator } from "@/lib/validators";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 interface PersonaPageParams {
   params: Promise<{ id: string }>;
@@ -14,22 +15,18 @@ const personaEditPageParamsSchema = z.object({
   id: dbIdValidator,
 });
 
-export default async function PersonaEditPage({ params }: PersonaPageParams) {
+async function PersonaEditPageContent({ params }: PersonaPageParams) {
   const { id } = personaEditPageParamsSchema.parse(await params);
   const persona = await getPersonaById(id);
   if (!persona) notFound();
 
+  return <PersonaEdit persona={toPersonaDto(persona)} />;
+}
+
+export default function PersonaEditPage({ params }: PersonaPageParams) {
   return (
-    <PersonaEdit
-      persona={{
-        id: persona.id,
-        name: persona.name,
-        description: persona.description,
-        imageUrl: buildPersonaImageUrl({
-          id: persona.id,
-          imgHash: persona.imageHash,
-        }),
-      }}
-    />
+    <Suspense>
+      <PersonaEditPageContent params={params} />
+    </Suspense>
   );
 }

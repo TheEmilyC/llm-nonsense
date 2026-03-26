@@ -69,13 +69,15 @@ interface ConstructPromptMessagesParams {
     description: string;
   };
   lastMessage?: string;
+  lorebook?: string;
 }
 
 export function constructPromptMessages({
   prompts,
-  lastMessage = "",
   character,
   persona,
+  lastMessage = "",
+  lorebook = "",
 }: ConstructPromptMessagesParams): string[] {
   const variables: Record<string, string> = {};
   //character variables
@@ -88,6 +90,7 @@ export function constructPromptMessages({
   variables["user.description"] = persona.description;
 
   variables["last_message"] = lastMessage;
+  variables["lorebook"] = lorebook;
 
   return prompts.map((pmt) => hydratePrompt(pmt, variables));
 }

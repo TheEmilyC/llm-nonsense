@@ -3,25 +3,33 @@
 import fs from "fs/promises";
 import path, { join } from "path";
 
+import { PERSONA_CACHE_KEY } from "@/app/persona/schema";
 import { DEFAULT_AVATAR_PATH, PERSONA_DIRECTORY } from "@/lib/constants";
 import { WORKING_DIRECTORY } from "@/lib/env-variables";
 import { createImageHash } from "@/lib/image";
 import { prisma } from "@/lib/prisma";
+import { cacheTag, revalidateTag } from "next/cache";
 import { Persona } from "../../../generated/client";
 
 const PERSONA_PATH = join(WORKING_DIRECTORY, PERSONA_DIRECTORY);
 
 export async function getPersonaList(): Promise<Persona[]> {
+  "use cache";
+  cacheTag(PERSONA_CACHE_KEY);
+
   return await prisma.persona.findMany();
 }
 
 export async function getPersonaById(id: string): Promise<Persona | null> {
+  "use cache";
+  cacheTag(`${PERSONA_CACHE_KEY}-${id}`);
+
   return await prisma.persona.findUnique({ where: { id } });
 }
 
 export async function getPersonaByIdOrFail(id: string): Promise<Persona> {
   const result = await getPersonaById(id);
-  if (!result) throw `Persona ID:${id} does not exist`;
+  if (!result) throw new Error(`Persona ID:${id} does not exist`);
   return result;
 }
 
@@ -56,6 +64,7 @@ export async function createPersona({
       throw err;
     });
 
+  revalidateTag(PERSONA_CACHE_KEY, "max");
   return personaEntity;
 }
 
@@ -107,11 +116,14 @@ export async function savePersonaImage(
 
 export async function deletePersona(id: string): Promise<void> {
   const persona = await getPersonaById(id);
-  if (!persona) throw "Persona does not exist";
+  if (!persona) throw new Error("Persona does not exist");
   // remove entity
   await prisma.persona.delete({ where: { id } });
   // remove image
   await fs.rm(join(WORKING_DIRECTORY, persona.image));
+
+  revalidateTag(PERSONA_CACHE_KEY, "max");
+  revalidateTag(`${PERSONA_CACHE_KEY}-${id}`, "max");
 }
 
 interface UpdatePersonaParams {
@@ -126,7 +138,7 @@ export async function updatePersona({
   image,
 }: UpdatePersonaParams): Promise<Persona> {
   const orgPersona = await getPersonaById(id);
-  if (!orgPersona) throw "Persona does not exist";
+  if (!orgPersona) throw new Error("Persona does not exist");
 
   const entityUpdate: Partial<Persona> = {};
   if (image) {
@@ -151,5 +163,7 @@ export async function updatePersona({
     where: { id },
   });
 
+  revalidateTag(PERSONA_CACHE_KEY, "max");
+  revalidateTag(`${PERSONA_CACHE_KEY}-${id}`, "max");
   return personaEntity;
 }

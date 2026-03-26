@@ -1,24 +1,24 @@
 "use client";
 
 import { PersonaForm } from "@/app/persona/_components/persona-form";
-import { createPersonaAction } from "@/app/persona/actions";
+import { useCreatePersona } from "@/app/persona/hooks";
+import { PersonaFormValues } from "@/app/persona/schema";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-import { ActionResponse } from "@/lib/action-utils";
-import { useActionState } from "react";
+import { useRouter } from "next/navigation";
 
 const FORM_ID = "form-new-persona";
 
-export const initialState: ActionResponse<null> = {
-  success: undefined,
-};
-
 export function PersonaNew() {
-  const [state, createCharacter, isPending] = useActionState(
-    createPersonaAction,
-    initialState,
-  );
+  const router = useRouter();
+  const { createPersona, isPending } = useCreatePersona();
+
+  async function onSubmitHandler(data: PersonaFormValues) {
+    const { id } = await createPersona(data);
+    router.push(`/persona/${id}`);
+  }
+
   return (
     <div>
       <Header
@@ -31,10 +31,7 @@ export function PersonaNew() {
         </Button>
       </Header>
       <Content>
-        {state.success === false && (
-          <p className="text-destructive">{state.message}</p>
-        )}
-        <PersonaForm formId={FORM_ID} formAction={createCharacter} />
+        <PersonaForm formId={FORM_ID} onSubmit={onSubmitHandler} />
       </Content>
     </div>
   );

@@ -44,6 +44,7 @@ model Story {
   character   Character @relation(fields: [characterId], references: [id])
   personaId   String
   persona     Persona   @relation(fields: [personaId], references: [id])
+  lorebook    String?
   chats       Chat[]
   createdAt   DateTime  @default(now())
   modifiedAt  DateTime  @default(now())

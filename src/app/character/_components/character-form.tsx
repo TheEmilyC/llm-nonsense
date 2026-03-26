@@ -1,12 +1,11 @@
 "use client";
 
-import { startTransition } from "react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 
 import {
   characterFormSchema,
   CharacterFormValues,
-} from "@/app/character/validators";
+} from "@/app/character/schema";
 import { FieldImageUpload } from "@/components/form-fields/field-image-upload";
 import { FieldInput } from "@/components/form-fields/field-input";
 import { FieldTagList } from "@/components/form-fields/field-taglist";
@@ -18,14 +17,14 @@ interface CharacterFormProps {
   formId: string;
   defaultValues?: CharacterFormValues;
   imageSrc?: string;
-  formAction: (formData: FormData) => void;
+  onSubmit: (data: CharacterFormValues) => void;
 }
 
 export function CharacterForm({
   formId,
   defaultValues,
   imageSrc,
-  formAction,
+  onSubmit,
 }: CharacterFormProps) {
   const form = useForm<CharacterFormValues>({
     resolver: zodResolver(characterFormSchema),
@@ -42,25 +41,8 @@ export function CharacterForm({
     },
   });
 
-  const onSubmitHandler: SubmitHandler<CharacterFormValues> = async (data) => {
-    // Required for client side validation to fire
-    const formData = new FormData();
-    formData.append("name", data.name);
-    formData.append("description", data.description);
-    formData.append("personality", data.personality);
-    formData.append("scenario", data.scenario);
-    formData.append("first_mes", data.first_mes);
-    formData.append("mes_example", data.mes_example);
-    formData.append("creator_notes", data.creator_notes);
-    if (data.image) formData.append("image", data.image);
-    if (data.tags.length > 0) {
-      data.tags.forEach((tag) => formData.append("tags", tag));
-    }
-    startTransition(() => formAction(formData));
-  };
-
   return (
-    <form id={formId} onSubmit={form.handleSubmit(onSubmitHandler)}>
+    <form id={formId} onSubmit={form.handleSubmit(onSubmit)}>
       <FieldGroup>
         <div className="grid grid-cols-3 gap-4">
           <div className="col-span-1">

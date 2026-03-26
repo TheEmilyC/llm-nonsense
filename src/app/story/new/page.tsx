@@ -1,4 +1,6 @@
 import { getCharacterList } from "@/app/character/data";
+import { getLorebook } from "@/app/lorebook/data";
+import { toLorebookDto } from "@/app/lorebook/schema";
 import { getPersonaList } from "@/app/persona/data";
 import { StoryNew } from "@/app/story/_components/story-new";
 import { buildCharacterImageUrl, buildPersonaImageUrl } from "@/lib/image";
@@ -22,10 +24,13 @@ const newStoryParamsSchema = z.object({
 export default async function NewStoryPage({
   searchParams,
 }: NewStoryPageParams) {
-  const [characterList, personaList, lorebookIndex, params] = await Promise.all(
-    //[getCharacterList(), getPersonaList(), getLorebookIndex(), searchParams],
-    [getCharacterList(), getPersonaList(), [], searchParams],
-  );
+  const [characterList, personaList, lorebookResult, params] =
+    await Promise.all([
+      getCharacterList(),
+      getPersonaList(),
+      getLorebook(),
+      searchParams,
+    ]);
 
   const characters = characterList.map((char) => ({
     id: char.id,
@@ -39,6 +44,7 @@ export default async function NewStoryPage({
   }));
   const { characterId, personaId, worldId } =
     newStoryParamsSchema.parse(params);
+  const lorebook = toLorebookDto(lorebookResult);
 
   return (
     <StoryNew
@@ -47,14 +53,7 @@ export default async function NewStoryPage({
       initialCharacterId={characterId}
       initialPersonaId={personaId}
       initialWorldId={worldId}
-    //   currentLorebook={{
-    //     status: lorebookIndex.status,
-    //     name:
-    //       lorebookIndex.status === LorebookStatus.IndexMissing ||
-    //       lorebookIndex.status === LorebookStatus.Ready
-    //         ? lorebookIndex.name
-    //         : "",
-    //   }}
+      currentLorebook={lorebook}
     />
   );
 }
