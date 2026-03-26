@@ -1,4 +1,5 @@
 import z from "zod";
+import { Suspense } from "react";
 
 import { CharacterEdit } from "@/app/character/_components/character-edit";
 import { getCharacterById } from "@/app/character/data";
@@ -14,10 +15,18 @@ const characterEditPageParamsSchema = z.object({
   id: dbIdValidator,
 });
 
-export default async function CharacterPage({ params }: Props) {
+async function CharacterPageContent({ params }: Props) {
   const { id } = characterEditPageParamsSchema.parse(await params);
   const characterRecord = await getCharacterById(id);
   if (!characterRecord) notFound();
   const character = toCharacterDto(characterRecord);
   return <CharacterEdit character={character} />;
+}
+
+export default function CharacterPage({ params }: Props) {
+  return (
+    <Suspense>
+      <CharacterPageContent params={params} />
+    </Suspense>
+  );
 }

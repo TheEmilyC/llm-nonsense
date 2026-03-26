@@ -1,3 +1,5 @@
+"use client";
+
 import { createChatFromStoryAction } from "@/app/chat/actions";
 import { unwrapAction } from "@/lib/action-utils";
 import { useChat } from "@ai-sdk/react";

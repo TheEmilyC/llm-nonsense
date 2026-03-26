@@ -6,10 +6,12 @@ import {
   updateCharacter,
 } from "@/app/character/data";
 import {
+  CharacterDto,
   characterFormSchema,
   CharacterFormValues,
   ImportFromPngForm,
   importFromPngFormSchema,
+  toCharacterDto,
 } from "@/app/character/schema";
 import { ActionResponse } from "@/lib/action-utils";
 import {
@@ -17,7 +19,6 @@ import {
   readCharacterFromBuffer,
 } from "@/lib/character-card-parser";
 import { dbIdValidator } from "@/lib/validators";
-import { refresh } from "next/cache";
 import { notFound } from "next/navigation";
 import z from "zod";
 
@@ -74,7 +75,7 @@ export async function deleteCharacterAction(
 export async function updateCharacterAction(
   characterId: string,
   data: CharacterFormValues,
-): Promise<ActionResponse<null>> {
+): Promise<ActionResponse<CharacterDto>> {
   const formParseResult = characterFormSchema.safeParse(data);
   if (!formParseResult.success) {
     console.error(z.prettifyError(formParseResult.error));
@@ -88,14 +89,15 @@ export async function updateCharacterAction(
   const id = idParseResult.data;
   const { image, ...card } = formParseResult.data;
 
+  let character;
   try {
-    await updateCharacter({ id, update: { card, image } });
-    refresh();
-    return { success: true, data: null };
+    character = await updateCharacter({ id, update: { card, image } });
   } catch (err) {
     console.error(err);
     return { success: false, error: "Character update failed" };
   }
+
+  return { success: true, data: toCharacterDto(character) };
 }
 
 export async function createCharacterAction(

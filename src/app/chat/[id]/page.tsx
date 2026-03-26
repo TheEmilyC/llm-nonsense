@@ -3,6 +3,7 @@ import { getMessagesForChat } from "@/app/chat/data";
 import { buildCharacterImageUrl, buildPersonaImageUrl } from "@/lib/image";
 import { dbIdValidator } from "@/lib/validators";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import z from "zod";
 
 interface Props {
@@ -13,7 +14,7 @@ const chatPageParamsSchema = z.object({
   id: dbIdValidator,
 });
 
-export default async function ChatPage({ params }: Props) {
+async function ChatPageContent({ params }: Props) {
   const { id } = chatPageParamsSchema.parse(await params);
   const chatDTO = await getMessagesForChat({ id });
   if (!chatDTO) notFound();
@@ -44,5 +45,17 @@ export default async function ChatPage({ params }: Props) {
     }),
   };
 
-  return <ChatView chat={chat} persona={persona} character={character} />;
+  return (
+    <Suspense>
+      <ChatView chat={chat} persona={persona} character={character} />
+    </Suspense>
+  );
+}
+
+export default function ChatPage({ params }: Props) {
+  return (
+    <Suspense>
+      <ChatPageContent params={params} />
+    </Suspense>
+  );
 }
