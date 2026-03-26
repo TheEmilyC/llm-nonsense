@@ -13,6 +13,7 @@ import {
   OBSIDIAN_API_KEY,
   OBSIDIAN_URL,
 } from "@/lib/env-variables";
+import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import path from "path";
 
 interface CreateLorebookIndexParams {
@@ -36,10 +37,15 @@ export async function createLorebookIndex({
     throw new Error("Failed to create lorebook index");
   }
 
+  revalidateTag(LOREBOOK_TAG, "max");
   return true;
 }
 
 export async function getLorebookMetadata(): Promise<ObsidianMetadataResponse | null> {
+  "use cache";
+  cacheTag(LOREBOOK_TAG);
+  cacheLife("hours");
+
   const response = await fetch(`${OBSIDIAN_URL}/vault/llmn.json`, {
     headers: {
       Authorization: `Bearer ${OBSIDIAN_API_KEY}`,
@@ -60,6 +66,10 @@ export async function getLorebookMetadata(): Promise<ObsidianMetadataResponse | 
 }
 
 export async function getLorebook({ debug = false } = {}): Promise<Lorebook> {
+  "use cache";
+  cacheTag(LOREBOOK_TAG);
+  cacheLife("hours");
+
   // Get metadata
   let metadata: ObsidianMetadataResponse;
   try {
@@ -126,10 +136,10 @@ export async function getLorebook({ debug = false } = {}): Promise<Lorebook> {
 }
 
 export async function getLorebookEntry(fileName: string) {
-  //"use cache";
-  //cacheLife("hours");
-  //cacheTag("lorebook");
-  console.log(`getLorebookEntry:${fileName}`);
+  "use cache";
+  cacheLife("hours");
+  cacheTag("lorebook");
+
   const response = await fetch(`${OBSIDIAN_URL}/vault/${fileName}`, {
     headers: {
       Authorization: `Bearer ${OBSIDIAN_API_KEY}`,

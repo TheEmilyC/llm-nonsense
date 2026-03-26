@@ -8,6 +8,8 @@ import {
   toLorebookDto,
 } from "@/app/lorebook/schema";
 import { ActionResponse } from "@/lib/action-utils";
+import { LOREBOOK_TAG } from "@/lib/env-variables";
+import { revalidateTag } from "next/cache";
 
 export async function initializeLorebookAction(
   data: InitializeLorebookFormValues,
@@ -36,9 +38,10 @@ export async function initializeLorebookAction(
   }
 }
 
-export async function getLorebookAction(): Promise<
-  ActionResponse<LorebookDto>
-> {
+export async function getLorebookAction(
+  isRetry?: boolean,
+): Promise<ActionResponse<LorebookDto>> {
+  if (isRetry) revalidateTag(LOREBOOK_TAG, "max");
   try {
     const lorebook = await getLorebook();
     return { success: true, data: toLorebookDto(lorebook) };

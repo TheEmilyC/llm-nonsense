@@ -77,7 +77,7 @@ export function useRefreshLorebookConnection() {
     error,
   } = useMutation({
     mutationFn: async () => {
-      const result = await getLorebookAction();
+      const result = await getLorebookAction(true);
       if (!result.success) {
         throw new Error(result.error);
       }
