@@ -18,7 +18,6 @@ const lorebookIndexSchema = z.object({
   constant: z.boolean().optional(),
   position: z.number(),
 });
-export type LorebookIndex = z.infer<typeof lorebookIndexSchema>;
 
 const lorebookServerUnavailableSchema = z.object({
   status: z.literal(LorebookStatus.ServerUnavailable),
@@ -73,7 +72,6 @@ const obsidianError = z.object({
 const lorebookMetadataFileSchema = z.object({
   name: z.string(),
 });
-export type LorebookMetadataFile = z.infer<typeof lorebookMetadataFileSchema>;
 
 export const obsidianMetadataResponseSchema = z.union([
   obsidianError,
@@ -91,8 +89,8 @@ export const getLorebookIndexSuccessSchema = z
       tags: z.string().array(),
       keys: z.string().array().nullable(),
       summary: z.string().nullable(),
-      constant: z.boolean().optional(),
-      position: z.number().optional(),
+      constant: z.string().optional().nullable(),
+      position: z.number().optional().nullable(),
     }),
   })
   .array();
@@ -111,7 +109,7 @@ export const lorebookFileSchema = z.object({
     aliases: z.string().array().optional().nullable(),
     keys: z.string().array().optional().nullable(),
     summary: z.string().optional().nullable(),
-    constant: z.boolean().optional().nullable(),
+    constant: z.string().optional().nullable(),
   }),
   stat: z.object({
     ctime: z.number(),

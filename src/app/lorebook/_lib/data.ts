@@ -99,7 +99,7 @@ export async function getLorebook({ debug = false } = {}): Promise<Lorebook> {
         "Content-type": "application/vnd.olrapi.dataview.dql+txt",
       },
       method: "POST",
-      body: `TABLE title, tags, keys, summary FROM ${LOREBOOK_TAG} and !${LOREBOOK_NEVER_TAG} and !"system/Templates"`,
+      body: `TABLE title, tags, keys, summary, constant, position FROM ${LOREBOOK_TAG} and !${LOREBOOK_NEVER_TAG} and !"system/Templates"`,
     });
     if (!indexResponse.ok) {
       console.error(
@@ -124,7 +124,10 @@ export async function getLorebook({ debug = false } = {}): Promise<Lorebook> {
           summary: idx.result.summary ?? "",
           tags: idx.result.tags,
           keys: idx.result.keys ?? [],
-          constant: idx.result.constant,
+          constant:
+            idx.result.constant && idx.result.constant === "true"
+              ? true
+              : false,
           position: idx.result.position ?? 10,
         }))
       : [],
@@ -148,7 +151,6 @@ export async function getLorebookEntry(fileName: string) {
   });
 
   const file = lorebookFileResponseSchema.parse(await response.json());
-  console.log("file", file);
   if ("errorCode" in file) {
     throw new Error(
       `Lorebook file request failed. Status${response.status} StatusText: ${response.statusText}`,
