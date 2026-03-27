@@ -1,6 +1,6 @@
 "use client";
 
-import { createChatFromStoryAction } from "@/app/chat/actions";
+import { createChatFromStoryAction } from "@/app/chat/_lib/actions";
 import { unwrapAction } from "@/lib/action-utils";
 import { useChat } from "@ai-sdk/react";
 import { useMutation } from "@tanstack/react-query";

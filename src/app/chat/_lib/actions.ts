@@ -1,7 +1,7 @@
 "use server";
 
 import { getCharacterByIdOrFail } from "@/app/character/data";
-import { createChat, createChatMessage } from "@/app/chat/data";
+import { createChat, createChatMessage } from "@/app/chat/_lib/data";
 import { getPersonaByIdOrFail } from "@/app/persona/data";
 import { getStoryById } from "@/app/story/data";
 import { ActionResponse } from "@/lib/action-utils";
