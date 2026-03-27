@@ -2,13 +2,13 @@
 
 import { getCharacterById } from "@/app/character/_lib/data";
 import { getPersonaById } from "@/app/persona/_lib/data";
-import { createStory, deleteStory, updateStory } from "@/app/story/data";
+import { createStory, deleteStory, updateStory } from "@/app/story/_lib/data";
 import {
   StoryDto,
   storyFormSchema,
   StoryFormValues,
   toStoryDto,
-} from "@/app/story/schema";
+} from "@/app/story/_lib/schema";
 import { ActionResponse } from "@/lib/action-utils";
 import { HttpStatus } from "@/lib/http";
 import { dbIdValidator } from "@/lib/validators";

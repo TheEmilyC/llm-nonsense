@@ -3,8 +3,8 @@
 import { useCreateChatFromStory } from "@/app/chat/_lib/hooks";
 import { LorebookDto } from "@/app/lorebook/_lib/schema";
 import { StoryForm } from "@/app/story/_components/story-form";
-import { useDeleteStory, useUpdateStory } from "@/app/story/hooks";
-import { StoryFormValues } from "@/app/story/schema";
+import { useDeleteStory, useUpdateStory } from "@/app/story/_lib/hooks";
+import { StoryFormValues } from "@/app/story/_lib/schema";
 import { CardOption } from "@/components/card-selector";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";

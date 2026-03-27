@@ -3,7 +3,7 @@
 import { CurrentLorebook } from "@/app/lorebook/_components/current-lorebook";
 import { useLorebook } from "@/app/lorebook/_lib/hooks";
 import { LorebookDto, LorebookStatus } from "@/app/lorebook/_lib/schema";
-import { storyFormSchema, StoryFormValues } from "@/app/story/schema";
+import { storyFormSchema, StoryFormValues } from "@/app/story/_lib/schema";
 import { CardOption, CardSelector } from "@/components/card-selector";
 import { FieldInput } from "@/components/form-fields/field-input";
 import { Badge } from "@/components/ui/badge";
