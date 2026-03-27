@@ -1,4 +1,4 @@
-import { getCharacterById } from "@/app/character/data";
+import { getCharacterById } from "@/app/character/_lib/data";
 import { HttpStatus } from "@/lib/http";
 import fs from "fs/promises";
 import { NextResponse } from "next/server";

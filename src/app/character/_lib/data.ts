@@ -7,7 +7,7 @@ import {
   CHARACTER_CACHE_KEY,
   CharacterListItem,
   CharacterRecord,
-} from "@/app/character/schema";
+} from "@/app/character/_lib/schema";
 import {
   CharacterCard,
   encodeCharacterCard,

@@ -4,13 +4,13 @@ import {
   useInitializeLorebook,
   useLorebook,
   useRefreshLorebookConnection,
-} from "@/app/lorebook/hooks";
+} from "@/app/lorebook/_lib/hooks";
 import {
   initializeLorebookFormSchema,
   InitializeLorebookFormValues,
   LorebookDto,
   LorebookStatus,
-} from "@/app/lorebook/schema";
+} from "@/app/lorebook/_lib/schema";
 import { FieldInput } from "@/components/form-fields/field-input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

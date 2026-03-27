@@ -1,4 +1,4 @@
-import { getPersonaById } from "@/app/persona/data";
+import { getPersonaById } from "@/app/persona/_lib/data";
 import { HttpStatus } from "@/lib/http";
 import fs from "fs/promises";
 import { NextResponse } from "next/server";

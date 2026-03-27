@@ -3,13 +3,13 @@
 import fs from "fs/promises";
 import path, { join } from "path";
 
-import { PERSONA_CACHE_KEY } from "@/app/persona/schema";
+import { PERSONA_CACHE_KEY } from "@/app/persona/_lib/schema";
 import { DEFAULT_AVATAR_PATH, PERSONA_DIRECTORY } from "@/lib/constants";
 import { WORKING_DIRECTORY } from "@/lib/env-variables";
 import { createImageHash } from "@/lib/image";
 import { prisma } from "@/lib/prisma";
 import { cacheTag, revalidateTag } from "next/cache";
-import { Persona } from "../../../generated/client";
+import { Persona } from "../../../../generated/client";
 
 const PERSONA_PATH = join(WORKING_DIRECTORY, PERSONA_DIRECTORY);
 

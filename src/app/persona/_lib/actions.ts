@@ -7,13 +7,13 @@ import {
   createPersona,
   deletePersona,
   updatePersona,
-} from "@/app/persona/data";
+} from "@/app/persona/_lib/data";
 import {
   PersonaDto,
   personaFormSchema,
   PersonaFormValues,
   toPersonaDto,
-} from "@/app/persona/schema";
+} from "@/app/persona/_lib/schema";
 import { ActionResponse } from "@/lib/action-utils";
 import { dbIdValidator } from "@/lib/validators";
 import { refresh } from "next/cache";

@@ -1,5 +1,5 @@
 import { PersonaList } from "@/app/persona/_components/persona-list";
-import { getPersonaList } from "@/app/persona/data";
+import { getPersonaList } from "@/app/persona/_lib/data";
 import { buildPersonaImageUrl } from "@/lib/image";
 
 export default async function PersonaPage() {

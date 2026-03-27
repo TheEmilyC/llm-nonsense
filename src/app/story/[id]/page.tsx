@@ -1,9 +1,9 @@
-import { getCharacterList } from "@/app/character/data";
-import { getLorebook } from "@/app/lorebook/data";
-import { toLorebookDto } from "@/app/lorebook/schema";
-import { getPersonaList } from "@/app/persona/data";
+import { getCharacterList } from "@/app/character/_lib/data";
+import { getLorebook } from "@/app/lorebook/_lib/data";
+import { toLorebookDto } from "@/app/lorebook/_lib/schema";
+import { getPersonaList } from "@/app/persona/_lib/data";
 import { StoryEdit } from "@/app/story/_components/story-edit";
-import { getStoryById } from "@/app/story/data";
+import { getStoryById } from "@/app/story/_lib/data";
 import { buildCharacterImageUrl, buildPersonaImageUrl } from "@/lib/image";
 import { dbIdValidator } from "@/lib/validators";
 import { notFound } from "next/navigation";

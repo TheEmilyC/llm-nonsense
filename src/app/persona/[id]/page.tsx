@@ -1,8 +1,8 @@
 import z from "zod";
 
 import { PersonaEdit } from "@/app/persona/_components/persona-edit";
-import { getPersonaById } from "@/app/persona/data";
-import { toPersonaDto } from "@/app/persona/schema";
+import { getPersonaById } from "@/app/persona/_lib/data";
+import { toPersonaDto } from "@/app/persona/_lib/schema";
 import { dbIdValidator } from "@/lib/validators";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";

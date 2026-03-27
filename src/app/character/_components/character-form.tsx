@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import {
   characterFormSchema,
   CharacterFormValues,
-} from "@/app/character/schema";
+} from "@/app/character/_lib/schema";
 import { FieldImageUpload } from "@/components/form-fields/field-image-upload";
 import { FieldInput } from "@/components/form-fields/field-input";
 import { FieldTagList } from "@/components/form-fields/field-taglist";

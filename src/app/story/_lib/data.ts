@@ -1,9 +1,9 @@
 "use server";
 
-import { STORY_CACHE_KEY } from "@/app/story/schema";
+import { STORY_CACHE_KEY } from "@/app/story/_lib/schema";
 import { prisma } from "@/lib/prisma";
 import { cacheTag, revalidateTag } from "next/cache";
-import { Story } from "../../../generated/client";
+import { Story } from "../../../../generated/client";
 
 export interface CreateStoryParams {
   newStory: {

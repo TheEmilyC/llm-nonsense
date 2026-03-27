@@ -2,8 +2,8 @@ import { Suspense } from "react";
 import z from "zod";
 
 import { CharacterEdit } from "@/app/character/_components/character-edit";
-import { getCharacterById } from "@/app/character/data";
-import { toCharacterDto } from "@/app/character/schema";
+import { getCharacterById } from "@/app/character/_lib/data";
+import { toCharacterDto } from "@/app/character/_lib/schema";
 import { dbIdValidator } from "@/lib/validators";
 import { notFound } from "next/navigation";
 

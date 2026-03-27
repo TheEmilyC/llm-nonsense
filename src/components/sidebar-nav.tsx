@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { BookOpen, Home, UserCircle, Users } from "lucide-react";
+import { BookOpen, Home, MessageSquareCode, UserCircle, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -15,6 +15,7 @@ const links = [
   { href: "/character", label: "Characters", icon: Users },
   { href: "/story", label: "Stories", icon: BookOpen },
   { href: "/persona", label: "Personas", icon: UserCircle },
+  { href: "/prompt", label: "Prompts", icon: MessageSquareCode },
 ];
 
 export function NavLinks() {

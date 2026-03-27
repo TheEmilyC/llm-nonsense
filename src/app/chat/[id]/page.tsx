@@ -1,5 +1,5 @@
 import { ChatView } from "@/app/chat/_components/chat-view";
-import { getMessagesForChat } from "@/app/chat/data";
+import { getMessagesForChat } from "@/app/chat/_lib/data";
 import { buildCharacterImageUrl, buildPersonaImageUrl } from "@/lib/image";
 import { dbIdValidator } from "@/lib/validators";
 import { notFound } from "next/navigation";

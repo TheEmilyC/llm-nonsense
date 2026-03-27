@@ -2,8 +2,8 @@ import {
   createStoryAction,
   deleteStoryAction,
   updateStoryAction,
-} from "@/app/story/actions";
-import { STORY_CACHE_KEY, StoryFormValues } from "@/app/story/schema";
+} from "@/app/story/_lib/actions";
+import { STORY_CACHE_KEY, StoryFormValues } from "@/app/story/_lib/schema";
 import { unwrapAction } from "@/lib/action-utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
