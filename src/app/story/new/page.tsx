@@ -1,7 +1,7 @@
-import { getCharacterList } from "@/app/character/data";
+import { getCharacterList } from "@/app/character/_lib/data";
 import { getLorebook } from "@/app/lorebook/_lib/data";
 import { toLorebookDto } from "@/app/lorebook/_lib/schema";
-import { getPersonaList } from "@/app/persona/data";
+import { getPersonaList } from "@/app/persona/_lib/data";
 import { StoryNew } from "@/app/story/_components/story-new";
 import { buildCharacterImageUrl, buildPersonaImageUrl } from "@/lib/image";
 import { dbIdValidator } from "@/lib/validators";

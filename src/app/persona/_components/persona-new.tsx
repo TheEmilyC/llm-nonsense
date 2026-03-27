@@ -1,8 +1,8 @@
 "use client";
 
 import { PersonaForm } from "@/app/persona/_components/persona-form";
-import { useCreatePersona } from "@/app/persona/hooks";
-import { PersonaFormValues } from "@/app/persona/schema";
+import { useCreatePersona } from "@/app/persona/_lib/hooks";
+import { PersonaFormValues } from "@/app/persona/_lib/schema";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";

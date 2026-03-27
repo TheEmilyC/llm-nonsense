@@ -2,7 +2,7 @@
 
 import { getCharacterByIdOrFail } from "@/app/character/_lib/data";
 import { createChat, createChatMessage } from "@/app/chat/_lib/data";
-import { getPersonaByIdOrFail } from "@/app/persona/data";
+import { getPersonaByIdOrFail } from "@/app/persona/_lib/data";
 import { getStoryById } from "@/app/story/data";
 import { ActionResponse } from "@/lib/action-utils";
 import { constructPromptMessages } from "@/lib/ai/prompt-manager";

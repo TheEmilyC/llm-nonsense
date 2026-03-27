@@ -1,7 +1,7 @@
 "use server";
 
-import { getCharacterById } from "@/app/character/data";
-import { getPersonaById } from "@/app/persona/data";
+import { getCharacterById } from "@/app/character/_lib/data";
+import { getPersonaById } from "@/app/persona/_lib/data";
 import { createStory, deleteStory, updateStory } from "@/app/story/data";
 import {
   StoryDto,

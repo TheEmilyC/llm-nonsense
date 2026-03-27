@@ -4,11 +4,11 @@ import {
   createPersonaAction,
   deletePersonaAction,
   updatePersonaAction,
-} from "@/app/persona/actions";
+} from "@/app/persona/_lib/actions";
 import {
   PERSONA_CACHE_KEY,
   PersonaFormValues,
-} from "@/app/persona/schema";
+} from "@/app/persona/_lib/schema";
 import { unwrapAction } from "@/lib/action-utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
