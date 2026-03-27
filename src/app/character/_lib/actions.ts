@@ -4,7 +4,7 @@ import {
   createCharacter,
   deleteCharacter,
   updateCharacter,
-} from "@/app/character/data";
+} from "@/app/character/_lib/data";
 import {
   CharacterDto,
   characterFormSchema,
@@ -12,7 +12,7 @@ import {
   ImportFromPngForm,
   importFromPngFormSchema,
   toCharacterDto,
-} from "@/app/character/schema";
+} from "@/app/character/_lib/schema";
 import { ActionResponse } from "@/lib/action-utils";
 import {
   characterCardSchema,

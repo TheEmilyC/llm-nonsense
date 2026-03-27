@@ -1,8 +1,11 @@
 "use client";
 
 import { CharacterForm } from "@/app/character/_components/character-form";
-import { useDeleteCharacter, useUpdateCharacter } from "@/app/character/hooks";
-import { CharacterDto, CharacterFormValues } from "@/app/character/schema";
+import {
+  useDeleteCharacter,
+  useUpdateCharacter,
+} from "@/app/character/_lib/hooks";
+import { CharacterDto, CharacterFormValues } from "@/app/character/_lib/schema";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";

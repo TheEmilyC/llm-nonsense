@@ -1,6 +1,6 @@
 "use server";
 
-import { getCharacterById } from "@/app/character/data";
+import { getCharacterById } from "@/app/character/_lib/data";
 import { createChatMessage, getMessagesForChat } from "@/app/chat/_lib/data";
 import { MessagePart } from "@/app/chat/_lib/schema";
 import { getLorebook, getLorebookEntryList } from "@/app/lorebook/data";

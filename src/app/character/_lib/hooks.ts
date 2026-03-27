@@ -5,12 +5,12 @@ import {
   deleteCharacterAction,
   importCharacterFromPNGAction,
   updateCharacterAction,
-} from "@/app/character/actions";
+} from "@/app/character/_lib/actions";
 import {
   CHARACTER_CACHE_KEY,
   CharacterFormValues,
   ImportFromPngForm,
-} from "@/app/character/schema";
+} from "@/app/character/_lib/schema";
 import { unwrapAction } from "@/lib/action-utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 

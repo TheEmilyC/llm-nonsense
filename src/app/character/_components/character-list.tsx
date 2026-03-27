@@ -1,9 +1,9 @@
 "use client";
-import { useImportCharacterFromPNG } from "@/app/character/hooks";
+import { useImportCharacterFromPNG } from "@/app/character/_lib/hooks";
 import {
   ImportFromPngForm,
   importFromPngFormSchema,
-} from "@/app/character/schema";
+} from "@/app/character/_lib/schema";
 import { CardTile } from "@/components/card-tile";
 import { Content } from "@/components/content";
 import { FieldImageUpload } from "@/components/form-fields/field-image-upload";
