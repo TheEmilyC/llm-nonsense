@@ -4,7 +4,7 @@ import { getCharacterById } from "@/app/character/_lib/data";
 import { createChatMessage, getMessagesForChat } from "@/app/chat/_lib/data";
 import { MessagePart } from "@/app/chat/_lib/schema";
 import { getLorebook, getLorebookEntryList } from "@/app/lorebook/_lib/data";
-import { LorebookStatus } from "@/app/lorebook/_lib/schema";
+import { LorebookFile, LorebookStatus } from "@/app/lorebook/_lib/schema";
 import {
   assemblePrompts,
   constructPromptMessages,
@@ -63,6 +63,7 @@ export async function buildPrompt({
   ]);
 
   let lorebookPrompt: string | undefined;
+  let files: LorebookFile[] | undefined;
   if (
     lorebookName &&
     lorebook.status === LorebookStatus.Ready &&
@@ -72,7 +73,7 @@ export async function buildPrompt({
       scanText: lorebookScanText ?? lastMessage,
       index: lorebook.index,
     });
-    const files = await getLorebookEntryList(indexList);
+    files = await getLorebookEntryList(indexList);
     lorebookPrompt = convertFilesToPrompt({ files });
   }
 
@@ -84,11 +85,17 @@ export async function buildPrompt({
     lorebook: lorebookPrompt,
   });
 
-  return [
-    { role: "system" as const, content: systemMessage },
-    ...history,
-    { role: "user" as const, content: userMessage },
-  ];
+  return {
+    prompt: [
+      { role: "system" as const, content: systemMessage },
+      ...history,
+      { role: "user" as const, content: userMessage },
+    ],
+    lorebookEntries: files?.map((lb) => ({
+      path: lb.path,
+      title: lb.frontmatter.title,
+    })),
+  };
 }
 
 async function buildPromptFromChat({
@@ -136,7 +143,7 @@ export async function constructChatResponse(
   { debug = true } = {},
 ) {
   await createChatMessage({ newMessage: { ...message, chatId: id } });
-  const prompt = await buildPromptFromChat({ id, message });
+  const { prompt } = await buildPromptFromChat({ id, message });
   if (debug) console.debug("prompt", prompt);
 
   // --send and stream result--

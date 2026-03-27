@@ -24,6 +24,9 @@ const FORM_ID = "form-inspect-prompt";
 
 export function PromptInspector() {
   const [prompt, setPrompt] = useState<string | null>(null);
+  const [lorebookEntries, setLorebookEntries] = useState<
+    { path: string; title?: string }[] | null
+  >(null);
   const { checkPrompt, isPending } = useCheckPrompt();
   const form = useForm<PromptInspectorFormValues>({
     resolver: zodResolver(promptInspectorFormSchema),
@@ -34,8 +37,14 @@ export function PromptInspector() {
   });
 
   async function onSubmitHandler(data: PromptInspectorFormValues) {
-    const { prompt: newPrompt } = await checkPrompt(data);
+    const { prompt: newPrompt, lorebookEntries: newLorebook } =
+      await checkPrompt(data);
     setPrompt(newPrompt);
+    if (newLorebook) {
+      setLorebookEntries(newLorebook);
+    } else {
+      setLorebookEntries(null);
+    }
   }
 
   return (
@@ -80,7 +89,7 @@ export function PromptInspector() {
                 Prompt
               </p>
               <div className="text-sm text-muted-foreground/50 italic whitespace-pre-wrap">
-                {prompt?.replace(/\\n/g, "\n") || "Prompt will appear here…"}
+                {prompt || "Prompt will appear here…"}
               </div>
             </div>
             <div className="w-64 min-h-96 rounded-md border bg-muted/30 p-4 shrink-0">
@@ -88,7 +97,11 @@ export function PromptInspector() {
                 Active Lorebook Items
               </p>
               <div className="text-sm text-muted-foreground/50 italic">
-                No active entries
+                <ul>
+                  {lorebookEntries?.map((lb) => (
+                    <li key={lb.path}>{lb.title || lb.path}</li>
+                  )) || "No active entries"}
+                </ul>
               </div>
             </div>
           </div>

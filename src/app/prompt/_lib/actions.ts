@@ -9,7 +9,12 @@ import { ActionResponse } from "@/lib/action-utils";
 
 export async function checkPromptAction(
   data: PromptInspectorFormValues,
-): Promise<ActionResponse<{ prompt: string }>> {
+): Promise<
+  ActionResponse<{
+    prompt: string;
+    lorebookEntries?: { path: string; title?: string }[];
+  }>
+> {
   const parseResult = promptInspectorFormSchema.safeParse(data);
 
   if (!parseResult.success) {
@@ -17,24 +22,21 @@ export async function checkPromptAction(
     return { success: false, error: "Malformed prompt" };
   }
   const { message } = parseResult.data;
-  const prompt = JSON.stringify(
-    await buildPrompt({
-      lastMessage: message,
-      character: {
-        name: "Test Character",
-        description: "Test Character Description",
-        personality: "Character Personality",
-        scenario: "Character Scenario",
-      },
-      persona: {
-        name: "Test Persona",
-        description: "Test Persona Description",
-      },
-      lorebookName: "heimskra",
-    }),
-    null,
-    2,
-  );
+  const { prompt: promptRaw, lorebookEntries } = await buildPrompt({
+    lastMessage: message,
+    character: {
+      name: "Test Character",
+      description: "Test Character Description",
+      personality: "Character Personality",
+      scenario: "Character Scenario",
+    },
+    persona: {
+      name: "Test Persona",
+      description: "Test Persona Description",
+    },
+    lorebookName: "heimskra",
+  });
+  const prompt = JSON.stringify(promptRaw, null, 2).replace(/\\n/g, "\n");
 
-  return { success: true, data: { prompt } };
+  return { success: true, data: { prompt, lorebookEntries } };
 }
