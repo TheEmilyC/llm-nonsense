@@ -7,6 +7,7 @@ export const MAX_CHARACTER_IMAGE_SIZE =
 export const DEFAULT_AVATAR_PATH = "/public/image/ai4.png";
 export const CHARACTER_CARD_DIRECTORY = "data/characters";
 export const PERSONA_DIRECTORY = "data/personas";
+export const WORLD_DIRECTORY = "data/worlds";
 
 // -- Lorebook --
 export const LOREBOOK_SCAN_DEPTH = 2;

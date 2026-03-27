@@ -23,3 +23,13 @@ export function buildPersonaImageUrl({
 }): string {
   return `/api/persona/${id}/image?v=${imgHash}`;
 }
+
+export function buildWorldImageUrl({
+  id,
+  imgHash,
+}: {
+  id: string;
+  imgHash: string;
+}): string {
+  return `/api/world/${id}/image?v=${imgHash}`;
+}
