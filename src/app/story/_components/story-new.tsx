@@ -1,6 +1,6 @@
 "use client";
 
-import { LorebookDto } from "@/app/lorebook/schema";
+import { LorebookDto } from "@/app/lorebook/_lib/schema";
 import { StoryForm } from "@/app/story/_components/story-form";
 import { useCreateStory } from "@/app/story/hooks";
 import { StoryFormValues } from "@/app/story/schema";

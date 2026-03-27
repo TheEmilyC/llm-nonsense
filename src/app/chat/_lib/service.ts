@@ -3,8 +3,8 @@
 import { getCharacterById } from "@/app/character/_lib/data";
 import { createChatMessage, getMessagesForChat } from "@/app/chat/_lib/data";
 import { MessagePart } from "@/app/chat/_lib/schema";
-import { getLorebook, getLorebookEntryList } from "@/app/lorebook/data";
-import { LorebookStatus } from "@/app/lorebook/schema";
+import { getLorebook, getLorebookEntryList } from "@/app/lorebook/_lib/data";
+import { LorebookStatus } from "@/app/lorebook/_lib/schema";
 import {
   assemblePrompts,
   constructPromptMessages,

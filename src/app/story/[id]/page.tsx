@@ -1,6 +1,6 @@
 import { getCharacterList } from "@/app/character/data";
-import { getLorebook } from "@/app/lorebook/data";
-import { toLorebookDto } from "@/app/lorebook/schema";
+import { getLorebook } from "@/app/lorebook/_lib/data";
+import { toLorebookDto } from "@/app/lorebook/_lib/schema";
 import { getPersonaList } from "@/app/persona/data";
 import { StoryEdit } from "@/app/story/_components/story-edit";
 import { getStoryById } from "@/app/story/data";

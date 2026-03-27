@@ -3,12 +3,12 @@
 import {
   getLorebookAction,
   initializeLorebookAction,
-} from "@/app/lorebook/actions";
+} from "@/app/lorebook/_lib/actions";
 import {
   InitializeLorebookFormValues,
   LOREBOOK_CACHE_KEY,
   LorebookDto,
-} from "@/app/lorebook/schema";
+} from "@/app/lorebook/_lib/schema";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useInitializeLorebook() {

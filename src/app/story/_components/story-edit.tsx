@@ -1,7 +1,7 @@
 "use client";
 
 import { useCreateChatFromStory } from "@/app/chat/_lib/hooks";
-import { LorebookDto } from "@/app/lorebook/schema";
+import { LorebookDto } from "@/app/lorebook/_lib/schema";
 import { StoryForm } from "@/app/story/_components/story-form";
 import { useDeleteStory, useUpdateStory } from "@/app/story/hooks";
 import { StoryFormValues } from "@/app/story/schema";

@@ -1,12 +1,12 @@
 "use server";
 
-import { createLorebookIndex, getLorebook } from "@/app/lorebook/data";
+import { createLorebookIndex, getLorebook } from "@/app/lorebook/_lib/data";
 import {
   initializeLorebookFormSchema,
   InitializeLorebookFormValues,
   LorebookDto,
   toLorebookDto,
-} from "@/app/lorebook/schema";
+} from "@/app/lorebook/_lib/schema";
 import { ActionResponse } from "@/lib/action-utils";
 import { LOREBOOK_TAG } from "@/lib/env-variables";
 import { revalidateTag } from "next/cache";

@@ -6,7 +6,7 @@ import {
   LorebookStatus,
   ObsidianMetadataResponse,
   obsidianMetadataResponseSchema,
-} from "@/app/lorebook/schema";
+} from "@/app/lorebook/_lib/schema";
 import {
   LOREBOOK_NEVER_TAG,
   LOREBOOK_TAG,
