@@ -4,7 +4,12 @@ import { toLorebookDto } from "@/app/lorebook/_lib/schema";
 import { getPersonaList } from "@/app/persona/_lib/data";
 import { StoryEdit } from "@/app/story/_components/story-edit";
 import { getStoryById } from "@/app/story/_lib/data";
-import { buildCharacterImageUrl, buildPersonaImageUrl } from "@/lib/image";
+import { getWorldList } from "@/app/world/_lib/data";
+import {
+  buildCharacterImageUrl,
+  buildPersonaImageUrl,
+  buildWorldImageUrl,
+} from "@/lib/image";
 import { dbIdValidator } from "@/lib/validators";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -19,10 +24,11 @@ const storyPageParamsSchema = z.object({
 });
 
 async function StoryPageContent({ params }: StoryPageParams) {
-  const [characterList, personaList, lorebookResult, routeParams] =
+  const [characterList, personaList, worldList, lorebookResult, routeParams] =
     await Promise.all([
       getCharacterList(),
       getPersonaList(),
+      getWorldList(),
       getLorebook(),
       params,
     ]);
@@ -40,6 +46,11 @@ async function StoryPageContent({ params }: StoryPageParams) {
     name: per.name,
     imageUrl: buildPersonaImageUrl({ id: per.id, imgHash: per.imageHash }),
   }));
+  const worlds = worldList.map((wrd) => ({
+    id: wrd.id,
+    name: wrd.name,
+    imageUrl: buildWorldImageUrl({ id: wrd.id, imgHash: wrd.imageHash }),
+  }));
   const lorebook = toLorebookDto(lorebookResult);
 
   return (
@@ -47,6 +58,7 @@ async function StoryPageContent({ params }: StoryPageParams) {
       story={story}
       characters={characters}
       personas={personas}
+      worlds={worlds}
       currentLorebook={lorebook}
     />
   );

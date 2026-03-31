@@ -44,6 +44,10 @@ interface BuildPromptParams {
     name: string;
     description: string;
   };
+  world: {
+    name: string;
+    description: string;
+  } | null;
   history?: ModelMessage[];
   lorebookName?: string | null;
   lorebookScanText?: string;
@@ -53,6 +57,7 @@ export async function buildPrompt({
   lastMessage,
   character,
   persona,
+  world,
   history = [],
   lorebookName,
   lorebookScanText,
@@ -82,6 +87,7 @@ export async function buildPrompt({
     lastMessage,
     character,
     persona,
+    world,
     lorebook: lorebookPrompt,
   });
 
@@ -107,6 +113,7 @@ async function buildPromptFromChat({
   const character = await getCharacterById(chat.story.character.id);
   if (!character) throw new Error("Character does not exist");
   const persona = chat.story.persona;
+  const world = chat.story.world;
 
   const lastMessage = message.parts
     .filter((p) => p.type === "text")
@@ -132,6 +139,7 @@ async function buildPromptFromChat({
     lastMessage,
     character: character.card,
     persona,
+    world,
     history: chat.messages ? await convertToModelMessages(chat.messages) : [],
     lorebookName: chat.story.lorebook,
     lorebookScanText,

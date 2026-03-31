@@ -34,6 +34,10 @@ export async function checkPromptAction(
       name: "Test Persona",
       description: "Test Persona Description",
     },
+    world:{
+      name: "Test World",
+      description: "Test World Description"
+    },
     lorebookName: "heimskra",
   });
   const prompt = JSON.stringify(promptRaw, null, 2).replace(/\\n/g, "\n");

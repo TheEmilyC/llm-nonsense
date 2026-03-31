@@ -1,6 +1,6 @@
-import { MessagePart } from "@/app/chat/schema";
 import { prisma } from "@/lib/prisma";
-import { MessageRole } from "../../../generated/enums";
+import { MessageRole } from "../../../../generated/enums";
+import { MessagePart } from "@/app/chat/_lib/schema";
 
 interface CreateChatParams {
   newChat: {
@@ -66,6 +66,7 @@ export async function getMessagesForChat({
         include: {
           character: true,
           persona: true,
+          world: true,
         },
       },
     },

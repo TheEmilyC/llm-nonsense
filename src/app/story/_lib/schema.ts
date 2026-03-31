@@ -1,5 +1,5 @@
 import z from "zod";
-import { Story } from "../../../generated/client";
+import { Story } from "../../../../generated/client";
 
 export const STORY_CACHE_KEY = "story";
 

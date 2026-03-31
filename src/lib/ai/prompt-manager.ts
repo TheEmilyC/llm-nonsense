@@ -68,6 +68,10 @@ interface ConstructPromptMessagesParams {
     name: string;
     description: string;
   };
+  world: {
+    name: string;
+    description: string;
+  } | null;
   lastMessage?: string;
   lorebook?: string;
 }
@@ -76,6 +80,7 @@ export function constructPromptMessages({
   prompts,
   character,
   persona,
+  world,
   lastMessage = "",
   lorebook = "",
 }: ConstructPromptMessagesParams): string[] {
@@ -88,6 +93,11 @@ export function constructPromptMessages({
   //persona variables
   variables["user"] = persona.name;
   variables["user.description"] = persona.description;
+  //world variables)
+  if (world) {
+    variables["world"] = world.name;
+    variables["world.description"] = world.description;
+  }
 
   variables["last_message"] = lastMessage;
   variables["lorebook"] = lorebook;

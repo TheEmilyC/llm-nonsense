@@ -3,8 +3,14 @@ import { getLorebook } from "@/app/lorebook/_lib/data";
 import { toLorebookDto } from "@/app/lorebook/_lib/schema";
 import { getPersonaList } from "@/app/persona/_lib/data";
 import { StoryNew } from "@/app/story/_components/story-new";
-import { buildCharacterImageUrl, buildPersonaImageUrl } from "@/lib/image";
+import { getWorldList } from "@/app/world/_lib/data";
+import {
+  buildCharacterImageUrl,
+  buildPersonaImageUrl,
+  buildWorldImageUrl,
+} from "@/lib/image";
 import { dbIdValidator } from "@/lib/validators";
+import { Suspense } from "react";
 import z from "zod";
 
 type NewStoryPageParams = {
@@ -21,13 +27,12 @@ const newStoryParamsSchema = z.object({
   worldId: dbIdValidator.optional(),
 });
 
-export default async function NewStoryPage({
-  searchParams,
-}: NewStoryPageParams) {
-  const [characterList, personaList, lorebookResult, params] =
+async function NewStoryPageContent({ searchParams }: NewStoryPageParams) {
+  const [characterList, personaList, worldList, lorebookResult, params] =
     await Promise.all([
       getCharacterList(),
       getPersonaList(),
+      getWorldList(),
       getLorebook(),
       searchParams,
     ]);
@@ -42,6 +47,12 @@ export default async function NewStoryPage({
     name: per.name,
     imageUrl: buildPersonaImageUrl({ id: per.id, imgHash: per.imageHash }),
   }));
+  const worlds = worldList.map((wrd) => ({
+    id: wrd.id,
+    name: wrd.name,
+    imageUrl: buildWorldImageUrl({ id: wrd.id, imgHash: wrd.imageHash }),
+  }));
+
   const { characterId, personaId, worldId } =
     newStoryParamsSchema.parse(params);
   const lorebook = toLorebookDto(lorebookResult);
@@ -50,10 +61,19 @@ export default async function NewStoryPage({
     <StoryNew
       characters={characters}
       personas={personas}
+      worlds={worlds}
       initialCharacterId={characterId}
       initialPersonaId={personaId}
       initialWorldId={worldId}
       currentLorebook={lorebook}
     />
+  );
+}
+
+export default function NewStoryPage({ searchParams }: NewStoryPageParams) {
+  return (
+    <Suspense>
+      <NewStoryPageContent searchParams={searchParams} />
+    </Suspense>
   );
 }

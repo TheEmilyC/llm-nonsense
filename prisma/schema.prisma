@@ -23,7 +23,7 @@ model Character {
   pngHash    String
   Stories    Story[]
   createdAt  DateTime @default(now())
-  modifiedAt DateTime @default(now())
+  modifiedAt DateTime @default(now()) @updatedAt
 }
 
 model Persona {
@@ -34,7 +34,7 @@ model Persona {
   description String
   stories     Story[]
   createdAt   DateTime @default(now())
-  modifiedAt  DateTime @default(now())
+  modifiedAt  DateTime @default(now()) @updatedAt
 }
 
 model Story {
@@ -44,10 +44,12 @@ model Story {
   character   Character @relation(fields: [characterId], references: [id])
   personaId   String
   persona     Persona   @relation(fields: [personaId], references: [id])
+  worldId     String?
+  world       World?    @relation(fields: [worldId], references: [id])
   lorebook    String?
   chats       Chat[]
   createdAt   DateTime  @default(now())
-  modifiedAt  DateTime  @default(now())
+  modifiedAt  DateTime  @default(now()) @updatedAt
 }
 
 model Chat {
@@ -57,7 +59,7 @@ model Chat {
   story      Story         @relation(fields: [storyId], references: [id])
   messages   ChatMessage[]
   createdAt  DateTime      @default(now())
-  modifiedAt DateTime      @default(now())
+  modifiedAt DateTime      @default(now()) @updatedAt
 }
 
 enum MessageRole {
@@ -76,5 +78,16 @@ model ChatMessage {
   /// [ChatMessageParts]
   parts      Json
   createdAt  DateTime    @default(now())
-  modifiedAt DateTime    @default(now())
+  modifiedAt DateTime    @default(now()) @updatedAt
+}
+
+model World {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  image       String
+  imageHash   String
+  stories     Story[]
+  createdAt   DateTime @default(now())
+  modifiedAt  DateTime @default(now()) @updatedAt
 }
