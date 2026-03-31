@@ -18,18 +18,17 @@ import {
   toLorebookDto,
 } from "@/app/lorebook/_lib/schema";
 import { ActionResponse } from "@/lib/action-utils";
-import { dbIdValidator } from "@/lib/validators";
 import { LOREBOOK_TAG } from "@/lib/env-variables";
-import { notFound } from "next/navigation";
+import { dbIdValidator } from "@/lib/validators";
 import { revalidateTag } from "next/cache";
-import z from "zod";
+import { notFound } from "next/navigation";
 
 export async function createLorebookAction(
   data: LorebookDbFormValues,
 ): Promise<ActionResponse<{ id: string }>> {
   const parseResult = lorebookDbFormSchema.safeParse(data);
   if (!parseResult.success) {
-    console.error(z.prettifyError(parseResult.error));
+    console.error(parseResult.error);
     return { success: false, error: "Malformed lorebook data" };
   }
   try {
@@ -46,11 +45,12 @@ export async function updateLorebookAction(
   data: LorebookDbFormValues,
 ): Promise<ActionResponse<LorebookDbDto>> {
   const idResult = dbIdValidator.safeParse(lorebookId);
-  if (!idResult.success) return { success: false, error: "Invalid lorebook ID" };
+  if (!idResult.success)
+    return { success: false, error: "Invalid lorebook ID" };
 
   const parseResult = lorebookDbFormSchema.safeParse(data);
   if (!parseResult.success) {
-    console.error(z.prettifyError(parseResult.error));
+    console.error(parseResult.error);
     return { success: false, error: "Malformed lorebook data" };
   }
   try {

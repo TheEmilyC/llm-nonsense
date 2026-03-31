@@ -20,7 +20,6 @@ import {
 } from "@/lib/character-card-parser";
 import { dbIdValidator } from "@/lib/validators";
 import { notFound } from "next/navigation";
-import z from "zod";
 
 export async function importCharacterFromPNGAction(
   data: ImportFromPngForm,
@@ -28,7 +27,7 @@ export async function importCharacterFromPNGAction(
   const parseResult = importFromPngFormSchema.safeParse(data);
 
   if (!parseResult.success) {
-    console.error(z.prettifyError(parseResult.error));
+    console.error(parseResult.error);
     return { success: false, error: "Character import failed" };
   }
   const { png } = parseResult.data;
@@ -78,12 +77,12 @@ export async function updateCharacterAction(
 ): Promise<ActionResponse<CharacterDto>> {
   const formParseResult = characterFormSchema.safeParse(data);
   if (!formParseResult.success) {
-    console.error(z.prettifyError(formParseResult.error));
+    console.error(formParseResult.error);
     return { success: false, error: "Malformed character data" };
   }
   const idParseResult = dbIdValidator.safeParse(characterId);
   if (!idParseResult.success) {
-    console.error(z.prettifyError(idParseResult.error));
+    console.error(idParseResult.error);
     notFound();
   }
   const id = idParseResult.data;
@@ -105,7 +104,7 @@ export async function createCharacterAction(
 ): Promise<ActionResponse<{ id: string }>> {
   const formParseResult = characterFormSchema.safeParse(data);
   if (!formParseResult.success) {
-    console.error(z.prettifyError(formParseResult.error));
+    console.error(formParseResult.error);
     return { success: false, error: "Malformed character data" };
   }
   const { image, ...card } = formParseResult.data;

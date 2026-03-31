@@ -7,6 +7,7 @@ interface FieldInputFieldParams<T extends FieldValues> {
   control: Control<T>;
   label: string;
   placeholder?: string;
+  type?: "text" | "number" | "password" | "email";
 }
 
 export function FieldInput<T extends FieldValues>({
@@ -14,6 +15,7 @@ export function FieldInput<T extends FieldValues>({
   label,
   control,
   placeholder,
+  type = "text",
 }: FieldInputFieldParams<T>) {
   return (
     <Controller
@@ -25,9 +27,20 @@ export function FieldInput<T extends FieldValues>({
           <Input
             {...field}
             id={`${name}-input`}
+            type={type}
             aria-invalid={fieldState.invalid}
             placeholder={placeholder || label}
             autoComplete="off"
+            value={field.value ?? ""}
+            onChange={(e) => {
+              if (type === "number") {
+                field.onChange(
+                  e.target.value === "" ? undefined : e.target.valueAsNumber,
+                );
+              } else {
+                field.onChange(e);
+              }
+            }}
           />
           {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
         </Field>

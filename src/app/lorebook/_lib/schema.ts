@@ -5,6 +5,7 @@ export const LOREBOOK_DB_CACHE_KEY = "lorebook-db";
 
 export const lorebookDbFormSchema = z.object({
   name: z.string().min(1, "Name is required"),
+  port: z.number(),
   apiKey: z.string().min(1, "API key is required"),
 });
 export type LorebookDbFormValues = z.infer<typeof lorebookDbFormSchema>;
@@ -13,6 +14,7 @@ export const lorebookDbDtoSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   apiKey: z.string().min(1),
+  port: z.number(),
   createdAt: z.date(),
   modifiedAt: z.date(),
 });

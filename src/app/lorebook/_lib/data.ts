@@ -38,6 +38,7 @@ export async function getLorebookDbById(
 export async function createLorebookDb(data: {
   name: string;
   apiKey: string;
+  port: number;
 }): Promise<LorebookEntity> {
   const entity = await prisma.lorebook.create({ data });
   revalidateTag(LOREBOOK_DB_CACHE_KEY, "max");
@@ -46,7 +47,7 @@ export async function createLorebookDb(data: {
 
 export async function updateLorebookDb(
   id: string,
-  data: Partial<{ name: string; apiKey: string }>,
+  data: Partial<{ name: string; apiKey: string; port: number }>,
 ): Promise<LorebookEntity> {
   const entity = await prisma.lorebook.update({ where: { id }, data });
   revalidateTag(LOREBOOK_DB_CACHE_KEY, "max");
