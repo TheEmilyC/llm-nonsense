@@ -6,11 +6,10 @@ import { cacheTag, revalidateTag } from "next/cache";
 import { Story } from "../../../../generated/client";
 
 export interface CreateStoryParams {
-  newStory: {
-    personaId: string;
-    characterId: string;
-    name: string;
-  };
+  newStory: Pick<
+    Story,
+    "personaId" | "characterId" | "name" | "worldId" | "lorebook"
+  >;
 }
 
 export async function createStory({ newStory }: CreateStoryParams) {
@@ -19,6 +18,8 @@ export async function createStory({ newStory }: CreateStoryParams) {
       name: newStory.name,
       characterId: newStory.characterId,
       personaId: newStory.personaId,
+      worldId: newStory.worldId,
+      lorebook: newStory.lorebook,
     },
   });
   revalidateTag(STORY_CACHE_KEY, "max");
@@ -52,7 +53,7 @@ export async function getStoryByIdOrFail(id: string) {
 export interface UpdateStoryParams {
   id: string;
   update: Partial<
-    Pick<Story, "name" | "characterId" | "personaId" | "lorebook">
+    Pick<Story, "name" | "characterId" | "personaId" | "worldId" | "lorebook">
   >;
 }
 
@@ -61,42 +62,28 @@ export async function updateStory({ id, update }: UpdateStoryParams) {
   if (!orgStory) throw new Error("Story does not exist");
 
   const entityUpdate: Partial<Story> = {};
-  let updateRequired = false;
-  if (update.name !== undefined && update.name !== orgStory.name) {
+  if (update.name !== undefined && update.name !== orgStory.name)
     entityUpdate.name = update.name;
-    updateRequired = true;
-  }
 
   if (
     update.characterId !== undefined &&
     update.characterId !== orgStory.characterId
-  ) {
+  )
     entityUpdate.characterId = update.characterId;
-    updateRequired = true;
-  }
 
-  if (
-    update.personaId !== undefined &&
-    update.personaId !== orgStory.personaId
-  ) {
+  if (update.personaId !== undefined && update.personaId !== orgStory.personaId)
     entityUpdate.personaId = update.personaId;
-    updateRequired = true;
-  }
 
-  if (update.lorebook !== undefined && update.lorebook !== orgStory.lorebook) {
+  if (update.worldId !== undefined && update.worldId !== orgStory.worldId)
+    entityUpdate.worldId = update.worldId;
+
+  if (update.lorebook !== undefined && update.lorebook !== orgStory.lorebook)
     entityUpdate.lorebook = update.lorebook;
-    updateRequired = true;
-  }
 
-  let story;
-  if (updateRequired) {
-    story = await prisma.story.update({
-      data: entityUpdate,
-      where: { id },
-    });
-  } else {
-    story = orgStory;
-  }
+  const story = await prisma.story.update({
+    data: entityUpdate,
+    where: { id },
+  });
 
   revalidateTag(STORY_CACHE_KEY, "max");
   revalidateTag(`${STORY_CACHE_KEY}-${id}`, "max");

@@ -9,6 +9,7 @@ import {
   StoryFormValues,
   toStoryDto,
 } from "@/app/story/_lib/schema";
+import { getWorldById } from "@/app/world/_lib/data";
 import { ActionResponse } from "@/lib/action-utils";
 import { HttpStatus } from "@/lib/http";
 import { dbIdValidator } from "@/lib/validators";
@@ -29,7 +30,7 @@ export async function createStoryAction(
     const [character, persona, world] = await Promise.all([
       newStory.characterId ? getCharacterById(newStory.characterId) : null,
       newStory.personaId ? getPersonaById(newStory.personaId) : null,
-      newStory.worldId ? { name: "worldtest" } : null, // TODO: Implement with worlds
+      newStory.worldId ? getWorldById(newStory.worldId) : null,
     ]);
     if (character) name += character.card.name;
     if (persona) {
@@ -46,7 +47,14 @@ export async function createStoryAction(
 
   let story;
   try {
-    story = await createStory({ newStory: { ...newStory, name } });
+    story = await createStory({
+      newStory: {
+        ...newStory,
+        name,
+        worldId: newStory.worldId ?? null,
+        lorebook: newStory.lorebook ?? null,
+      },
+    });
     return { success: true, data: { newStoryId: story.id } };
   } catch (err) {
     console.error(err);

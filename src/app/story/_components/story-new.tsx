@@ -25,6 +25,7 @@ interface StoryNewParams {
 export function StoryNew({
   characters,
   personas,
+  worlds,
   initialCharacterId,
   initialPersonaId,
   currentLorebook,
@@ -55,6 +56,7 @@ export function StoryNew({
           formId={FORM_ID}
           characters={characters}
           personas={personas}
+          worlds={worlds}
           onSubmit={onSubmitHandler}
           defaultValues={{
             characterId: initialCharacterId,
