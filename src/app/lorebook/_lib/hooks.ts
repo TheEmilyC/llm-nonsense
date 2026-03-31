@@ -5,6 +5,7 @@ import {
   deleteLorebookAction,
   getLorebookAction,
   initializeLorebookAction,
+  testConnectionAction,
   updateLorebookAction,
 } from "@/app/lorebook/_lib/actions";
 import {
@@ -19,40 +20,77 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useCreateLorebook() {
   const queryClient = useQueryClient();
-  const { mutateAsync: createLorebook, isPending, error } = useMutation({
+  const {
+    mutateAsync: createLorebook,
+    isPending,
+    error,
+  } = useMutation({
     mutationFn: async (data: LorebookDbFormValues) =>
       unwrapAction(await createLorebookAction(data)),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [LOREBOOK_DB_CACHE_KEY, "list"] });
+      queryClient.invalidateQueries({
+        queryKey: [LOREBOOK_DB_CACHE_KEY, "list"],
+      });
     },
   });
-  return { createLorebook, isPending, error: error ? (error as Error).message : null };
+  return {
+    createLorebook,
+    isPending,
+    error: error ? (error as Error).message : null,
+  };
 }
 
 export function useUpdateLorebook() {
   const queryClient = useQueryClient();
-  const { mutateAsync: updateLorebook, isPending, error } = useMutation({
-    mutationFn: async ({ lorebookId, data }: { lorebookId: string; data: LorebookDbFormValues }) =>
-      unwrapAction(await updateLorebookAction(lorebookId, data)),
+  const {
+    mutateAsync: updateLorebook,
+    isPending,
+    error,
+  } = useMutation({
+    mutationFn: async ({
+      lorebookId,
+      data,
+    }: {
+      lorebookId: string;
+      data: LorebookDbFormValues;
+    }) => unwrapAction(await updateLorebookAction(lorebookId, data)),
     onSuccess: (updated, { lorebookId }) => {
-      queryClient.invalidateQueries({ queryKey: [LOREBOOK_DB_CACHE_KEY, "list"] });
+      queryClient.invalidateQueries({
+        queryKey: [LOREBOOK_DB_CACHE_KEY, "list"],
+      });
       queryClient.setQueryData([LOREBOOK_DB_CACHE_KEY, lorebookId], updated);
     },
   });
-  return { updateLorebook, isPending, error: error ? (error as Error).message : null };
+  return {
+    updateLorebook,
+    isPending,
+    error: error ? (error as Error).message : null,
+  };
 }
 
 export function useDeleteLorebook() {
   const queryClient = useQueryClient();
-  const { mutateAsync: deleteLorebook, isPending, error } = useMutation({
+  const {
+    mutateAsync: deleteLorebook,
+    isPending,
+    error,
+  } = useMutation({
     mutationFn: async ({ lorebookId }: { lorebookId: string }) =>
       unwrapAction(await deleteLorebookAction(lorebookId)),
     onSuccess: (_, { lorebookId }) => {
-      queryClient.invalidateQueries({ queryKey: [LOREBOOK_DB_CACHE_KEY, "list"] });
-      queryClient.removeQueries({ queryKey: [LOREBOOK_DB_CACHE_KEY, lorebookId] });
+      queryClient.invalidateQueries({
+        queryKey: [LOREBOOK_DB_CACHE_KEY, "list"],
+      });
+      queryClient.removeQueries({
+        queryKey: [LOREBOOK_DB_CACHE_KEY, lorebookId],
+      });
     },
   });
-  return { deleteLorebook, isPending, error: error ? (error as Error).message : null };
+  return {
+    deleteLorebook,
+    isPending,
+    error: error ? (error as Error).message : null,
+  };
 }
 
 export function useInitializeLorebook() {
@@ -134,6 +172,23 @@ export function useRefreshLorebookConnection() {
 
   return {
     refreshLorebook,
+    isPending,
+    error: error ? (error as Error).message : null,
+  };
+}
+
+export function useTestLorebookConnection() {
+  const {
+    mutateAsync: testLorebookConnection,
+    isPending,
+    error,
+  } = useMutation({
+    mutationFn: async (api: { port: number; apiKey: string }) =>
+      unwrapAction(await testConnectionAction({ api })),
+  });
+
+  return {
+    testLorebookConnection,
     isPending,
     error: error ? (error as Error).message : null,
   };

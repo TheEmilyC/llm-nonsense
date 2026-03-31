@@ -2,13 +2,12 @@
 
 import {
   createLorebookDb,
-  createLorebookIndex,
   deleteLorebookDb,
   getLorebook,
+  testLorebookConnection,
   updateLorebookDb,
 } from "@/app/lorebook/_lib/data";
 import {
-  initializeLorebookFormSchema,
   InitializeLorebookFormValues,
   LorebookDbDto,
   lorebookDbDtoSchema,
@@ -113,5 +112,28 @@ export async function getLorebookAction(
   } catch (err) {
     console.error(err);
     return { success: false, error: "Failed to fetch lorebook" };
+  }
+}
+
+interface TestConnectionActionParams {
+  api: {
+    port: number;
+    apiKey: string;
+  };
+}
+
+export async function testConnectionAction({
+  api,
+}: TestConnectionActionParams): Promise<ActionResponse<null>> {
+  try {
+    const result = await testLorebookConnection(api);
+    if (result) {
+      return { success: true, data: null };
+    } else {
+      // shouldn't happen
+      return { success: false, error: "Unknown error" };
+    }
+  } catch (err) {
+    return { success: false, error: (err as Error).message };
   }
 }

@@ -37,6 +37,7 @@ export default function QueryProvider({
                 return;
               }
               toast.error(error.message);
+              return;
             }
             toast.error("An unexpected error has occured");
             console.error("Global Mutation Error:", error);
