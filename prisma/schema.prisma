@@ -91,3 +91,11 @@ model World {
   createdAt   DateTime @default(now())
   modifiedAt  DateTime @default(now()) @updatedAt
 }
+
+model Lorebook {
+  id         String   @id @default(cuid())
+  name       String
+  apiKey     String
+  createdAt  DateTime @default(now())
+  modifiedAt DateTime @default(now()) @updatedAt
+}

@@ -1,6 +1,22 @@
 import z from "zod";
 
 export const LOREBOOK_CACHE_KEY = "lorebook";
+export const LOREBOOK_DB_CACHE_KEY = "lorebook-db";
+
+export const lorebookDbFormSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  apiKey: z.string().min(1, "API key is required"),
+});
+export type LorebookDbFormValues = z.infer<typeof lorebookDbFormSchema>;
+
+export const lorebookDbDtoSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  apiKey: z.string().min(1),
+  createdAt: z.date(),
+  modifiedAt: z.date(),
+});
+export type LorebookDbDto = z.infer<typeof lorebookDbDtoSchema>;
 
 export enum LorebookStatus {
   ServerUnavailable = "server-unavailable",

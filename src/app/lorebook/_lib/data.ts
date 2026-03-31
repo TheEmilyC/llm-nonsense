@@ -2,6 +2,7 @@ import {
   GetLorebookIndexResposne,
   getLorebookIndexResposneSchema,
   Lorebook,
+  LOREBOOK_DB_CACHE_KEY,
   lorebookFileResponseSchema,
   LorebookStatus,
   ObsidianMetadataResponse,
@@ -13,8 +14,51 @@ import {
   OBSIDIAN_API_KEY,
   OBSIDIAN_URL,
 } from "@/lib/env-variables";
+import { prisma } from "@/lib/prisma";
 import { cacheLife, cacheTag, revalidateTag } from "next/cache";
 import path from "path";
+import { Lorebook as LorebookEntity } from "../../../../generated/client";
+
+export async function getLorebookDbList(): Promise<LorebookEntity[]> {
+  "use cache";
+  cacheTag(LOREBOOK_DB_CACHE_KEY);
+
+  return await prisma.lorebook.findMany();
+}
+
+export async function getLorebookDbById(
+  id: string,
+): Promise<LorebookEntity | null> {
+  "use cache";
+  cacheTag(`${LOREBOOK_DB_CACHE_KEY}-${id}`);
+
+  return await prisma.lorebook.findUnique({ where: { id } });
+}
+
+export async function createLorebookDb(data: {
+  name: string;
+  apiKey: string;
+}): Promise<LorebookEntity> {
+  const entity = await prisma.lorebook.create({ data });
+  revalidateTag(LOREBOOK_DB_CACHE_KEY, "max");
+  return entity;
+}
+
+export async function updateLorebookDb(
+  id: string,
+  data: Partial<{ name: string; apiKey: string }>,
+): Promise<LorebookEntity> {
+  const entity = await prisma.lorebook.update({ where: { id }, data });
+  revalidateTag(LOREBOOK_DB_CACHE_KEY, "max");
+  revalidateTag(`${LOREBOOK_DB_CACHE_KEY}-${id}`, "max");
+  return entity;
+}
+
+export async function deleteLorebookDb(id: string): Promise<void> {
+  await prisma.lorebook.delete({ where: { id } });
+  revalidateTag(LOREBOOK_DB_CACHE_KEY, "max");
+  revalidateTag(`${LOREBOOK_DB_CACHE_KEY}-${id}`, "max");
+}
 
 interface CreateLorebookIndexParams {
   lorebook: {
