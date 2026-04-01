@@ -1,21 +1,30 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import { BookOpen, Home, Library, MessageSquareCode, UserCircle, Users } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import {
+  BookOpen,
+  Globe,
+  Home,
+  Library,
+  MessageSquareCode,
+  UserCircle,
+  Users,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const links = [
   { href: "/", label: "Home", icon: Home },
   { href: "/character", label: "Characters", icon: Users },
+  { href: "/persona", label: "Personas", icon: UserCircle },
+  { href: "/world", label: "world", icon: Globe },
   { href: "/story", label: "Stories", icon: BookOpen },
   { href: "/lorebook", label: "Lorebooks", icon: Library },
-  { href: "/persona", label: "Personas", icon: UserCircle },
   { href: "/prompt", label: "Prompts", icon: MessageSquareCode },
 ];
 
