@@ -1,8 +1,11 @@
 "use client";
 
 import { LorebookForm } from "@/app/lorebook/_components/lorebook-form";
-import { useDeleteLorebook, useUpdateLorebook } from "@/app/lorebook/_lib/hooks";
-import { LorebookDbDto, LorebookDbFormValues } from "@/app/lorebook/_lib/schema";
+import {
+  useDeleteLorebook,
+  useUpdateLorebook,
+} from "@/app/lorebook/_lib/hooks";
+import { LorebookDbDto, LorebookFormValues } from "@/app/lorebook/_lib/schema";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
@@ -27,7 +30,7 @@ export function LorebookEdit({ lorebook }: LorebookEditProps) {
     router.push("/lorebook");
   }
 
-  async function onSubmitHandler(data: LorebookDbFormValues) {
+  async function onSubmitHandler(data: LorebookFormValues) {
     await updateLorebook({ lorebookId: lorebook.id, data });
   }
 
@@ -52,7 +55,11 @@ export function LorebookEdit({ lorebook }: LorebookEditProps) {
         </Button>
       </Header>
       <Content>
-        <LorebookForm formId={FORM_ID} defaultValues={lorebook} onSubmit={onSubmitHandler} />
+        <LorebookForm
+          formId={FORM_ID}
+          defaultValues={lorebook}
+          onSubmit={onSubmitHandler}
+        />
       </Content>
     </div>
   );

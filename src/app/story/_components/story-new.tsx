@@ -1,6 +1,5 @@
 "use client";
 
-import { LorebookDto } from "@/app/lorebook/_lib/schema";
 import { StoryForm } from "@/app/story/_components/story-form";
 import { useCreateStory } from "@/app/story/_lib/hooks";
 import { StoryFormValues } from "@/app/story/_lib/schema";
@@ -19,7 +18,7 @@ interface StoryNewParams {
   initialCharacterId?: string;
   initialPersonaId?: string;
   initialWorldId?: string;
-  currentLorebook: LorebookDto;
+  lorebooks: { value: string; label: string }[];
 }
 
 export function StoryNew({
@@ -28,7 +27,7 @@ export function StoryNew({
   worlds,
   initialCharacterId,
   initialPersonaId,
-  currentLorebook,
+  lorebooks,
 }: StoryNewParams) {
   const router = useRouter();
   const { createStory, isPending, error } = useCreateStory();
@@ -62,7 +61,7 @@ export function StoryNew({
             characterId: initialCharacterId,
             personaId: initialPersonaId,
           }}
-          currentLorebook={currentLorebook}
+          lorebooks={lorebooks}
         />
       </Content>
     </div>

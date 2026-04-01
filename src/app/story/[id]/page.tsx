@@ -1,9 +1,9 @@
 import { getCharacterList } from "@/app/character/_lib/data";
-import { getLorebook } from "@/app/lorebook/_lib/data";
-import { toLorebookDto } from "@/app/lorebook/_lib/schema";
+import { getLorebookDbList } from "@/app/lorebook/_lib/data";
 import { getPersonaList } from "@/app/persona/_lib/data";
 import { StoryEdit } from "@/app/story/_components/story-edit";
 import { getStoryById } from "@/app/story/_lib/data";
+import { toStoryDto } from "@/app/story/_lib/schema";
 import { getWorldList } from "@/app/world/_lib/data";
 import {
   buildCharacterImageUrl,
@@ -29,7 +29,7 @@ async function StoryPageContent({ params }: StoryPageParams) {
       getCharacterList(),
       getPersonaList(),
       getWorldList(),
-      getLorebook(),
+      getLorebookDbList(),
       params,
     ]);
   const { id } = storyPageParamsSchema.parse(routeParams);
@@ -51,15 +51,18 @@ async function StoryPageContent({ params }: StoryPageParams) {
     name: wrd.name,
     imageUrl: buildWorldImageUrl({ id: wrd.id, imgHash: wrd.imageHash }),
   }));
-  const lorebook = toLorebookDto(lorebookResult);
+  const lorebooks = lorebookResult.map((lb) => ({
+    value: lb.id,
+    label: lb.name,
+  }));
 
   return (
     <StoryEdit
-      story={story}
+      story={toStoryDto(story)}
       characters={characters}
       personas={personas}
       worlds={worlds}
-      currentLorebook={lorebook}
+      lorebooks={lorebooks}
     />
   );
 }

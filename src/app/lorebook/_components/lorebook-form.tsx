@@ -2,8 +2,8 @@
 
 import { useTestLorebookConnection } from "@/app/lorebook/_lib/hooks";
 import {
-  lorebookDbFormSchema,
-  LorebookDbFormValues,
+  LorebookFormValues,
+  lorebookFormSchema,
 } from "@/app/lorebook/_lib/schema";
 import { FieldInput } from "@/components/form-fields/field-input";
 import { Button } from "@/components/ui/button";
@@ -14,8 +14,8 @@ import { useForm, useWatch } from "react-hook-form";
 
 interface LorebookFormProps {
   formId: string;
-  defaultValues?: LorebookDbFormValues;
-  onSubmit: (data: LorebookDbFormValues) => void;
+  defaultValues?: LorebookFormValues;
+  onSubmit: (data: LorebookFormValues) => void;
 }
 
 export function LorebookForm({
@@ -23,8 +23,8 @@ export function LorebookForm({
   defaultValues,
   onSubmit,
 }: LorebookFormProps) {
-  const form = useForm<LorebookDbFormValues>({
-    resolver: zodResolver(lorebookDbFormSchema),
+  const form = useForm<LorebookFormValues>({
+    resolver: zodResolver(lorebookFormSchema),
     mode: "onTouched",
     defaultValues: defaultValues || { name: "", apiKey: "", port: 27123 },
   });
@@ -35,7 +35,9 @@ export function LorebookForm({
     port: number;
     apiKey: string;
   } | null>(
-    defaultValues ? { port: defaultValues.port, apiKey: defaultValues.apiKey } : null,
+    defaultValues
+      ? { port: defaultValues.port, apiKey: defaultValues.apiKey }
+      : null,
   );
 
   const port = useWatch({ control: form.control, name: "port" });
@@ -51,14 +53,17 @@ export function LorebookForm({
         port: form.getValues("port"),
         apiKey: form.getValues("apiKey"),
       });
-      setVerifiedCredentials({ port: form.getValues("port"), apiKey: form.getValues("apiKey") });
+      setVerifiedCredentials({
+        port: form.getValues("port"),
+        apiKey: form.getValues("apiKey"),
+      });
       form.clearErrors("root");
     } catch {
       setVerifiedCredentials(null);
     }
   }
 
-  async function handleSubmit(data: LorebookDbFormValues) {
+  async function handleSubmit(data: LorebookFormValues) {
     if (!connectionVerified) {
       form.setError("root", {
         message: "Connection must be verified before saving.",

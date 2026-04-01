@@ -1,6 +1,5 @@
 import { getCharacterList } from "@/app/character/_lib/data";
-import { getLorebook } from "@/app/lorebook/_lib/data";
-import { toLorebookDto } from "@/app/lorebook/_lib/schema";
+import { getLorebookDbList } from "@/app/lorebook/_lib/data";
 import { getPersonaList } from "@/app/persona/_lib/data";
 import { StoryNew } from "@/app/story/_components/story-new";
 import { getWorldList } from "@/app/world/_lib/data";
@@ -33,7 +32,7 @@ async function NewStoryPageContent({ searchParams }: NewStoryPageParams) {
       getCharacterList(),
       getPersonaList(),
       getWorldList(),
-      getLorebook(),
+      getLorebookDbList(),
       searchParams,
     ]);
 
@@ -52,10 +51,13 @@ async function NewStoryPageContent({ searchParams }: NewStoryPageParams) {
     name: wrd.name,
     imageUrl: buildWorldImageUrl({ id: wrd.id, imgHash: wrd.imageHash }),
   }));
+  const lorebooks = lorebookResult.map((lb) => ({
+    value: lb.id,
+    label: lb.name,
+  }));
 
   const { characterId, personaId, worldId } =
     newStoryParamsSchema.parse(params);
-  const lorebook = toLorebookDto(lorebookResult);
 
   return (
     <StoryNew
@@ -65,7 +67,7 @@ async function NewStoryPageContent({ searchParams }: NewStoryPageParams) {
       initialCharacterId={characterId}
       initialPersonaId={personaId}
       initialWorldId={worldId}
-      currentLorebook={lorebook}
+      lorebooks={lorebooks}
     />
   );
 }

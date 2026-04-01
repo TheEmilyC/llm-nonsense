@@ -4,16 +4,13 @@ import {
   createLorebookAction,
   deleteLorebookAction,
   getLorebookAction,
-  initializeLorebookAction,
   testConnectionAction,
   updateLorebookAction,
 } from "@/app/lorebook/_lib/actions";
 import {
-  InitializeLorebookFormValues,
   LOREBOOK_CACHE_KEY,
-  LOREBOOK_DB_CACHE_KEY,
-  LorebookDbFormValues,
   LorebookDto,
+  LorebookFormValues,
 } from "@/app/lorebook/_lib/schema";
 import { unwrapAction } from "@/lib/action-utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -25,11 +22,11 @@ export function useCreateLorebook() {
     isPending,
     error,
   } = useMutation({
-    mutationFn: async (data: LorebookDbFormValues) =>
+    mutationFn: async (data: LorebookFormValues) =>
       unwrapAction(await createLorebookAction(data)),
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: [LOREBOOK_DB_CACHE_KEY, "list"],
+        queryKey: [LOREBOOK_CACHE_KEY, "list"],
       });
     },
   });
@@ -52,13 +49,13 @@ export function useUpdateLorebook() {
       data,
     }: {
       lorebookId: string;
-      data: LorebookDbFormValues;
+      data: LorebookFormValues;
     }) => unwrapAction(await updateLorebookAction(lorebookId, data)),
     onSuccess: (updated, { lorebookId }) => {
       queryClient.invalidateQueries({
-        queryKey: [LOREBOOK_DB_CACHE_KEY, "list"],
+        queryKey: [LOREBOOK_CACHE_KEY, "list"],
       });
-      queryClient.setQueryData([LOREBOOK_DB_CACHE_KEY, lorebookId], updated);
+      queryClient.setQueryData([LOREBOOK_CACHE_KEY, lorebookId], updated);
     },
   });
   return {
@@ -79,10 +76,10 @@ export function useDeleteLorebook() {
       unwrapAction(await deleteLorebookAction(lorebookId)),
     onSuccess: (_, { lorebookId }) => {
       queryClient.invalidateQueries({
-        queryKey: [LOREBOOK_DB_CACHE_KEY, "list"],
+        queryKey: [LOREBOOK_CACHE_KEY, "list"],
       });
       queryClient.removeQueries({
-        queryKey: [LOREBOOK_DB_CACHE_KEY, lorebookId],
+        queryKey: [LOREBOOK_CACHE_KEY, lorebookId],
       });
     },
   });
@@ -93,48 +90,26 @@ export function useDeleteLorebook() {
   };
 }
 
-export function useInitializeLorebook() {
-  const queryClient = useQueryClient();
-
-  const {
-    mutateAsync: initializeLorebook,
-    isPending,
-    error,
-  } = useMutation({
-    mutationFn: async (data: InitializeLorebookFormValues) => {
-      const result = await initializeLorebookAction(data);
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-
-      return result.data;
-    },
-    onSuccess: (data) => {
-      queryClient.setQueryData([LOREBOOK_CACHE_KEY], data);
-    },
-  });
-
-  return {
-    initializeLorebook,
-    isPending,
-    error: error ? (error as Error).message : null,
-  };
-}
-
 interface UseLorebookParams {
+  lorebookId: string;
   initialLorebook?: LorebookDto;
 }
 
-export function useLorebook({ initialLorebook }: UseLorebookParams) {
+export function useLorebook({
+  lorebookId,
+  initialLorebook,
+}: UseLorebookParams) {
+  const queryClient = useQueryClient();
+
   const {
     data: lorebook,
     isLoading,
-    error,
+    error: loadingError,
   } = useQuery({
     queryKey: [LOREBOOK_CACHE_KEY],
     initialData: initialLorebook,
     queryFn: async () => {
-      const results = await getLorebookAction();
+      const results = await getLorebookAction(lorebookId);
       if (!results.success) {
         throw new Error(results.error);
       }
@@ -143,23 +118,13 @@ export function useLorebook({ initialLorebook }: UseLorebookParams) {
     },
   });
 
-  return {
-    lorebook,
-    isLoading,
-    error: error ? (error as Error).message : null,
-  };
-}
-
-export function useRefreshLorebookConnection() {
-  const queryClient = useQueryClient();
-
   const {
     mutateAsync: refreshLorebook,
-    isPending,
-    error,
+    isPending: isRefreshPending,
+    error: refreshError,
   } = useMutation({
     mutationFn: async () => {
-      const result = await getLorebookAction(true);
+      const result = await getLorebookAction(lorebookId, true);
       if (!result.success) {
         throw new Error(result.error);
       }
@@ -171,9 +136,14 @@ export function useRefreshLorebookConnection() {
   });
 
   return {
+    lorebook,
     refreshLorebook,
-    isPending,
-    error: error ? (error as Error).message : null,
+    isPending: isLoading || isRefreshPending,
+    error: loadingError
+      ? (loadingError as Error).message
+      : refreshError
+        ? (refreshError as Error).message
+        : null,
   };
 }
 

@@ -46,7 +46,8 @@ model Story {
   persona     Persona   @relation(fields: [personaId], references: [id])
   worldId     String?
   world       World?    @relation(fields: [worldId], references: [id])
-  lorebook    String?
+  lorebookId  String?
+  lorebook    Lorebook? @relation(fields: [lorebookId], references: [id])
   chats       Chat[]
   createdAt   DateTime  @default(now())
   modifiedAt  DateTime  @default(now()) @updatedAt
@@ -97,6 +98,7 @@ model Lorebook {
   name       String
   apiKey     String
   port       Int
+  stories    Story[]
   createdAt  DateTime @default(now())
   modifiedAt DateTime @default(now()) @updatedAt
 }

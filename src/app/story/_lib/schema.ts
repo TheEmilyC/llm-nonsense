@@ -7,7 +7,7 @@ const baseSchema = z.object({
   characterId: z.string(),
   personaId: z.string(),
   worldId: z.string().optional(),
-  lorebook: z.string().optional(),
+  lorebookId: z.string().optional(),
 });
 
 export const storyFormSchema = z.discriminatedUnion("mode", [
@@ -27,11 +27,15 @@ export const storyDtoSchema = z.object({
   name: z.string().min(1),
   characterId: z.string().min(1),
   personaId: z.string().min(1),
-  createdAt: z.date(),
-  modifiedAt: z.date(),
+  worldId: z.string().optional(),
+  lorebookId: z.string().optional(),
 });
 export type StoryDto = z.infer<typeof storyDtoSchema>;
 
 export function toStoryDto(story: Story) {
-  return storyDtoSchema.parse(story);
+  return storyDtoSchema.parse({
+    ...story,
+    worldId: story.worldId ?? undefined,
+    lorebookId: story.lorebookId ?? undefined,
+  });
 }

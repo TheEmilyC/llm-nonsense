@@ -2,7 +2,7 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Control, Controller, FieldValues, Path } from "react-hook-form";
 
-interface FieldInputFieldParams<T extends FieldValues> {
+interface FieldInputParams<T extends FieldValues> {
   name: Path<T>;
   control: Control<T>;
   label: string;
@@ -16,7 +16,7 @@ export function FieldInput<T extends FieldValues>({
   control,
   placeholder,
   type = "text",
-}: FieldInputFieldParams<T>) {
+}: FieldInputParams<T>) {
   return (
     <Controller
       name={name}

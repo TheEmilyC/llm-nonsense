@@ -2,7 +2,7 @@
 
 import { LorebookForm } from "@/app/lorebook/_components/lorebook-form";
 import { useCreateLorebook } from "@/app/lorebook/_lib/hooks";
-import { LorebookDbFormValues } from "@/app/lorebook/_lib/schema";
+import { LorebookFormValues } from "@/app/lorebook/_lib/schema";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ export function LorebookNew() {
   const router = useRouter();
   const { createLorebook, isPending } = useCreateLorebook();
 
-  async function onSubmitHandler(data: LorebookDbFormValues) {
+  async function onSubmitHandler(data: LorebookFormValues) {
     const { id } = await createLorebook(data);
     router.push(`/lorebook/${id}`);
   }
