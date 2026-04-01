@@ -127,16 +127,16 @@ async function buildPromptFromChat({
     .join("\n");
 
   const lorebookScanText = [
-    ...chat.messages.slice(
-      -Math.min(LOREBOOK_SCAN_DEPTH - 1, chat.messages.length),
-    ),
+    ...chat.messages
+      .slice(-Math.min(LOREBOOK_SCAN_DEPTH - 1, chat.messages.length))
+      .map((mes) => ({ role: mes.role, parts: mes.contents[0]?.parts ?? [] })),
     message,
   ]
     .map(
       (mes) =>
         `${mes.role === "assistant" ? character.card.name : persona.name}: ${mes.parts
           .filter((p) => p.type === "text")
-          .map((p) => p.text)
+          .map((p) => (p as TextPart).text)
           .join("\n")}`,
     )
     .join("\n");
@@ -146,7 +146,14 @@ async function buildPromptFromChat({
     character: character.card,
     persona,
     world,
-    history: chat.messages ? await convertToModelMessages(chat.messages) : [],
+    history: chat.messages
+      ? await convertToModelMessages(
+          chat.messages.map((m) => ({
+            ...m,
+            parts: m.contents[0]?.parts ?? [],
+          })),
+        )
+      : [],
     lorebook,
     lorebookScanText,
   });

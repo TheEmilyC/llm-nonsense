@@ -37,7 +37,11 @@ export async function createChatMessage({
       id: newMessage.id, // created by the Vercel AI SDK
       chatId: newMessage.chatId,
       role: newMessage.role,
-      parts: newMessage.parts,
+      contents: {
+        create: {
+          parts: newMessage.parts,
+        },
+      },
     },
   });
   return message;
@@ -61,6 +65,7 @@ export async function getMessagesForChat({
         orderBy: { createdAt: "desc" },
         take,
         skip,
+        include: { contents: true },
       },
       story: {
         include: {

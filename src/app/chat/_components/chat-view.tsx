@@ -6,9 +6,13 @@ import { Chat } from "@/components/chat";
 import { Header } from "@/components/header";
 
 export function ChatView({ chat, character, persona }: ChatViewParams) {
+  const initialMessages = (chat.messages ?? []).map((msg) => ({
+    ...msg,
+    parts: msg.contents[0]?.parts ?? [],
+  }));
   const { messages, status, input, setInput, handleSubmit } = useChatMessages(
     chat.id,
-    chat.messages ?? [],
+    initialMessages,
   );
 
   return (
