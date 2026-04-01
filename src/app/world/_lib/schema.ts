@@ -1,6 +1,6 @@
-import { World } from "../../../generated/client";
 import { buildWorldImageUrl } from "@/lib/image";
 import z from "zod";
+import { World } from "../../../../generated/client";
 
 export const WORLD_CACHE_KEY = "world";
 
