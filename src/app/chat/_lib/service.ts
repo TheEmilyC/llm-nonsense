@@ -1,7 +1,11 @@
 "use server";
 
 import { getCharacterById } from "@/app/character/_lib/data";
-import { createChatMessage, getMessagesForChat } from "@/app/chat/_lib/data";
+import {
+  createChatMessage,
+  getMessageById,
+  getMessagesForChat,
+} from "@/app/chat/_lib/data";
 import { MessagePart } from "@/app/chat/_lib/schema";
 import {
   getLorebookById,
@@ -161,9 +165,13 @@ async function buildPromptFromChat({
 
 export async function constructChatResponse(
   { id, message }: ConstructChatResponseParams,
-  { debug = true } = {},
+  { debug = false } = {},
 ) {
-  await createChatMessage({ newMessage: { ...message, chatId: id } });
+  // the user message will already exist in the DB during regenerate
+  const existingMsg = await getMessageById(message.id);
+  if (!existingMsg)
+    await createChatMessage({ newMessage: { ...message, chatId: id } });
+
   const { prompt } = await buildPromptFromChat({ id, message });
   if (debug) console.debug("prompt", prompt);
 

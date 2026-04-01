@@ -10,10 +10,8 @@ export function ChatView({ chat, character, persona }: ChatViewParams) {
     ...msg,
     parts: msg.contents[0]?.parts ?? [],
   }));
-  const { messages, status, input, setInput, handleSubmit } = useChatMessages(
-    chat.id,
-    initialMessages,
-  );
+  const { messages, status, input, setInput, handleSubmit, swipe } =
+    useChatMessages(chat.id, initialMessages);
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -31,6 +29,10 @@ export function ChatView({ chat, character, persona }: ChatViewParams) {
           onSubmit={handleSubmit}
           character={character}
           persona={persona}
+          currentSwipe={swipe.swipeIndex + 1}
+          swipeCount={swipe.length}
+          onSwipeNext={swipe.nextSwipe}
+          onSwipePrev={swipe.prevSwipe}
         />
       </div>
     </div>

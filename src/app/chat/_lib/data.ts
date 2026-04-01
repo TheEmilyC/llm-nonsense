@@ -82,3 +82,7 @@ export async function getMessagesForChat({
 
   return chat;
 }
+
+export async function getMessageById(id: string) {
+  return await prisma.chatMessage.findUnique({ where: { id } });
+}

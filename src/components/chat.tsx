@@ -20,8 +20,8 @@ import {
 } from "@/components/ui/reasoning";
 import { ScrollButton } from "@/components/ui/scroll-button";
 import { cn } from "@/lib/utils";
-import type { UIMessage } from "@ai-sdk/react";
-import { ArrowUp, Square } from "lucide-react";
+import { UIMessage } from "ai";
+import { ArrowUp, ChevronLeft, ChevronRight, Square } from "lucide-react";
 import Image from "next/image";
 
 function ChatAvatar({
@@ -53,8 +53,12 @@ interface ChatProps {
   input: string;
   onInputChange: (value: string) => void;
   onSubmit: () => void;
+  onSwipePrev: () => void;
+  onSwipeNext: () => void;
   character: { id: string; name: string; avatarSrc: string };
   persona: { id: string; name: string; avatarSrc: string };
+  swipeCount: number;
+  currentSwipe: number;
 }
 
 export function Chat({
@@ -65,6 +69,10 @@ export function Chat({
   onSubmit,
   character,
   persona,
+  onSwipePrev,
+  onSwipeNext,
+  swipeCount,
+  currentSwipe,
 }: ChatProps) {
   const isLoading = status !== "ready";
 
@@ -76,6 +84,8 @@ export function Chat({
             {messages.map((message, i) => {
               const isLastMessage = i === messages.length - 1;
               const isStreaming = isLastMessage && status === "streaming";
+              const isUser = message.role === "user";
+
               const reasoningText = message.parts
                 .filter((part) => part.type === "reasoning")
                 .map((part) => part.text)
@@ -85,7 +95,8 @@ export function Chat({
                 .map((part) => part.text)
                 .join("");
 
-              const isUser = message.role === "user";
+              const showSwipe = isLastMessage && !isUser && !isStreaming;
+
               return (
                 <Message
                   key={message.id}
@@ -125,6 +136,27 @@ export function Chat({
                       >
                         {textContent}
                       </MessageContent>
+                      {showSwipe && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <button
+                            onClick={onSwipePrev}
+                            className="p-0.5 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                            aria-label="Previous response"
+                          >
+                            <ChevronLeft className="h-3.5 w-3.5" />
+                          </button>
+                          <span className="text-xs text-muted-foreground/40 tabular-nums">
+                            {currentSwipe}/{swipeCount}
+                          </span>
+                          <button
+                            onClick={onSwipeNext}
+                            className="p-0.5 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                            aria-label="Next response"
+                          >
+                            <ChevronRight className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </Message>
