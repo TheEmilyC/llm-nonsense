@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { BookOpen, Home, MessageSquareCode, UserCircle, Users } from "lucide-react";
+import { BookOpen, Home, Library, MessageSquareCode, UserCircle, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -14,6 +14,7 @@ const links = [
   { href: "/", label: "Home", icon: Home },
   { href: "/character", label: "Characters", icon: Users },
   { href: "/story", label: "Stories", icon: BookOpen },
+  { href: "/lorebook", label: "Lorebooks", icon: Library },
   { href: "/persona", label: "Personas", icon: UserCircle },
   { href: "/prompt", label: "Prompts", icon: MessageSquareCode },
 ];
