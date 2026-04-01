@@ -4,6 +4,7 @@ import { getCharacterByIdOrFail } from "@/app/character/_lib/data";
 import { createChat, createChatMessage } from "@/app/chat/_lib/data";
 import { getPersonaByIdOrFail } from "@/app/persona/_lib/data";
 import { getStoryById } from "@/app/story/_lib/data";
+import { getWorldByIdOrFail } from "@/app/world/_lib/data";
 import { ActionResponse } from "@/lib/action-utils";
 import { constructPromptMessages } from "@/lib/ai/prompt-manager";
 import { HttpStatus } from "@/lib/http";
@@ -30,9 +31,10 @@ export async function createChatFromStoryAction(
 
   let chat;
   try {
-    const [character, persona, newChat] = await Promise.all([
+    const [character, persona, world, newChat] = await Promise.all([
       getCharacterByIdOrFail(story.characterId),
       getPersonaByIdOrFail(story.personaId),
+      story.worldId ? getWorldByIdOrFail(story.worldId) : null,
       createChat({
         newChat: { name: new Date().toLocaleString(), storyId },
       }),
@@ -43,6 +45,7 @@ export async function createChatFromStoryAction(
       const [message] = constructPromptMessages({
         prompts: [character.card.first_mes],
         character: character.card,
+        world,
         persona,
       });
       const idGenerator = createIdGenerator({
