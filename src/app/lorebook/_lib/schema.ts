@@ -1,6 +1,6 @@
 import { dbIdValidator } from "@/lib/validators";
 import z from "zod";
-import { Lorebook as LorebookDb } from "../../../../generated/client";
+import { Lorebook as LorebookEntity } from "../../../../generated/client";
 
 export const LOREBOOK_CACHE_KEY = "lorebook";
 
@@ -11,16 +11,18 @@ export const lorebookFormSchema = z.object({
 });
 export type LorebookFormValues = z.infer<typeof lorebookFormSchema>;
 
-export const lorebookDbDtoSchema = z.object({
+export const lorebookEntityDtoSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
   apiKey: z.string().min(1),
   port: z.number(),
 });
-export type LorebookDbDto = z.infer<typeof lorebookDbDtoSchema>;
+export type LorebookEntityDto = z.infer<typeof lorebookEntityDtoSchema>;
 
-export function toLorebookDbDto(lorebook: LorebookDb): LorebookDbDto {
-  return lorebookDbDtoSchema.parse(lorebook);
+export function toLorebookEntityDto(
+  lorebook: LorebookEntity,
+): LorebookEntityDto {
+  return lorebookEntityDtoSchema.parse(lorebook);
 }
 
 export enum LorebookStatus {

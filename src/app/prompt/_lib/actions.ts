@@ -1,6 +1,7 @@
 "use server";
 
 import { buildPrompt } from "@/app/chat/_lib/service";
+import { getLorebookById } from "@/app/lorebook/_lib/data";
 import {
   promptInspectorFormSchema,
   PromptInspectorFormValues,
@@ -22,6 +23,7 @@ export async function checkPromptAction(
     return { success: false, error: "Malformed prompt" };
   }
   const { message } = parseResult.data;
+  const lorebook = await getLorebookById("cmnffihst0000tj2wj3kq7nfx"); // TODO: remove hardcoding
   const { prompt: promptRaw, lorebookEntries } = await buildPrompt({
     lastMessage: message,
     character: {
@@ -34,11 +36,11 @@ export async function checkPromptAction(
       name: "Test Persona",
       description: "Test Persona Description",
     },
-    world:{
+    world: {
       name: "Test World",
-      description: "Test World Description"
+      description: "Test World Description",
     },
-    lorebookName: "heimskra",
+    lorebook,
   });
   const prompt = JSON.stringify(promptRaw, null, 2).replace(/\\n/g, "\n");
 

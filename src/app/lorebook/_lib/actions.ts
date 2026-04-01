@@ -1,19 +1,19 @@
 "use server";
 
 import {
-  createLorebookDb,
-  deleteLorebookDb,
+  createLorebookEntity,
+  deleteLorebookEntity,
   getLorebookById,
   testLorebookConnection,
-  updateLorebookDb,
+  updateLorebookEntity,
 } from "@/app/lorebook/_lib/data";
 import {
-  LorebookDbDto,
   LorebookDto,
+  LorebookEntityDto,
   lorebookFormSchema,
   LorebookFormValues,
-  toLorebookDbDto,
   toLorebookDto,
+  toLorebookEntityDto,
 } from "@/app/lorebook/_lib/schema";
 import { ActionResponse } from "@/lib/action-utils";
 import { LOREBOOK_TAG } from "@/lib/env-variables";
@@ -31,7 +31,7 @@ export async function createLorebookAction(
   }
   const newLorebook = parseResult.data;
   try {
-    const entity = await createLorebookDb({ newLorebook });
+    const entity = await createLorebookEntity({ newLorebook });
     return { success: true, data: { id: entity.id } };
   } catch (err) {
     console.error(err);
@@ -42,7 +42,7 @@ export async function createLorebookAction(
 export async function updateLorebookAction(
   lorebookId: string,
   data: LorebookFormValues,
-): Promise<ActionResponse<LorebookDbDto>> {
+): Promise<ActionResponse<LorebookEntityDto>> {
   const idResult = dbIdValidator.safeParse(lorebookId);
   if (!idResult.success)
     return { success: false, error: "Invalid lorebook ID" };
@@ -55,8 +55,8 @@ export async function updateLorebookAction(
   }
   const update = parseResult.data;
   try {
-    const entity = await updateLorebookDb({ id, update });
-    return { success: true, data: toLorebookDbDto(entity) };
+    const entity = await updateLorebookEntity({ id, update });
+    return { success: true, data: toLorebookEntityDto(entity) };
   } catch (err) {
     console.error(err);
     return { success: false, error: "Lorebook update failed" };
@@ -69,7 +69,7 @@ export async function deleteLorebookAction(
   const idResult = dbIdValidator.safeParse(lorebookId);
   if (!idResult.success) notFound();
   try {
-    await deleteLorebookDb(idResult.data);
+    await deleteLorebookEntity(idResult.data);
     return { success: true, data: null };
   } catch (err) {
     console.error(err);

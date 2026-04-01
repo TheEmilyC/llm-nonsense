@@ -1,5 +1,5 @@
 import { getCharacterList } from "@/app/character/_lib/data";
-import { getLorebookDbList } from "@/app/lorebook/_lib/data";
+import { getLorebookEntityList } from "@/app/lorebook/_lib/data";
 import { getPersonaList } from "@/app/persona/_lib/data";
 import { StoryNew } from "@/app/story/_components/story-new";
 import { getWorldList } from "@/app/world/_lib/data";
@@ -32,7 +32,7 @@ async function NewStoryPageContent({ searchParams }: NewStoryPageParams) {
       getCharacterList(),
       getPersonaList(),
       getWorldList(),
-      getLorebookDbList(),
+      getLorebookEntityList(),
       searchParams,
     ]);
 

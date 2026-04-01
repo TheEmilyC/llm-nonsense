@@ -5,7 +5,10 @@ import {
   useDeleteLorebook,
   useUpdateLorebook,
 } from "@/app/lorebook/_lib/hooks";
-import { LorebookDbDto, LorebookFormValues } from "@/app/lorebook/_lib/schema";
+import {
+  LorebookEntityDto,
+  LorebookFormValues,
+} from "@/app/lorebook/_lib/schema";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
@@ -14,7 +17,7 @@ import { useRouter } from "next/navigation";
 const FORM_ID = "form-edit-lorebook";
 
 interface LorebookEditProps {
-  lorebook: LorebookDbDto;
+  lorebook: LorebookEntityDto;
 }
 
 export function LorebookEdit({ lorebook }: LorebookEditProps) {

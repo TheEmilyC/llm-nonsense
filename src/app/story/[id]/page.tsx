@@ -1,5 +1,5 @@
 import { getCharacterList } from "@/app/character/_lib/data";
-import { getLorebookDbList } from "@/app/lorebook/_lib/data";
+import { getLorebookEntityList } from "@/app/lorebook/_lib/data";
 import { getPersonaList } from "@/app/persona/_lib/data";
 import { StoryEdit } from "@/app/story/_components/story-edit";
 import { getStoryById } from "@/app/story/_lib/data";
@@ -29,7 +29,7 @@ async function StoryPageContent({ params }: StoryPageParams) {
       getCharacterList(),
       getPersonaList(),
       getWorldList(),
-      getLorebookDbList(),
+      getLorebookEntityList(),
       params,
     ]);
   const { id } = storyPageParamsSchema.parse(routeParams);
