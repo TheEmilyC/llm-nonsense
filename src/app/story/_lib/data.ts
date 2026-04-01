@@ -8,7 +8,7 @@ import { Story } from "../../../../generated/client";
 export interface CreateStoryParams {
   newStory: Pick<
     Story,
-    "personaId" | "characterId" | "name" | "worldId" | "lorebook"
+    "personaId" | "characterId" | "name" | "worldId" | "lorebookId"
   >;
 }
 
@@ -19,7 +19,7 @@ export async function createStory({ newStory }: CreateStoryParams) {
       characterId: newStory.characterId,
       personaId: newStory.personaId,
       worldId: newStory.worldId,
-      lorebook: newStory.lorebook,
+      lorebookId: newStory.lorebookId,
     },
   });
   revalidateTag(STORY_CACHE_KEY, "max");
@@ -53,7 +53,7 @@ export async function getStoryByIdOrFail(id: string) {
 export interface UpdateStoryParams {
   id: string;
   update: Partial<
-    Pick<Story, "name" | "characterId" | "personaId" | "worldId" | "lorebook">
+    Pick<Story, "name" | "characterId" | "personaId" | "worldId" | "lorebookId">
   >;
 }
 
@@ -77,8 +77,11 @@ export async function updateStory({ id, update }: UpdateStoryParams) {
   if (update.worldId !== undefined && update.worldId !== orgStory.worldId)
     entityUpdate.worldId = update.worldId;
 
-  if (update.lorebook !== undefined && update.lorebook !== orgStory.lorebook)
-    entityUpdate.lorebook = update.lorebook;
+  if (
+    update.lorebookId !== undefined &&
+    update.lorebookId !== orgStory.lorebookId
+  )
+    entityUpdate.lorebookId = update.lorebookId;
 
   const story = await prisma.story.update({
     data: entityUpdate,

@@ -2,11 +2,12 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Control, Controller, FieldValues, Path } from "react-hook-form";
 
-interface FieldInputFieldParams<T extends FieldValues> {
+interface FieldInputParams<T extends FieldValues> {
   name: Path<T>;
   control: Control<T>;
   label: string;
   placeholder?: string;
+  type?: "text" | "number" | "password" | "email";
 }
 
 export function FieldInput<T extends FieldValues>({
@@ -14,7 +15,8 @@ export function FieldInput<T extends FieldValues>({
   label,
   control,
   placeholder,
-}: FieldInputFieldParams<T>) {
+  type = "text",
+}: FieldInputParams<T>) {
   return (
     <Controller
       name={name}
@@ -25,9 +27,20 @@ export function FieldInput<T extends FieldValues>({
           <Input
             {...field}
             id={`${name}-input`}
+            type={type}
             aria-invalid={fieldState.invalid}
             placeholder={placeholder || label}
             autoComplete="off"
+            value={field.value ?? ""}
+            onChange={(e) => {
+              if (type === "number") {
+                field.onChange(
+                  e.target.value === "" ? undefined : e.target.valueAsNumber,
+                );
+              } else {
+                field.onChange(e);
+              }
+            }}
           />
           {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
         </Field>

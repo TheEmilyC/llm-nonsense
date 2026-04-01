@@ -1,18 +1,13 @@
 "use server";
 
 import { notFound } from "next/navigation";
-import z from "zod";
 
+import { createWorld, deleteWorld, updateWorld } from "@/app/world/_lib/data";
 import {
-  createWorld,
-  deleteWorld,
-  updateWorld,
-} from "@/app/world/_lib/data";
-import {
+  toWorldDto,
   WorldDto,
   worldFormSchema,
   WorldFormValues,
-  toWorldDto,
 } from "@/app/world/_lib/schema";
 import { ActionResponse } from "@/lib/action-utils";
 import { dbIdValidator } from "@/lib/validators";
@@ -23,7 +18,7 @@ export async function createWorldAction(
 ): Promise<ActionResponse<{ id: string }>> {
   const formParseResult = worldFormSchema.safeParse(data);
   if (!formParseResult.success) {
-    console.error(z.prettifyError(formParseResult.error));
+    console.error(formParseResult.error);
     return { success: false, error: "Malformed world data" };
   }
   const { image, ...world } = formParseResult.data;
@@ -44,12 +39,12 @@ export async function updateWorldAction(
 ): Promise<ActionResponse<WorldDto>> {
   const formParseResult = worldFormSchema.safeParse(data);
   if (!formParseResult.success) {
-    console.error(z.prettifyError(formParseResult.error));
+    console.error(formParseResult.error);
     return { success: false, error: "Malformed world data" };
   }
   const idParseResult = dbIdValidator.safeParse(worldId);
   if (!idParseResult.success) {
-    console.error(z.prettifyError(idParseResult.error));
+    console.error(idParseResult.error);
     return { success: false, error: "Malformed world data" };
   }
   const id = idParseResult.data;

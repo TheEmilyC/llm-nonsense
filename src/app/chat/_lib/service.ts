@@ -3,8 +3,15 @@
 import { getCharacterById } from "@/app/character/_lib/data";
 import { createChatMessage, getMessagesForChat } from "@/app/chat/_lib/data";
 import { MessagePart } from "@/app/chat/_lib/schema";
-import { getLorebook, getLorebookEntryList } from "@/app/lorebook/_lib/data";
-import { LorebookFile, LorebookStatus } from "@/app/lorebook/_lib/schema";
+import {
+  getLorebookById,
+  getLorebookEntryList,
+} from "@/app/lorebook/_lib/data";
+import {
+  Lorebook,
+  LorebookStatus,
+  ObsidianFile,
+} from "@/app/lorebook/_lib/schema";
 import {
   assemblePrompts,
   constructPromptMessages,
@@ -49,7 +56,7 @@ interface BuildPromptParams {
     description: string;
   } | null;
   history?: ModelMessage[];
-  lorebookName?: string | null;
+  lorebook?: Lorebook | null;
   lorebookScanText?: string;
 }
 
@@ -59,26 +66,22 @@ export async function buildPrompt({
   persona,
   world,
   history = [],
-  lorebookName,
+  lorebook,
   lorebookScanText,
 }: BuildPromptParams) {
-  const [{ systemPrompt, userPrompt }, lorebook] = await Promise.all([
-    assemblePrompts(),
-    getLorebook(),
-  ]);
+  const { systemPrompt, userPrompt } = await assemblePrompts();
 
   let lorebookPrompt: string | undefined;
-  let files: LorebookFile[] | undefined;
-  if (
-    lorebookName &&
-    lorebook.status === LorebookStatus.Ready &&
-    lorebook.name === lorebookName
-  ) {
+  let files: ObsidianFile[] | undefined;
+  if (lorebook && lorebook.status === LorebookStatus.Ready) {
     const indexList = scanLorebookIndex({
       scanText: lorebookScanText ?? lastMessage,
       index: lorebook.index,
     });
-    files = await getLorebookEntryList(indexList);
+    files = await getLorebookEntryList({
+      files: indexList,
+      lorebookId: lorebook.id,
+    });
     lorebookPrompt = convertFilesToPrompt({ files });
   }
 
@@ -110,7 +113,10 @@ async function buildPromptFromChat({
 }: ConstructChatResponseParams) {
   const chat = await getMessagesForChat({ id });
   if (!chat) throw new Error("Chat does not exist");
-  const character = await getCharacterById(chat.story.character.id);
+  const [character, lorebook] = await Promise.all([
+    getCharacterById(chat.story.character.id),
+    chat.story.lorebookId ? getLorebookById(chat.story.lorebookId) : null,
+  ]);
   if (!character) throw new Error("Character does not exist");
   const persona = chat.story.persona;
   const world = chat.story.world;
@@ -141,7 +147,7 @@ async function buildPromptFromChat({
     persona,
     world,
     history: chat.messages ? await convertToModelMessages(chat.messages) : [],
-    lorebookName: chat.story.lorebook,
+    lorebook,
     lorebookScanText,
   });
 }

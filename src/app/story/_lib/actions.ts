@@ -52,7 +52,7 @@ export async function createStoryAction(
         ...newStory,
         name,
         worldId: newStory.worldId ?? null,
-        lorebook: newStory.lorebook ?? null,
+        lorebookId: newStory.lorebookId ?? null,
       },
     });
     return { success: true, data: { newStoryId: story.id } };

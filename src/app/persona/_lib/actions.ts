@@ -1,7 +1,6 @@
 "use server";
 
 import { notFound } from "next/navigation";
-import z from "zod";
 
 import {
   createPersona,
@@ -23,7 +22,7 @@ export async function createPersonaAction(
 ): Promise<ActionResponse<{ id: string }>> {
   const formParseResult = personaFormSchema.safeParse(data);
   if (!formParseResult.success) {
-    console.error(z.prettifyError(formParseResult.error));
+    console.error(formParseResult.error);
     return { success: false, error: "Malformed persona data" };
   }
   const { image, ...persona } = formParseResult.data;
@@ -44,12 +43,12 @@ export async function updatePersonaAction(
 ): Promise<ActionResponse<PersonaDto>> {
   const formParseResult = personaFormSchema.safeParse(data);
   if (!formParseResult.success) {
-    console.error(z.prettifyError(formParseResult.error));
+    console.error(formParseResult.error);
     return { success: false, error: "Malformed persona data" };
   }
   const idParseResult = dbIdValidator.safeParse(personaId);
   if (!idParseResult.success) {
-    console.error(z.prettifyError(idParseResult.error));
+    console.error(idParseResult.error);
     return { success: false, error: "Malformed persona data" };
   }
   const id = idParseResult.data;

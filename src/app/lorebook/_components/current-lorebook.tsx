@@ -1,59 +1,29 @@
 "use client";
 
-import {
-  useInitializeLorebook,
-  useLorebook,
-  useRefreshLorebookConnection,
-} from "@/app/lorebook/_lib/hooks";
-import {
-  initializeLorebookFormSchema,
-  InitializeLorebookFormValues,
-  LorebookDto,
-  LorebookStatus,
-} from "@/app/lorebook/_lib/schema";
-import { FieldInput } from "@/components/form-fields/field-input";
+import { useLorebook } from "@/app/lorebook/_lib/hooks";
+import { LorebookDto, LorebookStatus } from "@/app/lorebook/_lib/schema";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { zodResolver } from "@hookform/resolvers/zod";
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { RefreshCw } from "lucide-react";
-import { useForm } from "react-hook-form";
 
 interface CurrentLorebookProps {
-  initialLorebook: LorebookDto;
+  lorebookId: string;
+  initialLorebook?: LorebookDto;
 }
 
-export function CurrentLorebook({ initialLorebook }: CurrentLorebookProps) {
-  const { lorebook, isLoading } = useLorebook({ initialLorebook });
-  const {
-    refreshLorebook,
-    isPending: refreshIsPending,
-    error: refreshError,
-  } = useRefreshLorebookConnection();
-  const {
-    initializeLorebook,
-    isPending: intializeIsPending,
-    error: initializeError,
-  } = useInitializeLorebook();
-
-  const isPending = refreshIsPending || intializeIsPending || isLoading;
-  const error = refreshError || initializeError;
-
-  const form = useForm<InitializeLorebookFormValues>({
-    resolver: zodResolver(initializeLorebookFormSchema),
-    defaultValues: { name: "" },
+export function CurrentLorebook({
+  lorebookId,
+  initialLorebook,
+}: CurrentLorebookProps) {
+  const { lorebook, refreshLorebook, isPending } = useLorebook({
+    lorebookId,
+    initialLorebook,
   });
-
-  function onSubmitHandler(data: InitializeLorebookFormValues) {
-    initializeLorebook(data);
-  }
 
   if (!lorebook) {
     return <></>;
@@ -71,48 +41,26 @@ export function CurrentLorebook({ initialLorebook }: CurrentLorebookProps) {
           onClick={() => refreshLorebook()}
           title="Retry connection"
         >
-          <RefreshCw
-            className={refreshIsPending ? "animate-spin" : undefined}
-          />
+          <RefreshCw className={isPending ? "animate-spin" : undefined} />
         </Button>
       </span>
       <div className="mt-1">
-        {error && <p className="text-destructive">{error}</p>}
-        {lorebook.status === LorebookStatus.Ready ? (
+        {lorebook.status === LorebookStatus.Ready && (
           <Badge variant="secondary">{lorebook.name}</Badge>
-        ) : lorebook.status === LorebookStatus.ServerUnavailable ? (
+        )}
+        {lorebook.status === LorebookStatus.ServerUnavailable && (
           <Badge variant="destructive">Server unavailable</Badge>
-        ) : (
-          <Dialog>
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground italic">
-                Not initialized
-              </span>
-              <DialogTrigger asChild>
-                <Button type="button" variant="outline" size="xs">
-                  Initialize
-                </Button>
-              </DialogTrigger>
-            </div>
-            <DialogContent aria-describedby={undefined}>
-              <DialogHeader>
-                <DialogTitle>Initialize Lorebook</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={form.handleSubmit(onSubmitHandler)}>
-                <FieldInput
-                  control={form.control}
-                  name="name"
-                  label="Name"
-                  placeholder="My Lorebook"
-                />
-                <DialogFooter showCloseButton className="mt-4">
-                  <Button type="submit" disabled={isPending}>
-                    Initialize
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+        )}
+        {lorebook.status === LorebookStatus.Unauthorized && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="ghost">Unauthorized</Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              Your API key may be wrong, or you have the wrong Obsidian lorebook
+              running.
+            </TooltipContent>
+          </Tooltip>
         )}
       </div>
     </div>
