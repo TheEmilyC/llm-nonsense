@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "lint:fix": "eslint:fix",
+    "prisma": "pnpm dlx prisma",
     "db-generate": "pnpm dlx prisma generate",
     "db-migrate": "pnpm dlx prisma migrate dev --name"
   },

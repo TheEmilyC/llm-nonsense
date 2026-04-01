@@ -9,6 +9,7 @@
 CREATE TABLE "MessageContent" (
     "id" TEXT NOT NULL PRIMARY KEY,
     "messageId" TEXT NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT false,
     "metadata" JSONB,
     "parts" JSONB NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

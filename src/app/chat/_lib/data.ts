@@ -1,6 +1,6 @@
+import { MessagePart } from "@/app/chat/_lib/schema";
 import { prisma } from "@/lib/prisma";
 import { MessageRole } from "../../../../generated/enums";
-import { MessagePart } from "@/app/chat/_lib/schema";
 
 interface CreateChatParams {
   newChat: {
@@ -40,6 +40,7 @@ export async function createChatMessage({
       contents: {
         create: {
           parts: newMessage.parts,
+          isActive: true,
         },
       },
     },
