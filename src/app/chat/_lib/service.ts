@@ -1,6 +1,6 @@
 "use server";
 
-import { getCharacterById } from "@/app/character/_lib/data";
+import { getCharacterByIdOrFail } from "@/app/character/_lib/data";
 import {
   createChatMessage,
   getMessageById,
@@ -16,6 +16,8 @@ import {
   LorebookStatus,
   ObsidianFile,
 } from "@/app/lorebook/_lib/schema";
+import { getPersonaByIdOrFail } from "@/app/persona/_lib/data";
+import { getWorldById } from "@/app/world/_lib/data";
 import {
   assemblePrompts,
   constructPromptMessages,
@@ -117,13 +119,12 @@ async function buildPromptFromChat({
 }: ConstructChatResponseParams) {
   const chat = await getMessagesForChat({ id });
   if (!chat) throw new Error("Chat does not exist");
-  const [character, lorebook] = await Promise.all([
-    getCharacterById(chat.story.character.id),
-    chat.story.lorebookId ? getLorebookById(chat.story.lorebookId) : null,
+  const [character, lorebook, persona, world] = await Promise.all([
+    getCharacterByIdOrFail(chat.character.id),
+    chat.lorebookId ? getLorebookById(chat.lorebookId) : null,
+    getPersonaByIdOrFail(chat.persona.id),
+    chat.worldId ? getWorldById(chat.worldId) : null,
   ]);
-  if (!character) throw new Error("Character does not exist");
-  const persona = chat.story.persona;
-  const world = chat.story.world;
 
   const lastMessage = message.parts
     .filter((p) => p.type === "text")
@@ -133,7 +134,7 @@ async function buildPromptFromChat({
   const lorebookScanText = [
     ...chat.messages
       .slice(-Math.min(LOREBOOK_SCAN_DEPTH - 1, chat.messages.length))
-      .map((mes) => ({ role: mes.role, parts: mes.contents[0]?.parts ?? [] })),
+      .map((mes) => ({ role: mes.contents[0]?.role, parts: mes.contents[0]?.parts ?? [] })),
     message,
   ]
     .map(
@@ -154,6 +155,7 @@ async function buildPromptFromChat({
       ? await convertToModelMessages(
           chat.messages.map((m) => ({
             ...m,
+            role: m.contents[0]?.role,
             parts: m.contents[0]?.parts ?? [],
           })),
         )

@@ -1,6 +1,7 @@
 "use client";
 
 import { createChatFromStoryAction } from "@/app/chat/_lib/actions";
+import { ChatMessageDto, messageDtoToUIMessage } from "@/app/chat/_lib/schema";
 import { unwrapAction } from "@/lib/action-utils";
 import { useChat } from "@ai-sdk/react";
 import { useMutation } from "@tanstack/react-query";
@@ -24,16 +25,28 @@ export function useCreateChatFromStory() {
   };
 }
 
-export function useChatMessages(chatId: string, initialMessages: UIMessage[]) {
+function getMessageSwipes(message: ChatMessageDto): UIMessage[] {
+  return message.contents.map((con) => ({
+    id: message.id,
+    role: con.role,
+    parts: con.parts,
+    metadata: con.metadata,
+  }));
+}
+
+export function useChatMessages(
+  chatId: string,
+  initialMessages: ChatMessageDto[],
+) {
   const [isSwipeGenerate, setIsSwipeGenerate] = useState(false);
-  const [messageSwipes, setMessageSwipes] = useState<UIMessage[]>([
-    initialMessages[initialMessages.length - 1],
-  ]);
+  const [messageSwipes, setMessageSwipes] = useState<UIMessage[]>(
+    getMessageSwipes(initialMessages[initialMessages.length - 1]),
+  );
   const [swipeIndex, _setSwipeIndex] = useState(0);
   const [input, setInput] = useState("");
 
   const { messages, sendMessage, status, regenerate, setMessages } = useChat({
-    messages: initialMessages,
+    messages: initialMessages.map((msg) => messageDtoToUIMessage(msg)),
     transport: new DefaultChatTransport({
       api: `/api/chat/${chatId}`,
       prepareSendMessagesRequest({ messages, id }) {

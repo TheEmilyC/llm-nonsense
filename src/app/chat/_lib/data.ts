@@ -1,4 +1,5 @@
-import { MessagePart } from "@/app/chat/_lib/schema";
+import { ChatWithMessagesDto, MessagePart } from "@/app/chat/_lib/schema";
+import { buildCharacterImageUrl, buildPersonaImageUrl } from "@/lib/image";
 import { prisma } from "@/lib/prisma";
 import { MessageRole } from "../../../../generated/enums";
 
@@ -36,9 +37,9 @@ export async function createChatMessage({
     data: {
       id: newMessage.id, // created by the Vercel AI SDK
       chatId: newMessage.chatId,
-      role: newMessage.role,
       contents: {
         create: {
+          role: newMessage.role,
           parts: newMessage.parts,
           isActive: true,
         },
@@ -58,7 +59,7 @@ export async function getMessagesForChat({
   id,
   take = 50,
   skip = 0,
-}: GetMessagesForChatParams) {
+}: GetMessagesForChatParams): Promise<ChatWithMessagesDto | null> {
   const chat = await prisma.chat.findUnique({
     where: { id },
     include: {
@@ -78,9 +79,42 @@ export async function getMessagesForChat({
     },
   });
 
-  if (chat) chat.messages.reverse();
+  if (!chat) return null;
 
-  return chat;
+  chat.messages.reverse();
+  return {
+    id: chat.id,
+    name: chat.name,
+    storyId: chat.storyId,
+    storyName: chat.story.name,
+    lorebookId: chat.story.lorebookId ?? undefined,
+    messages: chat.messages.map((msg) => ({
+      id: msg.id,
+      contents: msg.contents.map((con) => ({
+        id: con.id,
+        role: con.role,
+        metadata: con.metadata,
+        parts: con.parts,
+        isActive: con.isActive,
+      })),
+    })),
+    character: {
+      id: chat.story.character.id,
+      name: chat.story.character.name,
+      avatarSrc: buildCharacterImageUrl({
+        id: chat.story.character.id,
+        pngHash: chat.story.character.pngHash,
+      }),
+    },
+    persona: {
+      id: chat.story.persona.id,
+      name: chat.story.persona.name,
+      avatarSrc: buildPersonaImageUrl({
+        id: chat.story.persona.id,
+        imgHash: chat.story.persona.imageHash,
+      }),
+    },
+  };
 }
 
 export async function getMessageById(id: string) {
