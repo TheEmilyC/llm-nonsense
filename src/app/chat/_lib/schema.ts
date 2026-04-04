@@ -14,7 +14,7 @@ const profileSchema = z.object({
 });
 
 export const messageContentDtoSchema = z.object({
-  id: dbIdValidator,
+  id: z.string().min(1),
   role: z.enum(MessageRole),
   metadata: z.record(z.string(), z.unknown()).optional(),
   parts: z.custom<MessagePart>().array(),
@@ -39,11 +39,10 @@ export type ChatMessageDto = z.infer<typeof chatMessageDtoSchema>;
 
 export function messageDtoToUIMessage(chatMessage: ChatMessageDto): UIMessage {
   const activeContent =
-    chatMessage.contents.find((msg) => msg.isActive) ??
-    chatMessage.contents[0];
+    chatMessage.contents.find((msg) => msg.isActive) ?? chatMessage.contents[0];
   if (!activeContent)
     throw new Error(`No content for message ${chatMessage.id}`);
-  
+
   return {
     id: chatMessage.id,
     role: activeContent.role,
@@ -64,3 +63,18 @@ export const chatWithMessagesDtoSchema = z.object({
   persona: profileSchema,
 });
 export type ChatWithMessagesDto = z.infer<typeof chatWithMessagesDtoSchema>;
+
+export const updateContentActionParamsSchema = z.object({
+  id: z.string().min(1),
+  update: messageContentDtoSchema
+    .pick({
+      isActive: true,
+      metadata: true,
+      parts: true,
+      role: true,
+    })
+    .partial(),
+});
+export type UpdateContentActionParams = z.infer<
+  typeof updateContentActionParamsSchema
+>;

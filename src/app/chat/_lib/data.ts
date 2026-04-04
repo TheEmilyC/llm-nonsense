@@ -173,3 +173,55 @@ export async function getMessageByIdOrFail(id: string): Promise<ChatMessage> {
   if (!result) throw new Error(`Message does not exist`);
   return result;
 }
+
+export async function getMessageContentById(
+  id: string,
+): Promise<MessageContent | null> {
+  return prisma.messageContent.findUnique({ where: { id } });
+}
+
+export async function getMessageContentByIdOrFail(id: string) {
+  const result = await getMessageContentById(id);
+  if (!result) throw new Error("Message content does not exist");
+  return result;
+}
+
+export interface UpdateMessageContentParams {
+  id: string;
+  update: Partial<
+    Pick<
+      MessageContent,
+      "isActive" | "messageId" | "metadata" | "parts" | "role"
+    >
+  >;
+}
+
+export async function updateMessageContent({
+  id,
+  update,
+}: UpdateMessageContentParams): Promise<MessageContent> {
+  return prisma.$transaction(async (tx) => {
+    if (update.isActive) {
+      const messageId =
+        update.messageId ??
+        (await tx.messageContent.findUniqueOrThrow({ where: { id } }))
+          .messageId;
+
+      await tx.messageContent.updateMany({
+        where: { messageId, NOT: { id } },
+        data: { isActive: false },
+      });
+    }
+
+    return tx.messageContent.update({
+      where: { id },
+      data: {
+        isActive: update.isActive,
+        messageId: update.messageId,
+        metadata: update.metadata,
+        parts: update.parts,
+        role: update.role,
+      },
+    });
+  });
+}

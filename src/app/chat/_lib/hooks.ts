@@ -1,12 +1,20 @@
 "use client";
 
-import { createChatFromStoryAction } from "@/app/chat/_lib/actions";
-import { ChatMessageDto, messageDtoToUIMessage } from "@/app/chat/_lib/schema";
+import {
+  createChatFromStoryAction,
+  updateMessageContentAction,
+} from "@/app/chat/_lib/actions";
+import {
+  ChatMessageDto,
+  messageDtoToUIMessage,
+  UpdateContentActionParams,
+} from "@/app/chat/_lib/schema";
 import { unwrapAction } from "@/lib/action-utils";
 import { useChat } from "@ai-sdk/react";
 import { useMutation } from "@tanstack/react-query";
 import { DefaultChatTransport, UIMessage } from "ai";
 import { useState } from "react";
+import { useDebouncedCallback } from "use-debounce";
 
 export function useCreateChatFromStory() {
   const {
@@ -27,11 +35,28 @@ export function useCreateChatFromStory() {
 
 function getMessageSwipes(message: ChatMessageDto): UIMessage[] {
   return message.contents.map((con) => ({
-    id: message.id,
+    id: con.id,
     role: con.role,
     parts: con.parts,
     metadata: con.metadata,
   }));
+}
+
+export function useUpdateMessageContent() {
+  const {
+    mutateAsync: updateMessageContent,
+    isPending,
+    error,
+  } = useMutation({
+    mutationFn: async (params: UpdateContentActionParams) =>
+      unwrapAction(await updateMessageContentAction(params)),
+  });
+
+  return {
+    updateMessageContent,
+    isPending,
+    error: error ? (error as Error).message : null,
+  };
 }
 
 export function useChatMessages(
@@ -48,6 +73,7 @@ export function useChatMessages(
     ),
   );
   const [input, setInput] = useState("");
+  const { updateMessageContent } = useUpdateMessageContent();
 
   const { messages, sendMessage, status, regenerate, setMessages } = useChat({
     messages: initialMessages.map((msg) => messageDtoToUIMessage(msg)),
@@ -72,10 +98,16 @@ export function useChatMessages(
     },
   });
 
+  const debouncedUpdateMessageContent = useDebouncedCallback(
+    (id: string) => updateMessageContent({ id, update: { isActive: true } }),
+    500,
+  );
+
   const setMessageSwipe = (index: number) => {
     if (index < 0 || index >= messageSwipes.length) return;
     setMessages([...messages.slice(0, -1), messageSwipes[index]]);
     _setSwipeIndex(index);
+    debouncedUpdateMessageContent(messageSwipes[index].id);
   };
 
   const nextSwipe = () => {
