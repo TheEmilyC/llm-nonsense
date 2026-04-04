@@ -1,7 +1,12 @@
-import { ChatWithMessagesDto, MessagePart } from "@/app/chat/_lib/schema";
+import {
+  ChatWithMessagesDto,
+  MessageContentDto,
+  messageContentToDto,
+} from "@/app/chat/_lib/schema";
 import { buildCharacterImageUrl, buildPersonaImageUrl } from "@/lib/image";
 import { prisma } from "@/lib/prisma";
-import { MessageRole } from "../../../../generated/enums";
+
+import { ChatMessage, MessageContent } from "../../../../generated/client";
 
 interface CreateChatParams {
   newChat: {
@@ -22,12 +27,7 @@ export async function createChat({ newChat }: CreateChatParams) {
 }
 
 export interface CreateChatMessageParams {
-  newMessage: {
-    id: string;
-    chatId: string;
-    role: MessageRole;
-    parts: MessagePart[];
-  };
+  newMessage: Pick<ChatMessage, "chatId">;
 }
 
 export async function createChatMessage({
@@ -35,18 +35,57 @@ export async function createChatMessage({
 }: CreateChatMessageParams) {
   const message = await prisma.chatMessage.create({
     data: {
-      id: newMessage.id, // created by the Vercel AI SDK
       chatId: newMessage.chatId,
-      contents: {
-        create: {
-          role: newMessage.role,
-          parts: newMessage.parts,
-          isActive: true,
-        },
-      },
     },
   });
   return message;
+}
+
+export interface CreateChatMessageContentParams {
+  chatId: string;
+  messageId?: string;
+  messageContent: Pick<MessageContent, "isActive" | "parts" | "role" | "id"> & {
+    metadata?: unknown;
+  };
+}
+
+export async function createChatMessageContent({
+  chatId,
+  messageId,
+  messageContent,
+}: CreateChatMessageContentParams): Promise<MessageContentDto> {
+  const result = await prisma.$transaction(async (tx) => {
+    let contentMsgId: string;
+    if (messageId) {
+      const existingMsg = await tx.chatMessage.findUnique({
+        where: { id: messageId },
+      });
+      if (!existingMsg) throw new Error(`Message does not exist`);
+      contentMsgId = existingMsg.id;
+      if (messageContent.isActive) {
+        // only one message may be active at a time
+        await tx.messageContent.updateMany({
+          data: { isActive: false },
+          where: { messageId },
+        });
+      }
+    } else {
+      const message = await tx.chatMessage.create({
+        data: { chatId },
+      });
+      contentMsgId = message.id;
+    }
+
+    return tx.messageContent.create({
+      data: {
+        ...messageContent,
+        id: messageContent.id, // Vercel AI SDK Generated
+        messageId: contentMsgId,
+      },
+    });
+  });
+
+  return messageContentToDto(result);
 }
 
 export interface GetMessagesForChatParams {
@@ -67,7 +106,7 @@ export async function getMessagesForChat({
         orderBy: { createdAt: "desc" },
         take,
         skip,
-        include: { contents: true },
+        include: { contents: { where: { isActive: true } } },
       },
       story: {
         include: {
@@ -82,6 +121,15 @@ export async function getMessagesForChat({
   if (!chat) return null;
 
   chat.messages.reverse();
+  if (chat.messages.length > 0) {
+    // fetch all content for last message
+    const lastMessage = chat.messages[chat.messages.length - 1];
+    const fullContents = await prisma.messageContent.findMany({
+      where: { messageId: lastMessage.id },
+    });
+    lastMessage.contents = fullContents;
+  }
+
   return {
     id: chat.id,
     name: chat.name,
@@ -93,7 +141,6 @@ export async function getMessagesForChat({
       contents: msg.contents.map((con) => ({
         id: con.id,
         role: con.role,
-        metadata: con.metadata,
         parts: con.parts,
         isActive: con.isActive,
       })),
@@ -117,6 +164,12 @@ export async function getMessagesForChat({
   };
 }
 
-export async function getMessageById(id: string) {
+export async function getMessageById(id: string): Promise<ChatMessage | null> {
   return await prisma.chatMessage.findUnique({ where: { id } });
+}
+
+export async function getMessageByIdOrFail(id: string): Promise<ChatMessage> {
+  const result = await getMessageById(id);
+  if (!result) throw new Error(`Message does not exist`);
+  return result;
 }

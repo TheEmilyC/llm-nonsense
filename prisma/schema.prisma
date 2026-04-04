@@ -84,7 +84,6 @@ model MessageContent {
   message    ChatMessage @relation(fields: [messageId], references: [id])
   role       MessageRole
   isActive   Boolean     @default(false)
-  /// [ChatMessageMeta]
   metadata   Json?
   /// [ChatMessageParts]
   parts      Json

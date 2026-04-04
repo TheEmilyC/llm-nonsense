@@ -1,7 +1,7 @@
 "use server";
 
 import { getCharacterByIdOrFail } from "@/app/character/_lib/data";
-import { createChat, createChatMessage } from "@/app/chat/_lib/data";
+import { createChat, createChatMessageContent } from "@/app/chat/_lib/data";
 import { getPersonaByIdOrFail } from "@/app/persona/_lib/data";
 import { getStoryById } from "@/app/story/_lib/data";
 import { getWorldByIdOrFail } from "@/app/world/_lib/data";
@@ -10,6 +10,7 @@ import { constructPromptMessages } from "@/lib/ai/prompt-manager";
 import { HttpStatus } from "@/lib/http";
 import { dbIdValidator } from "@/lib/validators";
 import { createIdGenerator } from "ai";
+import { MessageRole } from "../../../../generated/enums";
 
 export async function createChatFromStoryAction(
   storyId: string,
@@ -53,11 +54,12 @@ export async function createChatFromStoryAction(
         size: 16,
       });
 
-      await createChatMessage({
-        newMessage: {
+      await createChatMessageContent({
+        chatId: newChat.id,
+        messageContent: {
           id: idGenerator(),
-          chatId: newChat.id,
-          role: "assistant",
+          isActive: true,
+          role: MessageRole.assistant,
           parts: [
             {
               type: "text",

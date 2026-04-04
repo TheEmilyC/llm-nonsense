@@ -11,7 +11,8 @@
     "lint:fix": "eslint:fix",
     "prisma": "pnpm dlx prisma",
     "db-generate": "pnpm dlx prisma generate",
-    "db-migrate": "pnpm dlx prisma migrate dev --name"
+    "db-migrate": "pnpm dlx prisma migrate dev --name",
+    "errorCheck": "npx tsc --noEmit 2>&1"
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^2.0.26",

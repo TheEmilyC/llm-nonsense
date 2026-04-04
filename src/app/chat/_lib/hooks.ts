@@ -42,16 +42,22 @@ export function useChatMessages(
   const [messageSwipes, setMessageSwipes] = useState<UIMessage[]>(
     getMessageSwipes(initialMessages[initialMessages.length - 1]),
   );
-  const [swipeIndex, _setSwipeIndex] = useState(0);
+  const [swipeIndex, _setSwipeIndex] = useState(
+    initialMessages[initialMessages.length - 1].contents.findIndex(
+      (con) => con.isActive,
+    ),
+  );
   const [input, setInput] = useState("");
 
   const { messages, sendMessage, status, regenerate, setMessages } = useChat({
     messages: initialMessages.map((msg) => messageDtoToUIMessage(msg)),
     transport: new DefaultChatTransport({
       api: `/api/chat/${chatId}`,
-      prepareSendMessagesRequest({ messages, id }) {
+      prepareSendMessagesRequest({ messages, id, trigger }) {
         //only send the last message to the server
-        return { body: { message: messages[messages.length - 1], id } };
+        return {
+          body: { content: messages[messages.length - 1], id, trigger },
+        };
       },
     }),
     onFinish: ({ message }) => {

@@ -8,17 +8,21 @@ interface Params {
 
 const chatPostRequestBodySchema = z.object({
   id: z.string(),
-  message: z.object({
+  content: z.object({
     id: z.string(),
     role: z.enum(["user", "system", "assistant"]),
     parts: z.array(messagePartSchema),
   }),
-  trigger: z.string().optional(),
+  trigger: z.enum(["submit-message", "regenerate-message"]),
 });
 
 export async function POST(req: Request, { params }: Params) {
   const { id } = await params;
   const body = await req.json();
-  const { message } = chatPostRequestBodySchema.parse(body);
-  return constructChatResponse({ id, message: message });
+  const { content: message, trigger } = chatPostRequestBodySchema.parse(body);
+  return constructChatResponse({
+    chatId: id,
+    message: message,
+    regenerate: trigger === "regenerate-message",
+  });
 }

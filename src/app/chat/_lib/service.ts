@@ -2,11 +2,10 @@
 
 import { getCharacterByIdOrFail } from "@/app/character/_lib/data";
 import {
-  createChatMessage,
-  getMessageById,
+  createChatMessageContent,
   getMessagesForChat,
 } from "@/app/chat/_lib/data";
-import { MessagePart } from "@/app/chat/_lib/schema";
+import { messageDtoToUIMessage, MessagePart } from "@/app/chat/_lib/schema";
 import {
   getLorebookById,
   getLorebookEntryList,
@@ -35,9 +34,11 @@ import {
   streamText,
   TextPart,
 } from "ai";
+import { MessageRole } from "../../../../generated/enums";
 
 interface ConstructChatResponseParams {
-  id: string;
+  chatId: string;
+  regenerate?: boolean;
   message: {
     id: string;
     role: "user" | "assistant" | "system";
@@ -113,30 +114,40 @@ export async function buildPrompt({
   };
 }
 
+interface BuildPromptFromChatParams {
+  characterId: string;
+  personaId: string;
+  worldId?: string;
+  lorebookId?: string;
+  messages: {
+    role: MessageRole;
+    parts: MessagePart[];
+  }[];
+}
+
 async function buildPromptFromChat({
-  id,
-  message,
-}: ConstructChatResponseParams) {
-  const chat = await getMessagesForChat({ id });
-  if (!chat) throw new Error("Chat does not exist");
+  characterId,
+  personaId,
+  worldId,
+  lorebookId,
+  messages,
+}: BuildPromptFromChatParams) {
+  console.log("messages", JSON.stringify(messages, null, 2));
   const [character, lorebook, persona, world] = await Promise.all([
-    getCharacterByIdOrFail(chat.character.id),
-    chat.lorebookId ? getLorebookById(chat.lorebookId) : null,
-    getPersonaByIdOrFail(chat.persona.id),
-    chat.worldId ? getWorldById(chat.worldId) : null,
+    getCharacterByIdOrFail(characterId),
+    lorebookId ? getLorebookById(lorebookId) : null,
+    getPersonaByIdOrFail(personaId),
+    worldId ? getWorldById(worldId) : null,
   ]);
 
-  const lastMessage = message.parts
-    .filter((p) => p.type === "text")
-    .map((p) => (p as TextPart).text)
-    .join("\n");
+  const lastMessage =
+    messages[messages.length - 1].parts
+      .filter((p) => p.type === "text")
+      .map((p) => (p as TextPart).text)
+      .join("\n") ?? "";
 
-  const lorebookScanText = [
-    ...chat.messages
-      .slice(-Math.min(LOREBOOK_SCAN_DEPTH - 1, chat.messages.length))
-      .map((mes) => ({ role: mes.contents[0]?.role, parts: mes.contents[0]?.parts ?? [] })),
-    message,
-  ]
+  const lorebookScanText = messages
+    .slice(-Math.min(LOREBOOK_SCAN_DEPTH, messages.length))
     .map(
       (mes) =>
         `${mes.role === "assistant" ? character.card.name : persona.name}: ${mes.parts
@@ -151,30 +162,41 @@ async function buildPromptFromChat({
     character: character.card,
     persona,
     world,
-    history: chat.messages
-      ? await convertToModelMessages(
-          chat.messages.map((m) => ({
-            ...m,
-            role: m.contents[0]?.role,
-            parts: m.contents[0]?.parts ?? [],
-          })),
-        )
-      : [],
+    history: messages ? await convertToModelMessages(messages) : [],
     lorebook,
     lorebookScanText,
   });
 }
 
 export async function constructChatResponse(
-  { id, message }: ConstructChatResponseParams,
+  { chatId, message, regenerate }: ConstructChatResponseParams,
   { debug = false } = {},
 ) {
   // the user message will already exist in the DB during regenerate
-  const existingMsg = await getMessageById(message.id);
-  if (!existingMsg)
-    await createChatMessage({ newMessage: { ...message, chatId: id } });
+  if (!regenerate)
+    await createChatMessageContent({
+      chatId: chatId,
+      messageContent: {
+        id: message.id,
+        parts: message.parts,
+        role: message.role,
+        isActive: true,
+      },
+    });
 
-  const { prompt } = await buildPromptFromChat({ id, message });
+  const chat = await getMessagesForChat({ id: chatId });
+  if (!chat) throw new Error("Chat does not exist");
+  const canonicalMessages = chat.messages.map((mes) =>
+    messageDtoToUIMessage(mes),
+  );
+
+  const { prompt } = await buildPromptFromChat({
+    characterId: chat.character.id,
+    personaId: chat.persona.id,
+    lorebookId: chat.lorebookId,
+    worldId: chat.worldId,
+    messages: regenerate ? canonicalMessages.slice(0, -1) : canonicalMessages,
+  });
   if (debug) console.debug("prompt", prompt);
 
   // --send and stream result--
@@ -191,13 +213,18 @@ export async function constructChatResponse(
       size: 16,
     }),
     onFinish: async ({ messages }) => {
-      const lastMessage = messages[0];
-      await createChatMessage({
-        newMessage: {
-          id: lastMessage.id,
-          chatId: id,
-          role: lastMessage.role,
-          parts: lastMessage.parts,
+      const sentMessage = messages[0];
+      let messageId = undefined;
+      if (regenerate && chat.messages.length > 0)
+        messageId = chat.messages[canonicalMessages.length - 1].id;
+      await createChatMessageContent({
+        chatId,
+        messageId,
+        messageContent: {
+          id: sentMessage.id,
+          parts: sentMessage.parts,
+          role: sentMessage.role,
+          isActive: true,
         },
       });
     },
