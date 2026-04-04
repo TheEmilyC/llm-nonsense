@@ -1,37 +1,80 @@
-import { UIDataTypes, UIMessagePart, UITools } from "ai";
+import { dbIdValidator } from "@/lib/validators";
+import { UIDataTypes, UIMessage, UIMessagePart, UITools } from "ai";
 import z from "zod";
-import { MessageRole } from "../../../generated/enums";
+import { MessageContent } from "../../../../generated/client";
+import { MessageRole } from "../../../../generated/enums";
 
 export type MessagePart = UIMessagePart<UIDataTypes, UITools>;
 export const messagePartSchema = z.custom<MessagePart>();
 
-export const profileSchema = z.object({
-  id: z.string(),
+const profileSchema = z.object({
+  id: dbIdValidator,
   name: z.string(),
   avatarSrc: z.string(),
 });
 
-export const chatMessageSchema = z.object({
-  id: z.string(),
-  chatId: z.string(),
-  metadata: z.record(z.string(), z.unknown()).nullable(),
+export const messageContentDtoSchema = z.object({
+  id: z.string().min(1),
   role: z.enum(MessageRole),
+  metadata: z.record(z.string(), z.unknown()).optional(),
   parts: z.custom<MessagePart>().array(),
-  createdAt: z.date(),
+  isActive: z.boolean(),
 });
-export type ChatMessage = z.infer<typeof chatMessageSchema>;
+export type MessageContentDto = z.infer<typeof messageContentDtoSchema>;
 
-export const chatViewParamsSchema = z.object({
-  chat: z.object({
-    id: z.string(),
-    name: z.string(),
-    story: z.object({
-      id: z.string(),
-      name: z.string(),
-    }),
-    messages: chatMessageSchema.array().optional(),
-  }),
+export function messageContentToDto(
+  content: MessageContent,
+): MessageContentDto {
+  return messageContentDtoSchema.parse({
+    ...content,
+    metadata: content.metadata ?? undefined,
+  });
+}
+
+export const chatMessageDtoSchema = z.object({
+  id: z.string().min(1, "id is required"), // created by Vercel so doesn't match dbIdValidator pattern
+  contents: messageContentDtoSchema.array(),
+});
+export type ChatMessageDto = z.infer<typeof chatMessageDtoSchema>;
+
+export function messageDtoToUIMessage(chatMessage: ChatMessageDto): UIMessage {
+  const activeContent =
+    chatMessage.contents.find((msg) => msg.isActive) ?? chatMessage.contents[0];
+  if (!activeContent)
+    throw new Error(`No content for message ${chatMessage.id}`);
+
+  return {
+    id: chatMessage.id,
+    role: activeContent.role,
+    parts: activeContent.parts,
+    metadata: activeContent.metadata,
+  };
+}
+
+export const chatWithMessagesDtoSchema = z.object({
+  id: dbIdValidator,
+  name: z.string().min(1, "Name is required"),
+  storyId: dbIdValidator,
+  storyName: z.string().min(1, "Story Name is required"),
+  lorebookId: dbIdValidator.optional(),
+  worldId: dbIdValidator.optional(),
+  messages: chatMessageDtoSchema.array(),
   character: profileSchema,
   persona: profileSchema,
 });
-export type ChatViewParams = z.infer<typeof chatViewParamsSchema>;
+export type ChatWithMessagesDto = z.infer<typeof chatWithMessagesDtoSchema>;
+
+export const updateContentActionParamsSchema = z.object({
+  id: z.string().min(1),
+  update: messageContentDtoSchema
+    .pick({
+      isActive: true,
+      metadata: true,
+      parts: true,
+      role: true,
+    })
+    .partial(),
+});
+export type UpdateContentActionParams = z.infer<
+  typeof updateContentActionParamsSchema
+>;

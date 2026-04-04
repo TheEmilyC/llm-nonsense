@@ -1,6 +1,6 @@
-import { Persona } from "../../../generated/client";
 import { buildPersonaImageUrl } from "@/lib/image";
 import z from "zod";
+import { Persona } from "../../../../generated/client";
 
 export const PERSONA_CACHE_KEY = "persona";
 
@@ -31,7 +31,10 @@ export function toPersonaDto(persona: Persona): PersonaDto {
     id: persona.id,
     name: persona.name,
     description: persona.description,
-    imageUrl: buildPersonaImageUrl({ id: persona.id, imgHash: persona.imageHash }),
+    imageUrl: buildPersonaImageUrl({
+      id: persona.id,
+      imgHash: persona.imageHash,
+    }),
     createdAt: persona.createdAt,
     modifiedAt: persona.modifiedAt,
   });

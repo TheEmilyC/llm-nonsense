@@ -70,11 +70,20 @@ enum MessageRole {
 }
 
 model ChatMessage {
-  id         String      @id @default(cuid())
+  id         String           @id @default(cuid())
   chatId     String
-  chat       Chat        @relation(fields: [chatId], references: [id])
+  chat       Chat             @relation(fields: [chatId], references: [id])
+  contents   MessageContent[]
+  createdAt  DateTime         @default(now())
+  modifiedAt DateTime         @default(now()) @updatedAt
+}
+
+model MessageContent {
+  id         String      @id @default(cuid())
+  messageId  String
+  message    ChatMessage @relation(fields: [messageId], references: [id])
   role       MessageRole
-  /// [ChatMessageMeta]
+  isActive   Boolean     @default(false)
   metadata   Json?
   /// [ChatMessageParts]
   parts      Json
