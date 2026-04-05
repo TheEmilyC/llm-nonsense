@@ -10,11 +10,7 @@ import {
   getLorebookById,
   getLorebookEntryList,
 } from "@/app/lorebook/_lib/data";
-import {
-  Lorebook,
-  LorebookStatus,
-  ObsidianFile,
-} from "@/app/lorebook/_lib/schema";
+import { LorebookStatus, ObsidianFile } from "@/app/lorebook/_lib/schema";
 import { getPersonaByIdOrFail } from "@/app/persona/_lib/data";
 import { getWorldById } from "@/app/world/_lib/data";
 import {
@@ -23,17 +19,22 @@ import {
 } from "@/lib/ai/prompt-manager";
 import { models } from "@/lib/ai/registry";
 import { LOREBOOK_SCAN_DEPTH } from "@/lib/constants";
+import { USE_LOREBOOK_TOOLCALL } from "@/lib/env-variables";
 import {
   convertFilesToPrompt,
+  IndexEntry,
   scanLorebookIndex,
 } from "@/lib/lorebook-scanning";
 import {
   convertToModelMessages,
   createIdGenerator,
   ModelMessage,
+  stepCountIs,
   streamText,
   TextPart,
+  tool,
 } from "ai";
+import z from "zod";
 import { MessageRole } from "../../../../generated/enums";
 
 interface ConstructChatResponseParams {
@@ -63,7 +64,7 @@ interface BuildPromptParams {
     description: string;
   } | null;
   history?: ModelMessage[];
-  lorebook?: Lorebook | null;
+  lorebook?: { id: string; index: IndexEntry[] };
   lorebookScanText?: string;
 }
 
@@ -80,16 +81,22 @@ export async function buildPrompt({
 
   let lorebookPrompt: string | undefined;
   let files: ObsidianFile[] | undefined;
-  if (lorebook && lorebook.status === LorebookStatus.Ready) {
-    const indexList = scanLorebookIndex({
-      scanText: lorebookScanText ?? lastMessage,
-      index: lorebook.index,
-    });
-    files = await getLorebookEntryList({
-      files: indexList,
-      lorebookId: lorebook.id,
-    });
-    lorebookPrompt = convertFilesToPrompt({ files });
+  if (lorebook) {
+    if (USE_LOREBOOK_TOOLCALL) {
+      lorebookPrompt = lorebook.index
+        .map((idx) => `${idx.filename}  -  ${idx.summary}`)
+        .join("\n");
+    } else {
+      const indexList = scanLorebookIndex({
+        scanText: lorebookScanText ?? lastMessage,
+        index: lorebook.index,
+      });
+      files = await getLorebookEntryList({
+        files: indexList,
+        lorebookId: lorebook.id,
+      });
+      lorebookPrompt = convertFilesToPrompt({ files });
+    }
   }
 
   const [systemMessage, userMessage] = constructPromptMessages({
@@ -118,7 +125,7 @@ interface BuildPromptFromChatParams {
   characterId: string;
   personaId: string;
   worldId?: string;
-  lorebookId?: string;
+  lorebook?: { id: string; index: IndexEntry[] };
   messages: {
     role: MessageRole;
     parts: MessagePart[];
@@ -129,13 +136,11 @@ async function buildPromptFromChat({
   characterId,
   personaId,
   worldId,
-  lorebookId,
+  lorebook,
   messages,
 }: BuildPromptFromChatParams) {
-  console.log("messages", JSON.stringify(messages, null, 2));
-  const [character, lorebook, persona, world] = await Promise.all([
+  const [character, persona, world] = await Promise.all([
     getCharacterByIdOrFail(characterId),
-    lorebookId ? getLorebookById(lorebookId) : null,
     getPersonaByIdOrFail(personaId),
     worldId ? getWorldById(worldId) : null,
   ]);
@@ -186,6 +191,10 @@ export async function constructChatResponse(
 
   const chat = await getMessagesForChat({ id: chatId });
   if (!chat) throw new Error("Chat does not exist");
+  const lorebook = chat.lorebookId
+    ? await getLorebookById(chat.lorebookId)
+    : undefined;
+
   const canonicalMessages = chat.messages.map((mes) =>
     messageDtoToUIMessage(mes),
   );
@@ -193,7 +202,7 @@ export async function constructChatResponse(
   const { prompt } = await buildPromptFromChat({
     characterId: chat.character.id,
     personaId: chat.persona.id,
-    lorebookId: chat.lorebookId,
+    lorebook: lorebook?.status === LorebookStatus.Ready ? lorebook : undefined,
     worldId: chat.worldId,
     messages: regenerate ? canonicalMessages.slice(0, -1) : canonicalMessages,
   });
@@ -206,6 +215,21 @@ export async function constructChatResponse(
     onFinish: ({ response }) => {
       if (debug)
         console.debug("raw llm response", JSON.stringify(response, null, 2));
+    },
+    stopWhen: stepCountIs(20),
+    tools: {
+      ...(lorebook?.status === LorebookStatus.Ready && {
+        getLorebookEntries: tool({
+          description:
+            "Retrive lore and character information from the lorebook",
+          inputSchema: z.object({
+            entries: z
+              .string()
+              .array()
+              .describe("A list of lorebook entry paths to retrive"),
+          }),
+        }),
+      }),
     },
   }).toUIMessageStreamResponse({
     generateMessageId: createIdGenerator({
