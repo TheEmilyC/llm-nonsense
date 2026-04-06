@@ -4,6 +4,7 @@ import { getCharacterByIdOrFail } from "@/app/character/_lib/data";
 import {
   createChat,
   createChatMessageContent,
+  deleteChat,
   updateMessageContent,
 } from "@/app/chat/_lib/data";
 import {
@@ -85,6 +86,22 @@ export async function createChatFromStoryAction(
     return { success: false, error: "Failed to create chat" };
   }
   return { success: true, data: { id: chat.id } };
+}
+
+export async function deleteChatAction(
+  chatId: string,
+): Promise<ActionResponse<void>> {
+  const parseResult = dbIdValidator.safeParse(chatId);
+  if (!parseResult.success) {
+    return { success: false, error: "Malformed chat id" };
+  }
+  try {
+    await deleteChat(chatId);
+    return { success: true, data: undefined };
+  } catch (err) {
+    console.error(err);
+    return { success: false, error: "Failed to delete chat" };
+  }
 }
 
 export async function updateMessageContentAction(

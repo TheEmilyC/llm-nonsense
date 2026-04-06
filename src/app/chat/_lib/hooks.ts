@@ -2,6 +2,7 @@
 
 import {
   createChatFromStoryAction,
+  deleteChatAction,
   updateMessageContentAction,
 } from "@/app/chat/_lib/actions";
 import {
@@ -15,6 +16,15 @@ import { useMutation } from "@tanstack/react-query";
 import { DefaultChatTransport, UIMessage } from "ai";
 import { useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
+
+export function useDeleteChat() {
+  const { mutateAsync: deleteChat, isPending } = useMutation({
+    mutationFn: async ({ chatId }: { chatId: string }) =>
+      unwrapAction(await deleteChatAction(chatId)),
+  });
+
+  return { deleteChat, isPending };
+}
 
 export function useCreateChatFromStory() {
   const {

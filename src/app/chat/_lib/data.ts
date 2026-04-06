@@ -15,6 +15,18 @@ interface CreateChatParams {
   };
 }
 
+export async function deleteChat(id: string) {
+  return prisma.chat.delete({ where: { id } });
+}
+
+export async function getChatsForStory(storyId: string) {
+  return prisma.chat.findMany({
+    where: { storyId },
+    orderBy: { createdAt: "desc" },
+    select: { id: true, name: true },
+  });
+}
+
 export async function createChat({ newChat }: CreateChatParams) {
   const chat = await prisma.chat.create({
     data: {

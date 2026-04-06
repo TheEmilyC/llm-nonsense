@@ -1,4 +1,5 @@
 import { getCharacterList } from "@/app/character/_lib/data";
+import { getChatsForStory } from "@/app/chat/_lib/data";
 import { getLorebookEntityList } from "@/app/lorebook/_lib/data";
 import { getPersonaList } from "@/app/persona/_lib/data";
 import { StoryEdit } from "@/app/story/_components/story-edit";
@@ -33,7 +34,10 @@ async function StoryPageContent({ params }: StoryPageParams) {
       params,
     ]);
   const { id } = storyPageParamsSchema.parse(routeParams);
-  const story = await getStoryById(id);
+  const [story, chats] = await Promise.all([
+    getStoryById(id),
+    getChatsForStory(id),
+  ]);
   if (!story) notFound();
 
   const characters = characterList.map((char) => ({
@@ -63,6 +67,7 @@ async function StoryPageContent({ params }: StoryPageParams) {
       personas={personas}
       worlds={worlds}
       lorebooks={lorebooks}
+      chats={chats}
     />
   );
 }
