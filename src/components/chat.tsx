@@ -107,7 +107,7 @@ export function Chat({
                   >
                     <ChatAvatar
                       src={isUser ? persona.avatarSrc : character.avatarSrc}
-                      alt={isUser ? "You" : "AI"}
+                      alt={isUser ? persona.name : character.name}
                       isUser={isUser}
                     />
                     <div className="flex flex-col gap-2 p-3">
