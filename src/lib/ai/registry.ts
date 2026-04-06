@@ -18,6 +18,6 @@ export const registry = createProviderRegistry({
 
 // Helper to get specialized models for specific tasks
 export const models = {
-  chat: registry.languageModel("openrouter:anthropic/claude-3.5-sonnet"),
+  chat: registry.languageModel("openrouter:anthropic/claude-sonnet-4.6"),
   deepseek: registry.languageModel("deepseek:deepseek-reasoner"),
 };

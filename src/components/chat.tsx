@@ -21,7 +21,13 @@ import {
 import { ScrollButton } from "@/components/ui/scroll-button";
 import { cn } from "@/lib/utils";
 import { UIMessage } from "ai";
-import { ArrowUp, ChevronLeft, ChevronRight, Square } from "lucide-react";
+import {
+  ArrowUp,
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  Square,
+} from "lucide-react";
 import Image from "next/image";
 
 function ChatAvatar({
@@ -86,15 +92,6 @@ export function Chat({
               const isStreaming = isLastMessage && status === "streaming";
               const isUser = message.role === "user";
 
-              const reasoningText = message.parts
-                .filter((part) => part.type === "reasoning")
-                .map((part) => part.text)
-                .join("");
-              const textContent = message.parts
-                .filter((part) => part.type === "text")
-                .map((part) => part.text)
-                .join("");
-
               const showSwipe = isLastMessage && !isUser && !isStreaming;
 
               return (
@@ -117,25 +114,57 @@ export function Chat({
                       <span className="text-xs font-semibold tracking-wide uppercase opacity-60">
                         {isUser ? persona.name : character.name}
                       </span>
-                      {reasoningText && (
-                        <Reasoning isStreaming={isStreaming}>
-                          <ReasoningTrigger className="text-sm text-muted-foreground">
-                            Thinking
-                          </ReasoningTrigger>
-                          <ReasoningContent
-                            markdown
-                            className="border-l-2 border-muted-foreground/30 pl-3 mt-1"
-                          >
-                            {reasoningText}
-                          </ReasoningContent>
-                        </Reasoning>
-                      )}
-                      <MessageContent
-                        markdown
-                        className="rounded-none bg-transparent p-0"
-                      >
-                        {textContent}
-                      </MessageContent>
+                      {message.parts.map((part, partIndex) => {
+                        if (part.type === "reasoning") {
+                          return (
+                            <Reasoning
+                              key={partIndex}
+                              isStreaming={isStreaming}
+                            >
+                              <ReasoningTrigger className="text-sm text-muted-foreground">
+                                Thinking
+                              </ReasoningTrigger>
+                              <ReasoningContent
+                                markdown
+                                className="border-l-2 border-muted-foreground/30 pl-3 mt-1"
+                              >
+                                {part.text}
+                              </ReasoningContent>
+                            </Reasoning>
+                          );
+                        }
+                        if (part.type === "tool-getLorebookEntries") {
+                          const entries =
+                            (part.input as { entries?: string[] })?.entries ??
+                            [];
+                          return (
+                            <div
+                              key={partIndex}
+                              className="flex items-start gap-1.5 text-xs text-muted-foreground/60"
+                            >
+                              <BookOpen className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                              <span>
+                                Looking up:{" "}
+                                {entries.length > 0
+                                  ? entries.join(", ")
+                                  : "lorebook entries"}
+                              </span>
+                            </div>
+                          );
+                        }
+                        if (part.type === "text") {
+                          return (
+                            <MessageContent
+                              key={partIndex}
+                              markdown
+                              className="rounded-none bg-transparent p-0"
+                            >
+                              {part.text}
+                            </MessageContent>
+                          );
+                        }
+                        return null;
+                      })}
                       {showSwipe && (
                         <div className="flex items-center gap-1 mt-1">
                           <button

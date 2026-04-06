@@ -210,7 +210,7 @@ export async function constructChatResponse(
 
   // --send and stream result--
   return streamText({
-    model: models.deepseek,
+    model: models.chat,
     prompt: prompt,
     onFinish: ({ response }) => {
       if (debug)
@@ -228,6 +228,17 @@ export async function constructChatResponse(
               .array()
               .describe("A list of lorebook entry paths to retrive"),
           }),
+          execute: async ({ entries }) => {
+            if (debug)
+              console.debug(
+                `getLorebookEntries tool call, requesting: ${entries}`,
+              );
+            const files = await getLorebookEntryList({
+              files: entries,
+              lorebookId: lorebook.id,
+            });
+            return convertFilesToPrompt({ files });
+          },
         }),
       }),
     },
