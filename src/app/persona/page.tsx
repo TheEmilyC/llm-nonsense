@@ -5,8 +5,8 @@ import { buildPersonaImageUrl } from "@/lib/image";
 export default async function PersonaPage() {
   const personas = (await getPersonaList()).map((per) => ({
     id: per.id,
-    name: per.name,
     imageUrl: buildPersonaImageUrl({ id: per.id, imgHash: per.imageHash }),
+    name: per.name,
   }));
   return <PersonaList personas={personas} />;
 }

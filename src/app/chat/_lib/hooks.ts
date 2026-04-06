@@ -1,5 +1,11 @@
 "use client";
 
+import { useChat } from "@ai-sdk/react";
+import { useMutation } from "@tanstack/react-query";
+import { DefaultChatTransport, UIMessage } from "ai";
+import { useRef, useState } from "react";
+import { useDebouncedCallback } from "use-debounce";
+
 import {
   createChatFromStoryAction,
   deleteChatAction,
@@ -11,63 +17,6 @@ import {
   UpdateContentActionParams,
 } from "@/app/chat/_lib/schema";
 import { unwrapAction } from "@/lib/action-utils";
-import { useChat } from "@ai-sdk/react";
-import { useMutation } from "@tanstack/react-query";
-import { DefaultChatTransport, UIMessage } from "ai";
-import { useRef, useState } from "react";
-import { useDebouncedCallback } from "use-debounce";
-
-export function useDeleteChat() {
-  const { mutateAsync: deleteChat, isPending } = useMutation({
-    mutationFn: async ({ chatId }: { chatId: string }) =>
-      unwrapAction(await deleteChatAction(chatId)),
-  });
-
-  return { deleteChat, isPending };
-}
-
-export function useCreateChatFromStory() {
-  const {
-    mutateAsync: createChatFromStory,
-    isPending,
-    error,
-  } = useMutation({
-    mutationFn: async ({ storyId }: { storyId: string }) =>
-      unwrapAction(await createChatFromStoryAction(storyId)),
-  });
-
-  return {
-    createChatFromStory,
-    isPending,
-    error: error ? (error as Error).message : null,
-  };
-}
-
-function getMessageSwipes(message: ChatMessageDto): UIMessage[] {
-  return message.contents.map((con) => ({
-    id: con.id,
-    role: con.role,
-    parts: con.parts,
-    metadata: con.metadata,
-  }));
-}
-
-export function useUpdateMessageContent() {
-  const {
-    mutateAsync: updateMessageContent,
-    isPending,
-    error,
-  } = useMutation({
-    mutationFn: async (params: UpdateContentActionParams) =>
-      unwrapAction(await updateMessageContentAction(params)),
-  });
-
-  return {
-    updateMessageContent,
-    isPending,
-    error: error ? (error as Error).message : null,
-  };
-}
 
 export function useChatMessages(
   chatId: string,
@@ -96,17 +45,8 @@ export function useChatMessages(
     ),
   );
 
-  const { messages, sendMessage, status, regenerate, setMessages } = useChat({
+  const { messages, regenerate, sendMessage, setMessages, status } = useChat({
     messages: initialMessages.map((msg) => messageDtoToUIMessage(msg)),
-    transport: new DefaultChatTransport({
-      api: `/api/chat/${chatId}`,
-      prepareSendMessagesRequest({ messages, id, trigger }) {
-        //only send the last message to the server
-        return {
-          body: { content: messages[messages.length - 1], id, trigger },
-        };
-      },
-    }),
     onFinish: ({ message }) => {
       if (isSwipeGenerate) {
         setMessageSwipes((prev) => [...prev, message]);
@@ -117,6 +57,15 @@ export function useChatMessages(
       }
       setIsSwipeGenerate(false);
     },
+    transport: new DefaultChatTransport({
+      api: `/api/chat/${chatId}`,
+      prepareSendMessagesRequest({ id, messages, trigger }) {
+        //only send the last message to the server
+        return {
+          body: { content: messages[messages.length - 1], id, trigger },
+        };
+      },
+    }),
   });
 
   const debouncedUpdateMessageContent = useDebouncedCallback(
@@ -176,23 +125,75 @@ export function useChatMessages(
     if (contentId) {
       updateMessageContent({
         id: contentId,
-        update: { parts: [{ type: "text", text: newText }] },
+        update: { parts: [{ text: newText, type: "text" }] },
       });
     }
   };
 
   return {
-    messages,
-    status,
-    input,
-    setInput,
-    handleSubmit,
     editMessage,
+    handleSubmit,
+    input,
+    messages,
+    setInput,
+    status,
     swipe: {
       length: messageSwipes.length,
-      swipeIndex,
       nextSwipe,
       prevSwipe,
+      swipeIndex,
     },
   };
+}
+
+export function useCreateChatFromStory() {
+  const {
+    error,
+    isPending,
+    mutateAsync: createChatFromStory,
+  } = useMutation({
+    mutationFn: async ({ storyId }: { storyId: string }) =>
+      unwrapAction(await createChatFromStoryAction(storyId)),
+  });
+
+  return {
+    createChatFromStory,
+    error: error ? (error as Error).message : null,
+    isPending,
+  };
+}
+
+export function useDeleteChat() {
+  const { isPending, mutateAsync: deleteChat } = useMutation({
+    mutationFn: async ({ chatId }: { chatId: string }) =>
+      unwrapAction(await deleteChatAction(chatId)),
+  });
+
+  return { deleteChat, isPending };
+}
+
+export function useUpdateMessageContent() {
+  const {
+    error,
+    isPending,
+    mutateAsync: updateMessageContent,
+  } = useMutation({
+    mutationFn: async (params: UpdateContentActionParams) =>
+      unwrapAction(await updateMessageContentAction(params)),
+  });
+
+  return {
+    error: error ? (error as Error).message : null,
+    isPending,
+    updateMessageContent,
+  };
+}
+
+function getMessageSwipes(message: ChatMessageDto): UIMessage[] {
+  return message.contents.map((con) => ({
+    id: con.id,
+    metadata: con.metadata,
+    parts: con.parts,
+    role: con.role,
+  }));
 }

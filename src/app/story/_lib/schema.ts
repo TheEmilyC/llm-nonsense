@@ -1,13 +1,14 @@
 import z from "zod";
+
 import { Story } from "../../../../generated/client";
 
 export const STORY_CACHE_KEY = "story";
 
 const baseSchema = z.object({
   characterId: z.string(),
+  lorebookId: z.string().optional(),
   personaId: z.string(),
   worldId: z.string().optional(),
-  lorebookId: z.string().optional(),
 });
 
 export const storyFormSchema = z.discriminatedUnion("mode", [
@@ -23,19 +24,19 @@ export const storyFormSchema = z.discriminatedUnion("mode", [
 export type StoryFormValues = z.infer<typeof storyFormSchema>;
 
 export const storyDtoSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1),
   characterId: z.string().min(1),
+  id: z.string().min(1),
+  lorebookId: z.string().optional(),
+  name: z.string().min(1),
   personaId: z.string().min(1),
   worldId: z.string().optional(),
-  lorebookId: z.string().optional(),
 });
 export type StoryDto = z.infer<typeof storyDtoSchema>;
 
 export function toStoryDto(story: Story) {
   return storyDtoSchema.parse({
     ...story,
-    worldId: story.worldId ?? undefined,
     lorebookId: story.lorebookId ?? undefined,
+    worldId: story.worldId ?? undefined,
   });
 }

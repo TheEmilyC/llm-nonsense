@@ -13,26 +13,33 @@ import {
 import { Header } from "@/components/header";
 
 export function ChatView({ chat }: { chat: ChatWithMessagesDto }) {
-  const { messages, status, input, setInput, handleSubmit, editMessage, swipe } =
-    useChatMessages(chat.id, chat.messages);
+  const {
+    editMessage,
+    handleSubmit,
+    input,
+    messages,
+    setInput,
+    status,
+    swipe,
+  } = useChatMessages(chat.id, chat.messages);
   const lastMessage = messages[messages.length - 1];
 
   return (
     <div className="flex h-screen flex-col bg-background">
       <Header
-        pageTitle={chat.name}
-        backLinkLabel={chat.storyName}
         backLinkDestination={`/story/${chat.storyId}`}
+        backLinkLabel={chat.storyName}
+        pageTitle={chat.name}
       />
       <div className="mx-auto max-w-6xl p-6">
         <ChatContainer>
           <ChatHistory>
             <ChatMessages
-              messages={messages}
-              status={status}
               character={chat.character}
-              persona={chat.persona}
+              messages={messages}
               onEdit={editMessage}
+              persona={chat.persona}
+              status={status}
             />
             {status === "submitted" && (
               <ChatMessageThinking character={chat.character} />
@@ -43,9 +50,9 @@ export function ChatView({ chat }: { chat: ChatWithMessagesDto }) {
           </ChatHistory>
           <ChatInput
             input={input}
+            isLoading={status !== "ready"}
             onInputChange={setInput}
             onSubmit={handleSubmit}
-            isLoading={status !== "ready"}
           />
         </ChatContainer>
       </div>

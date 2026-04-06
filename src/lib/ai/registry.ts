@@ -12,12 +12,12 @@ const deepseekProvider = createDeepSeek({
 });
 
 export const registry = createProviderRegistry({
-  openrouter: openRouterProvider,
   deepseek: deepseekProvider,
+  openrouter: openRouterProvider,
 });
 
 // Helper to get specialized models for specific tasks
 export const models = {
-  chat: registry.languageModel("openrouter:anthropic/claude-sonnet-4.6"),
+  chat: registry.languageModel("openrouter:anthropic/claude-opus-4.6"),
   deepseek: registry.languageModel("deepseek:deepseek-reasoner"),
 };

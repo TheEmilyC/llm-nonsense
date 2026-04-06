@@ -1,37 +1,35 @@
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { Control, Controller, FieldValues, Path } from "react-hook-form";
 
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+
 interface FieldInputParams<T extends FieldValues> {
-  name: Path<T>;
   control: Control<T>;
   label: string;
+  name: Path<T>;
   placeholder?: string;
-  type?: "text" | "number" | "password" | "email";
+  type?: "email" | "number" | "password" | "text";
 }
 
 export function FieldInput<T extends FieldValues>({
-  name,
-  label,
   control,
+  label,
+  name,
   placeholder,
   type = "text",
 }: FieldInputParams<T>) {
   return (
     <Controller
-      name={name}
       control={control}
+      name={name}
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid}>
           <FieldLabel htmlFor={`${name}-input`}>{label}</FieldLabel>
           <Input
             {...field}
-            id={`${name}-input`}
-            type={type}
             aria-invalid={fieldState.invalid}
-            placeholder={placeholder || label}
             autoComplete="off"
-            value={field.value ?? ""}
+            id={`${name}-input`}
             onChange={(e) => {
               if (type === "number") {
                 field.onChange(
@@ -41,6 +39,9 @@ export function FieldInput<T extends FieldValues>({
                 field.onChange(e);
               }
             }}
+            placeholder={placeholder || label}
+            type={type}
+            value={field.value ?? ""}
           />
           {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
         </Field>

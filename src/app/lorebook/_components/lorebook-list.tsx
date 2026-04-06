@@ -1,7 +1,8 @@
+import Link from "next/link";
+
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 
 interface LorebookListParams {
   lorebooks: { id: string; name: string }[];
@@ -11,7 +12,7 @@ export function LorebookList({ lorebooks }: LorebookListParams) {
   return (
     <div>
       <Header pageTitle="Lorebooks">
-        <Button size="sm" asChild>
+        <Button asChild size="sm">
           <Link href={"/lorebook/new"}>New Lorebook</Link>
         </Button>
       </Header>
@@ -19,9 +20,9 @@ export function LorebookList({ lorebooks }: LorebookListParams) {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {lorebooks.map((lorebook) => (
             <Link
-              key={lorebook.id}
-              href={`/lorebook/${lorebook.id}`}
               className="rounded-lg border px-4 py-3 hover:bg-muted transition-colors"
+              href={`/lorebook/${lorebook.id}`}
+              key={lorebook.id}
             >
               <p className="font-medium text-sm">{lorebook.name}</p>
             </Link>

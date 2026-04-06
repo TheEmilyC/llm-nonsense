@@ -1,6 +1,7 @@
 "use server";
 
 import fs from "fs/promises";
+import { cacheTag, revalidateTag } from "next/cache";
 import path, { join } from "path";
 
 import { PERSONA_CACHE_KEY } from "@/app/persona/_lib/schema";
@@ -8,42 +9,41 @@ import { DEFAULT_AVATAR_PATH, PERSONA_DIRECTORY } from "@/lib/constants";
 import { WORKING_DIRECTORY } from "@/lib/env-variables";
 import { createImageHash } from "@/lib/image";
 import { prisma } from "@/lib/prisma";
-import { cacheTag, revalidateTag } from "next/cache";
+
 import { Persona } from "../../../../generated/client";
 
 const PERSONA_PATH = join(WORKING_DIRECTORY, PERSONA_DIRECTORY);
 
-export async function getPersonaList(): Promise<Persona[]> {
-  "use cache";
-  cacheTag(PERSONA_CACHE_KEY);
-
-  return await prisma.persona.findMany();
-}
-
-export async function getPersonaById(id: string): Promise<Persona | null> {
-  "use cache";
-  cacheTag(`${PERSONA_CACHE_KEY}-${id}`);
-
-  return await prisma.persona.findUnique({ where: { id } });
-}
-
-export async function getPersonaByIdOrFail(id: string): Promise<Persona> {
-  const result = await getPersonaById(id);
-  if (!result) throw new Error(`Persona ID:${id} does not exist`);
-  return result;
-}
-
 export interface CreatePersonaParams {
-  persona: {
-    name: string;
-    description: string;
-  };
   image: File | undefined;
+  persona: {
+    description: string;
+    name: string;
+  };
+}
+
+export type SavePersonaImageParams =
+  | { filePath: string; image: File | undefined }
+  | {
+      image: File | undefined;
+      personaName: string;
+    };
+
+export interface SavePersonaImageResult {
+  fileName: string;
+  filePath: string;
+  imageHash: string;
+}
+
+interface UpdatePersonaParams {
+  id: string;
+  image?: File;
+  update: { description?: string; name?: string; };
 }
 
 export async function createPersona({
-  persona,
   image,
+  persona,
 }: CreatePersonaParams): Promise<Persona> {
   const { fileName, filePath, imageHash } = await savePersonaImage({
     image,
@@ -52,10 +52,10 @@ export async function createPersona({
   const personaEntity = await prisma.persona
     .create({
       data: {
-        name: persona.name,
         description: persona.description,
         image: join(PERSONA_DIRECTORY, fileName),
         imageHash,
+        name: persona.name,
       },
     })
     .catch(async (err) => {
@@ -68,17 +68,36 @@ export async function createPersona({
   return personaEntity;
 }
 
-export type SavePersonaImageParams =
-  | {
-      image: File | undefined;
-      personaName: string;
-    }
-  | { filePath: string; image: File | undefined };
+export async function deletePersona(id: string): Promise<void> {
+  const persona = await getPersonaById(id);
+  if (!persona) throw new Error("Persona does not exist");
+  // remove entity
+  await prisma.persona.delete({ where: { id } });
+  // remove image
+  await fs.rm(join(WORKING_DIRECTORY, persona.image));
 
-export interface SavePersonaImageResult {
-  fileName: string;
-  filePath: string;
-  imageHash: string;
+  revalidateTag(PERSONA_CACHE_KEY, "max");
+  revalidateTag(`${PERSONA_CACHE_KEY}-${id}`, "max");
+}
+
+export async function getPersonaById(id: string): Promise<null | Persona> {
+  "use cache";
+  cacheTag(`${PERSONA_CACHE_KEY}-${id}`);
+
+  return await prisma.persona.findUnique({ where: { id } });
+}
+
+export async function getPersonaByIdOrFail(id: string): Promise<Persona> {
+  const result = await getPersonaById(id);
+  if (!result) throw new Error(`Persona ID:${id} does not exist`);
+  return result;
+}
+
+export async function getPersonaList(): Promise<Persona[]> {
+  "use cache";
+  cacheTag(PERSONA_CACHE_KEY);
+
+  return await prisma.persona.findMany();
 }
 
 export async function savePersonaImage(
@@ -114,28 +133,10 @@ export async function savePersonaImage(
   return { fileName, filePath, imageHash };
 }
 
-export async function deletePersona(id: string): Promise<void> {
-  const persona = await getPersonaById(id);
-  if (!persona) throw new Error("Persona does not exist");
-  // remove entity
-  await prisma.persona.delete({ where: { id } });
-  // remove image
-  await fs.rm(join(WORKING_DIRECTORY, persona.image));
-
-  revalidateTag(PERSONA_CACHE_KEY, "max");
-  revalidateTag(`${PERSONA_CACHE_KEY}-${id}`, "max");
-}
-
-interface UpdatePersonaParams {
-  id: string;
-  update: { name?: string; description?: string };
-  image?: File;
-}
-
 export async function updatePersona({
   id,
-  update,
   image,
+  update,
 }: UpdatePersonaParams): Promise<Persona> {
   const orgPersona = await getPersonaById(id);
   if (!orgPersona) throw new Error("Persona does not exist");

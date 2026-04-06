@@ -1,22 +1,30 @@
-import { dbIdValidator } from "@/lib/validators";
 import z from "zod";
+
+import { dbIdValidator } from "@/lib/validators";
+
 import { Lorebook as LorebookEntity } from "../../../../generated/client";
 
 export const LOREBOOK_CACHE_KEY = "lorebook";
 
 export const lorebookFormSchema = z.object({
+  apiKey: z.string().min(1, "API key is required"),
   name: z.string().min(1, "Name is required"),
   port: z.number(),
-  apiKey: z.string().min(1, "API key is required"),
 });
 export type LorebookFormValues = z.infer<typeof lorebookFormSchema>;
 
 export const lorebookEntityDtoSchema = z.object({
+  apiKey: z.string().min(1),
   id: z.string().min(1),
   name: z.string().min(1),
-  apiKey: z.string().min(1),
   port: z.number(),
 });
+export enum LorebookStatus {
+  Ready = "ready",
+  ServerUnavailable = "server-unavailable",
+  Unauthorized = "unauthorized",
+}
+
 export type LorebookEntityDto = z.infer<typeof lorebookEntityDtoSchema>;
 
 export function toLorebookEntityDto(
@@ -25,20 +33,14 @@ export function toLorebookEntityDto(
   return lorebookEntityDtoSchema.parse(lorebook);
 }
 
-export enum LorebookStatus {
-  ServerUnavailable = "server-unavailable",
-  Ready = "ready",
-  Unauthorized = "unauthorized",
-}
-
 const lorebookIndexSchema = z.object({
+  constant: z.boolean().optional(),
   filename: z.string(),
+  keys: z.string().array(),
   name: z.string(),
+  position: z.number(),
   summary: z.string(),
   tags: z.string().array(),
-  keys: z.string().array(),
-  constant: z.boolean().optional(),
-  position: z.number(),
 });
 
 const lorebookUnavailableSchema = z.object({
@@ -48,10 +50,10 @@ const lorebookUnavailableSchema = z.object({
   ]),
 });
 const lorebookReadySchema = z.object({
-  status: z.literal(LorebookStatus.Ready),
   id: dbIdValidator,
-  name: z.string(),
   index: lorebookIndexSchema.array(),
+  name: z.string(),
+  status: z.literal(LorebookStatus.Ready),
 });
 
 export const lorebookSchema = z.discriminatedUnion("status", [
@@ -73,26 +75,26 @@ export function toLorebookDto(lorebook: Lorebook): LorebookDto {
 }
 
 export const obsidianApiConnection = z.object({
-  port: z.number(),
   apiKey: z.string(),
+  port: z.number(),
 });
 export type ObsidianApiConnection = z.infer<typeof obsidianApiConnection>;
 
 const obsidianError = z.object({
-  message: z.string(),
   errorCode: z.number(),
+  message: z.string(),
 });
 
 export const getObsidianIndexSuccessSchema = z
   .object({
     filename: z.string(),
     result: z.object({
-      title: z.string().nullable(),
-      tags: z.string().array(),
-      keys: z.string().array().nullable(),
-      summary: z.string().nullable(),
       constant: z.string().optional().nullable(),
+      keys: z.string().array().nullable(),
       position: z.number().optional().nullable(),
+      summary: z.string().nullable(),
+      tags: z.string().array(),
+      title: z.string().nullable(),
     }),
   })
   .array();
@@ -105,21 +107,21 @@ export type GetLorebookIndexResposne = z.infer<
 >;
 
 export const obsidianFileSchema = z.object({
-  tags: z.string().array(),
+  content: z.string(),
   frontmatter: z.object({
-    title: z.string().optional(),
     aliases: z.string().array().optional().nullable(),
+    constant: z.string().optional().nullable(),
     keys: z.string().array().optional().nullable(),
     summary: z.string().optional().nullable(),
-    constant: z.string().optional().nullable(),
+    title: z.string().optional(),
   }),
+  path: z.string(),
   stat: z.object({
     ctime: z.number(),
     mtime: z.number(),
     size: z.number(),
   }),
-  path: z.string(),
-  content: z.string(),
+  tags: z.string().array(),
 });
 export type ObsidianFile = z.infer<typeof obsidianFileSchema>;
 

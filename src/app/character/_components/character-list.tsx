@@ -1,4 +1,9 @@
 "use client";
+import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+
 import { useImportCharacterFromPNG } from "@/app/character/_lib/hooks";
 import {
   ImportFromPngForm,
@@ -20,11 +25,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { buildCharacterImageUrl } from "@/lib/image";
-
-import { zodResolver } from "@hookform/resolvers/zod";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
 
 interface CharacterListParams {
   characters: { id: string; name: string; pngHash: string }[];
@@ -62,18 +62,18 @@ export function CharacterList({ characters }: CharacterListParams) {
                 </DialogDescription>
               </DialogHeader>
               <FieldImageUpload
-                control={form.control}
-                name="png"
-                label=""
                 acceptedFormats="png"
+                control={form.control}
+                label=""
+                name="png"
               />
               <DialogFooter>
                 <DialogClose asChild>
                   <Button variant="outline">Cancel</Button>
                 </DialogClose>
                 <Button
-                  type="submit"
                   disabled={isPending || !form.formState.isValid}
+                  type="submit"
                 >
                   {isPending ? "Importing..." : "Import"}
                 </Button>
@@ -82,7 +82,7 @@ export function CharacterList({ characters }: CharacterListParams) {
           </DialogContent>
         </Dialog>
 
-        <Button size="sm" asChild>
+        <Button asChild size="sm">
           <Link href="/character/new">New Character</Link>
         </Button>
       </Header>
@@ -90,16 +90,16 @@ export function CharacterList({ characters }: CharacterListParams) {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {characters.map((character) => (
             <Link
-              key={character.id}
-              href={`/character/${character.id}`}
               className="group relative rounded-lg overflow-hidden aspect-3/4 bg-muted hover:ring-2 hover:ring-foreground/30 transition-all"
+              href={`/character/${character.id}`}
+              key={character.id}
             >
               <CardTile
+                name={character.name}
                 src={buildCharacterImageUrl({
                   id: character.id,
                   pngHash: character.pngHash,
                 })}
-                name={character.name}
               />
             </Link>
           ))}

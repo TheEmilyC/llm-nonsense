@@ -1,12 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import { WorldForm } from "@/app/world/_components/world-form";
 import { useDeleteWorld, useUpdateWorld } from "@/app/world/_lib/hooks";
 import { WorldDto, WorldFormValues } from "@/app/world/_lib/schema";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 
 const FORM_ID = "form-edit-world";
 
@@ -17,7 +18,7 @@ interface WorldEditParams {
 export function WorldEdit({ world }: WorldEditParams) {
   const router = useRouter();
   const { deleteWorld, isPending: isDeletePending } = useDeleteWorld();
-  const { updateWorld, isPending: isUpdatePending } = useUpdateWorld();
+  const { isPending: isUpdatePending, updateWorld } = useUpdateWorld();
 
   const isPending = isDeletePending || isUpdatePending;
 
@@ -28,33 +29,33 @@ export function WorldEdit({ world }: WorldEditParams) {
   }
 
   async function onSubmitHandler(data: WorldFormValues) {
-    await updateWorld({ worldId: world.id, data });
+    await updateWorld({ data, worldId: world.id });
   }
 
   return (
     <div>
       <Header
-        pageTitle={world.name}
         backLinkDestination="/world"
         backLinkLabel="Worlds"
+        pageTitle={world.name}
       >
         <Button
+          disabled={isPending}
+          onClick={deleteHandler}
           size="sm"
           type="button"
           variant="destructive"
-          disabled={isPending}
-          onClick={deleteHandler}
         >
           {isDeletePending ? "Deleting..." : "Delete"}
         </Button>
-        <Button size="sm" type="submit" form={FORM_ID} disabled={isPending}>
+        <Button disabled={isPending} form={FORM_ID} size="sm" type="submit">
           {isUpdatePending ? "Saving..." : "Save"}
         </Button>
       </Header>
       <Content>
         <WorldForm
-          formId={FORM_ID}
           defaultValues={world}
+          formId={FORM_ID}
           imageSrc={world.imageUrl}
           onSubmit={onSubmitHandler}
         />

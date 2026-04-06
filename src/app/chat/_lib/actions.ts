@@ -1,5 +1,7 @@
 "use server";
 
+import { createIdGenerator } from "ai";
+
 import { getCharacterByIdOrFail } from "@/app/character/_lib/data";
 import {
   createChat,
@@ -20,7 +22,7 @@ import { ActionResponse } from "@/lib/action-utils";
 import { constructPromptMessages } from "@/lib/ai/prompt-manager";
 import { HttpStatus } from "@/lib/http";
 import { dbIdValidator } from "@/lib/validators";
-import { createIdGenerator } from "ai";
+
 import { MessageRole } from "../../../../generated/enums";
 
 export async function createChatFromStoryAction(
@@ -29,7 +31,7 @@ export async function createChatFromStoryAction(
   const idParseResult = dbIdValidator.safeParse(storyId);
   if (!idParseResult.success) {
     console.error(idParseResult.error);
-    return { success: false, error: "Malformed chat data" };
+    return { error: "Malformed chat data", success: false };
   }
 
   let story;
@@ -39,7 +41,7 @@ export async function createChatFromStoryAction(
     console.error(err);
   }
   if (!story)
-    return { success: false, error: "not found", status: HttpStatus.NOT_FOUND };
+    return { error: "not found", status: HttpStatus.NOT_FOUND, success: false };
 
   let chat;
   try {
@@ -55,10 +57,10 @@ export async function createChatFromStoryAction(
     // preload character first message
     if (character.card.first_mes.length > 0) {
       const [message] = constructPromptMessages({
-        prompts: [character.card.first_mes],
         character: character.card,
-        world,
         persona,
+        prompts: [character.card.first_mes],
+        world,
       });
       const idGenerator = createIdGenerator({
         prefix: "msg",
@@ -70,22 +72,22 @@ export async function createChatFromStoryAction(
         messageContent: {
           id: idGenerator(),
           isActive: true,
-          role: MessageRole.assistant,
           parts: [
             {
-              type: "text",
               text: message,
+              type: "text",
             },
           ],
+          role: MessageRole.assistant,
         },
       });
     }
     chat = newChat;
   } catch (err) {
     console.error(err);
-    return { success: false, error: "Failed to create chat" };
+    return { error: "Failed to create chat", success: false };
   }
-  return { success: true, data: { id: chat.id } };
+  return { data: { id: chat.id }, success: true };
 }
 
 export async function deleteChatAction(
@@ -93,14 +95,14 @@ export async function deleteChatAction(
 ): Promise<ActionResponse<void>> {
   const parseResult = dbIdValidator.safeParse(chatId);
   if (!parseResult.success) {
-    return { success: false, error: "Malformed chat id" };
+    return { error: "Malformed chat id", success: false };
   }
   try {
     await deleteChat(chatId);
-    return { success: true, data: undefined };
+    return { data: undefined, success: true };
   } catch (err) {
     console.error(err);
-    return { success: false, error: "Failed to delete chat" };
+    return { error: "Failed to delete chat", success: false };
   }
 }
 
@@ -110,7 +112,7 @@ export async function updateMessageContentAction(
   const parseResult = updateContentActionParamsSchema.safeParse(params);
   if (!parseResult.success) {
     console.error(parseResult.error);
-    return { success: false, error: "Malfored chat data" };
+    return { error: "Malfored chat data", success: false };
   }
   const { id, update } = parseResult.data;
 
@@ -119,9 +121,9 @@ export async function updateMessageContentAction(
       id,
       update,
     });
-    return { success: true, data: messageContentToDto(messageContent) };
+    return { data: messageContentToDto(messageContent), success: true };
   } catch (err) {
     console.error(err);
-    return { success: false, error: "Failed to update chat" };
+    return { error: "Failed to update chat", success: false };
   }
 }

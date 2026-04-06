@@ -1,12 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import { LorebookForm } from "@/app/lorebook/_components/lorebook-form";
 import { useCreateLorebook } from "@/app/lorebook/_lib/hooks";
 import { LorebookFormValues } from "@/app/lorebook/_lib/schema";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 
 const FORM_ID = "form-new-lorebook";
 
@@ -22,11 +23,11 @@ export function LorebookNew() {
   return (
     <div>
       <Header
-        pageTitle="New Lorebook"
         backLinkDestination="/lorebook"
         backLinkLabel="Lorebooks"
+        pageTitle="New Lorebook"
       >
-        <Button size="sm" disabled={isPending} type="submit" form={FORM_ID}>
+        <Button disabled={isPending} form={FORM_ID} size="sm" type="submit">
           {isPending ? "Saving..." : "Save"}
         </Button>
       </Header>

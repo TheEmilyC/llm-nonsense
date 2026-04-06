@@ -1,8 +1,9 @@
 "use client";
 
+import { ThemeProvider } from "next-themes";
+
 import QueryProvider from "@/components/query-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "next-themes";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (

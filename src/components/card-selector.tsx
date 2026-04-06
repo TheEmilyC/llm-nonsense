@@ -1,6 +1,7 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
+
 import { useState } from "react";
 
 import { CardTile } from "@/components/card-tile";
@@ -16,24 +17,24 @@ import { cn } from "@/lib/utils";
 
 export interface CardOption {
   id: string;
-  name: string;
   imageUrl: string;
+  name: string;
 }
 
 interface CardSelectorParams {
   icon?: LucideIcon;
   label?: string;
+  onChange?: (selected: CardOption) => void;
   options?: CardOption[];
   selectedId?: string;
-  onChange?: (selected: CardOption) => void;
 }
 
 export function CardSelector({
   icon: Icon,
   label,
+  onChange,
   options,
   selectedId,
-  onChange,
 }: CardSelectorParams) {
   const [open, setOpen] = useState(false);
   const selected = options?.find((o) => o.id === selectedId);
@@ -42,7 +43,7 @@ export function CardSelector({
     onChange?.(selected);
   }
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger className="w-full h-full">
         <div className="relative w-full h-full rounded-lg overflow-hidden bg-muted flex items-center justify-center border-2 border-dashed cursor-pointer hover:border-foreground/40 transition-colors">
           {selected ? (
@@ -66,11 +67,11 @@ export function CardSelector({
           {options && options.length > 0 ? (
             options?.map((opt) => (
               <div
-                key={opt.id}
-                onClick={() => handleSelectChange(opt)}
                 className={cn(
                   opt.id === selectedId && "ring-2 ring-primary rounded-lg",
                 )}
+                key={opt.id}
+                onClick={() => handleSelectChange(opt)}
               >
                 <CardTile name={opt.name} src={opt.imageUrl} />
               </div>

@@ -1,8 +1,8 @@
 import { ApiError } from "@/lib/error";
 
 export type ActionResponse<T> =
-  | { success: true; data: T }
-  | { success: false; error: string; status?: number };
+  | { data: T; success: true; }
+  | { error: string; status?: number; success: false; };
 
 export function unwrapAction<T>(result: ActionResponse<T>): T {
   if (!result.success) {
@@ -20,6 +20,6 @@ export async function withActionError<T>(
     console.error(err);
     const error =
       err instanceof Error ? err.message : "An unexpected error occurred";
-    return { success: false, error };
+    return { error, success: false };
   }
 }

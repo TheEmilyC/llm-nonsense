@@ -3,17 +3,17 @@ import Image from "next/image";
 import { useRef, useState } from "react";
 
 interface ImageUploadParams {
+  acceptedFormats: "image" | "png";
   imageSrc?: string;
-  onChange?: (newImage: File | null) => void;
-  acceptedFormats: "png" | "image";
   name?: string;
+  onChange?: (newImage: File | null) => void;
 }
 
 export function ImageUpload({
-  imageSrc,
-  onChange,
   acceptedFormats,
+  imageSrc,
   name,
+  onChange,
 }: ImageUploadParams) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [imagePreview, setImagePreview] = useState<string | undefined>(
@@ -37,12 +37,12 @@ export function ImageUpload({
       >
         {imagePreview || imageSrc ? (
           <Image
-            src={imagePreview || imageSrc || ""}
             alt={"Character Image"}
-            width={144}
-            height={192}
             className="object-cover w-full h-full"
+            height={192}
             loading="eager"
+            src={imagePreview || imageSrc || ""}
+            width={144}
           />
         ) : (
           <span className="text-xs text-muted-foreground text-center px-2">
@@ -51,12 +51,12 @@ export function ImageUpload({
         )}
       </div>
       <input
-        ref={inputRef}
-        type="file"
-        name={name}
         accept={acceptedFormats === "png" ? "image/png" : "image/*"}
         className="hidden"
+        name={name}
         onChange={handleFileInput}
+        ref={inputRef}
+        type="file"
       />
     </div>
   );

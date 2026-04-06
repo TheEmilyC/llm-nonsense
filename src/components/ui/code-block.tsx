@@ -1,13 +1,23 @@
 "use client"
 
-import { cn } from "@/lib/utils"
 import React, { useEffect, useState } from "react"
 import { codeToHtml } from "shiki"
 
-export type CodeBlockProps = {
+import { cn } from "@/lib/utils"
+
+export type CodeBlockCodeProps = React.HTMLProps<HTMLDivElement> & {
+  className?: string
+  code: string
+  language?: string
+  theme?: string
+}
+
+export type CodeBlockGroupProps = React.HTMLAttributes<HTMLDivElement>
+
+export type CodeBlockProps = React.HTMLProps<HTMLDivElement> & {
   children?: React.ReactNode
   className?: string
-} & React.HTMLProps<HTMLDivElement>
+}
 
 function CodeBlock({ children, className, ...props }: CodeBlockProps) {
   return (
@@ -24,21 +34,14 @@ function CodeBlock({ children, className, ...props }: CodeBlockProps) {
   )
 }
 
-export type CodeBlockCodeProps = {
-  code: string
-  language?: string
-  theme?: string
-  className?: string
-} & React.HTMLProps<HTMLDivElement>
-
 function CodeBlockCode({
+  className,
   code,
   language = "tsx",
   theme = "github-light",
-  className,
   ...props
 }: CodeBlockCodeProps) {
-  const [highlightedHtml, setHighlightedHtml] = useState<string | null>(null)
+  const [highlightedHtml, setHighlightedHtml] = useState<null | string>(null)
 
   useEffect(() => {
     async function highlight() {
@@ -74,8 +77,6 @@ function CodeBlockCode({
   )
 }
 
-export type CodeBlockGroupProps = React.HTMLAttributes<HTMLDivElement>
-
 function CodeBlockGroup({
   children,
   className,
@@ -91,4 +92,4 @@ function CodeBlockGroup({
   )
 }
 
-export { CodeBlockGroup, CodeBlockCode, CodeBlock }
+export { CodeBlock, CodeBlockCode, CodeBlockGroup }

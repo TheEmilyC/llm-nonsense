@@ -1,8 +1,6 @@
 // src/providers/query-provider.tsx
 "use client";
 
-import { ApiError } from "@/lib/error";
-import { HttpStatus } from "@/lib/http";
 import {
   MutationCache,
   QueryClient,
@@ -11,6 +9,9 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
+
+import { ApiError } from "@/lib/error";
+import { HttpStatus } from "@/lib/http";
 
 export default function QueryProvider({
   children,
@@ -23,8 +24,8 @@ export default function QueryProvider({
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 60 * 1000, // 1 minute
             refetchOnWindowFocus: false,
+            staleTime: 60 * 1000, // 1 minute
           },
         },
         mutationCache: new MutationCache({

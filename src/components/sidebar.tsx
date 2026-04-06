@@ -1,6 +1,7 @@
+import { Suspense } from "react";
+
 import { NavLinks } from "@/components/sidebar-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Suspense } from "react";
 
 export function Sidebar() {
   return (

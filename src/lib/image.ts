@@ -1,9 +1,5 @@
 import crypto from "crypto";
 
-export function createImageHash(imageBuffer: Buffer) {
-  return crypto.createHash("md5").update(imageBuffer).digest("hex").slice(0, 8);
-}
-
 export function buildCharacterImageUrl({
   id,
   pngHash,
@@ -32,4 +28,8 @@ export function buildWorldImageUrl({
   imgHash: string;
 }): string {
   return `/api/world/${id}/image?v=${imgHash}`;
+}
+
+export function createImageHash(imageBuffer: Buffer) {
+  return crypto.createHash("md5").update(imageBuffer).digest("hex").slice(0, 8);
 }

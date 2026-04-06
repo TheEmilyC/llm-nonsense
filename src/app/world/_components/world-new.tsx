@@ -1,12 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import { WorldForm } from "@/app/world/_components/world-form";
 import { useCreateWorld } from "@/app/world/_lib/hooks";
 import { WorldFormValues } from "@/app/world/_lib/schema";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 
 const FORM_ID = "form-new-world";
 
@@ -22,11 +23,11 @@ export function WorldNew() {
   return (
     <div>
       <Header
-        pageTitle="New World"
         backLinkDestination="/world"
         backLinkLabel="Worlds"
+        pageTitle="New World"
       >
-        <Button size="sm" disabled={isPending} type="submit" form={FORM_ID}>
+        <Button disabled={isPending} form={FORM_ID} size="sm" type="submit">
           {isPending ? "Saving..." : "Save"}
         </Button>
       </Header>

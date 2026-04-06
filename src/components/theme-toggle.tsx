@@ -3,6 +3,7 @@
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+
 import {
   Tooltip,
   TooltipContent,
@@ -11,7 +12,7 @@ import {
 
 export function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
-  const { theme, setTheme } = useTheme();
+  const { setTheme, theme } = useTheme();
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Needed for SSR & theme selector
@@ -24,8 +25,8 @@ export function ThemeToggle() {
     <Tooltip>
       <TooltipTrigger asChild>
         <button
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           className="flex items-center justify-center rounded-md p-2 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground"
+          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
         >
           {theme === "dark" ? (
             <Sun className="h-5 w-5" />

@@ -1,12 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import { PersonaForm } from "@/app/persona/_components/persona-form";
 import { useDeletePersona, useUpdatePersona } from "@/app/persona/_lib/hooks";
 import { PersonaDto, PersonaFormValues } from "@/app/persona/_lib/schema";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 
 const FORM_ID = "form-edit-persona";
 
@@ -17,7 +18,7 @@ interface PersonaEditParams {
 export function PersonaEdit({ persona }: PersonaEditParams) {
   const router = useRouter();
   const { deletePersona, isPending: isDeletePending } = useDeletePersona();
-  const { updatePersona, isPending: isUpdatePending } = useUpdatePersona();
+  const { isPending: isUpdatePending, updatePersona } = useUpdatePersona();
 
   const isPending = isDeletePending || isUpdatePending;
 
@@ -28,33 +29,33 @@ export function PersonaEdit({ persona }: PersonaEditParams) {
   }
 
   async function onSubmitHandler(data: PersonaFormValues) {
-    await updatePersona({ personaId: persona.id, data });
+    await updatePersona({ data, personaId: persona.id });
   }
 
   return (
     <div>
       <Header
-        pageTitle={persona.name}
         backLinkDestination="/persona"
         backLinkLabel="Persona"
+        pageTitle={persona.name}
       >
         <Button
+          disabled={isPending}
+          onClick={deleteHandler}
           size="sm"
           type="button"
           variant="destructive"
-          disabled={isPending}
-          onClick={deleteHandler}
         >
           {isDeletePending ? "Deleting..." : "Delete"}
         </Button>
-        <Button size="sm" type="submit" form={FORM_ID} disabled={isPending}>
+        <Button disabled={isPending} form={FORM_ID} size="sm" type="submit">
           {isUpdatePending ? "Saving..." : "Save"}
         </Button>
       </Header>
       <Content>
         <PersonaForm
-          formId={FORM_ID}
           defaultValues={persona}
+          formId={FORM_ID}
           imageSrc={persona.imageUrl}
           onSubmit={onSubmitHandler}
         />

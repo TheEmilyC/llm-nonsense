@@ -1,5 +1,8 @@
 "use server";
 
+import { revalidateTag } from "next/cache";
+import { notFound } from "next/navigation";
+
 import {
   createLorebookEntity,
   deleteLorebookEntity,
@@ -18,8 +21,13 @@ import {
 import { ActionResponse } from "@/lib/action-utils";
 import { LOREBOOK_TAG } from "@/lib/env-variables";
 import { dbIdValidator } from "@/lib/validators";
-import { revalidateTag } from "next/cache";
-import { notFound } from "next/navigation";
+
+interface TestConnectionActionParams {
+  api: {
+    apiKey: string;
+    port: number;
+  };
+}
 
 export async function createLorebookAction(
   data: LorebookFormValues,
@@ -27,39 +35,15 @@ export async function createLorebookAction(
   const parseResult = lorebookFormSchema.safeParse(data);
   if (!parseResult.success) {
     console.error(parseResult.error);
-    return { success: false, error: "Malformed lorebook data" };
+    return { error: "Malformed lorebook data", success: false };
   }
   const newLorebook = parseResult.data;
   try {
     const entity = await createLorebookEntity({ newLorebook });
-    return { success: true, data: { id: entity.id } };
+    return { data: { id: entity.id }, success: true };
   } catch (err) {
     console.error(err);
-    return { success: false, error: "Lorebook create failed" };
-  }
-}
-
-export async function updateLorebookAction(
-  lorebookId: string,
-  data: LorebookFormValues,
-): Promise<ActionResponse<LorebookEntityDto>> {
-  const idResult = dbIdValidator.safeParse(lorebookId);
-  if (!idResult.success)
-    return { success: false, error: "Invalid lorebook ID" };
-  const id = idResult.data;
-
-  const parseResult = lorebookFormSchema.safeParse(data);
-  if (!parseResult.success) {
-    console.error(parseResult.error);
-    return { success: false, error: "Malformed lorebook data" };
-  }
-  const update = parseResult.data;
-  try {
-    const entity = await updateLorebookEntity({ id, update });
-    return { success: true, data: toLorebookEntityDto(entity) };
-  } catch (err) {
-    console.error(err);
-    return { success: false, error: "Lorebook update failed" };
+    return { error: "Lorebook create failed", success: false };
   }
 }
 
@@ -70,10 +54,10 @@ export async function deleteLorebookAction(
   if (!idResult.success) notFound();
   try {
     await deleteLorebookEntity(idResult.data);
-    return { success: true, data: null };
+    return { data: null, success: true };
   } catch (err) {
     console.error(err);
-    return { success: false, error: "Lorebook delete failed" };
+    return { error: "Lorebook delete failed", success: false };
   }
 }
 
@@ -83,25 +67,18 @@ export async function getLorebookAction(
 ): Promise<ActionResponse<LorebookDto>> {
   const idParseResult = dbIdValidator.safeParse(lorebookId);
   if (!idParseResult.success) {
-    return { success: false, error: "Malformed lorebook data" };
+    return { error: "Malformed lorebook data", success: false };
   }
   const id = idParseResult.data;
 
   if (isRetry) revalidateTag(LOREBOOK_TAG, "max");
   try {
     const lorebook = await getLorebookById(id);
-    return { success: true, data: toLorebookDto(lorebook) };
+    return { data: toLorebookDto(lorebook), success: true };
   } catch (err) {
     console.error(err);
-    return { success: false, error: "Failed to fetch lorebook" };
+    return { error: "Failed to fetch lorebook", success: false };
   }
-}
-
-interface TestConnectionActionParams {
-  api: {
-    port: number;
-    apiKey: string;
-  };
 }
 
 export async function testConnectionAction({
@@ -110,12 +87,36 @@ export async function testConnectionAction({
   try {
     const result = await testLorebookConnection(api);
     if (result) {
-      return { success: true, data: null };
+      return { data: null, success: true };
     } else {
       // shouldn't happen
-      return { success: false, error: "Unknown error" };
+      return { error: "Unknown error", success: false };
     }
   } catch (err) {
-    return { success: false, error: (err as Error).message };
+    return { error: (err as Error).message, success: false };
+  }
+}
+
+export async function updateLorebookAction(
+  lorebookId: string,
+  data: LorebookFormValues,
+): Promise<ActionResponse<LorebookEntityDto>> {
+  const idResult = dbIdValidator.safeParse(lorebookId);
+  if (!idResult.success)
+    return { error: "Invalid lorebook ID", success: false };
+  const id = idResult.data;
+
+  const parseResult = lorebookFormSchema.safeParse(data);
+  if (!parseResult.success) {
+    console.error(parseResult.error);
+    return { error: "Malformed lorebook data", success: false };
+  }
+  const update = parseResult.data;
+  try {
+    const entity = await updateLorebookEntity({ id, update });
+    return { data: toLorebookEntityDto(entity), success: true };
+  } catch (err) {
+    console.error(err);
+    return { error: "Lorebook update failed", success: false };
   }
 }

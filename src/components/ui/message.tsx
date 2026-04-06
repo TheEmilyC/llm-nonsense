@@ -6,12 +6,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
+
 import { Markdown } from "./markdown"
 
-export type MessageProps = {
+export type MessageProps = React.HTMLProps<HTMLDivElement> & {
   children: React.ReactNode
   className?: string
-} & React.HTMLProps<HTMLDivElement>
+}
 
 const Message = ({ children, className, ...props }: MessageProps) => (
   <div className={cn("flex gap-3", className)} {...props}>
@@ -20,23 +21,23 @@ const Message = ({ children, className, ...props }: MessageProps) => (
 )
 
 export type MessageAvatarProps = {
-  src: string
   alt: string
-  fallback?: string
-  delayMs?: number
   className?: string
+  delayMs?: number
+  fallback?: string
+  src: string
 }
 
 const MessageAvatar = ({
-  src,
   alt,
-  fallback,
-  delayMs,
   className,
+  delayMs,
+  fallback,
+  src,
 }: MessageAvatarProps) => {
   return (
     <Avatar className={cn("h-8 w-8 shrink-0", className)}>
-      <AvatarImage src={src} alt={alt} />
+      <AvatarImage alt={alt} src={src} />
       {fallback && (
         <AvatarFallback delayMs={delayMs}>{fallback}</AvatarFallback>
       )}
@@ -44,17 +45,17 @@ const MessageAvatar = ({
   )
 }
 
-export type MessageContentProps = {
+export type MessageContentProps = React.ComponentProps<typeof Markdown> & React.HTMLProps<HTMLDivElement> &
+  {
   children: React.ReactNode
-  markdown?: boolean
   className?: string
-} & React.ComponentProps<typeof Markdown> &
-  React.HTMLProps<HTMLDivElement>
+  markdown?: boolean
+}
 
 const MessageContent = ({
   children,
-  markdown = false,
   className,
+  markdown = false,
   ...props
 }: MessageContentProps) => {
   const classNames = cn(
@@ -73,10 +74,10 @@ const MessageContent = ({
   )
 }
 
-export type MessageActionsProps = {
+export type MessageActionsProps = React.HTMLProps<HTMLDivElement> & {
   children: React.ReactNode
   className?: string
-} & React.HTMLProps<HTMLDivElement>
+}
 
 const MessageActions = ({
   children,
@@ -91,25 +92,25 @@ const MessageActions = ({
   </div>
 )
 
-export type MessageActionProps = {
-  className?: string
-  tooltip: React.ReactNode
+export type MessageActionProps = React.ComponentProps<typeof Tooltip> & {
   children: React.ReactNode
-  side?: "top" | "bottom" | "left" | "right"
-} & React.ComponentProps<typeof Tooltip>
+  className?: string
+  side?: "bottom" | "left" | "right" | "top"
+  tooltip: React.ReactNode
+}
 
 const MessageAction = ({
-  tooltip,
   children,
   className,
   side = "top",
+  tooltip,
   ...props
 }: MessageActionProps) => {
   return (
     <TooltipProvider>
       <Tooltip {...props}>
         <TooltipTrigger asChild>{children}</TooltipTrigger>
-        <TooltipContent side={side} className={className}>
+        <TooltipContent className={className} side={side}>
           {tooltip}
         </TooltipContent>
       </Tooltip>
@@ -117,4 +118,4 @@ const MessageAction = ({
   )
 }
 
-export { Message, MessageAvatar, MessageContent, MessageActions, MessageAction }
+export { Message, MessageAction, MessageActions, MessageAvatar, MessageContent }

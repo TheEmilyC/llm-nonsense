@@ -1,61 +1,42 @@
+import path from "path";
+
 import {
   LOREBOOK_CASE_SENSITIVE,
   LOREBOOK_MATCH_WHOLE_WORDS,
   LOREBOOK_MAX_MATCHES,
 } from "@/lib/constants";
-import path from "path";
 
 export interface IndexEntry {
   constant?: boolean;
+  filename: string;
   keys: string[];
   position: number;
-  filename: string;
   summary: string;
 }
 
-/**
- * Escape a string for use in a regex.
- * @param {string} str
- * @returns {string}
- */
-function escapeRegex(str: string) {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+interface ConvertFilesToPromptParams {
+  files: { content: string; path: string; title?: string; }[];
 }
 
 interface ScanLorebookIndexParams {
-  scanText: string;
   index: IndexEntry[];
+  scanText: string;
 }
 
-/**
- * Removes frontmatter YAML from the start of a file
- * @param str
- * @returns
- */
-function stripFrontMatter(str: string) {
-  return str.replace(/^---[\s\S]*?---/g, "").trim();
-}
+export function convertFilesToPrompt({ files }: ConvertFilesToPromptParams) {
+  const lorebookPrompt = files.reduce((acc, file) => {
+    const fileText = stripFrontMatter(file.content);
+    const { cleanedText, header } = extractHeader(fileText);
+    const title = file.title || header || path.basename(file.path);
+    return acc + `<${title}>${cleanedText}</${title}>`;
+  }, "");
 
-/**
- * Extracts the leading header
- * @param str
- * @returns Returns the str without the header if present, and the found header without markup
- */
-function extractHeader(str: string) {
-  let header: string | null = null;
-  const headerRegex = /^#\s+(.*)\n?/;
-  const match = str.match(headerRegex);
-  if (match) {
-    header = match[1].trim();
-  }
-  const cleanedText = str.replace(headerRegex, "").trim();
-
-  return { cleanedText, header };
+  return lorebookPrompt;
 }
 
 export function scanLorebookIndex({
-  scanText,
   index,
+  scanText,
 }: ScanLorebookIndexParams) {
   const scanTextFormatted = LOREBOOK_CASE_SENSITIVE
     ? scanText
@@ -68,6 +49,41 @@ export function scanLorebookIndex({
     .map((index) => index.filename);
 
   return indexList;
+}
+
+/**
+ * Escape a string for use in a regex.
+ * @param {string} str
+ * @returns {string}
+ */
+function escapeRegex(str: string) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Extracts the leading header
+ * @param str
+ * @returns Returns the str without the header if present, and the found header without markup
+ */
+function extractHeader(str: string) {
+  let header: null | string = null;
+  const headerRegex = /^#\s+(.*)\n?/;
+  const match = str.match(headerRegex);
+  if (match) {
+    header = match[1].trim();
+  }
+  const cleanedText = str.replace(headerRegex, "").trim();
+
+  return { cleanedText, header };
+}
+
+/**
+ * Removes frontmatter YAML from the start of a file
+ * @param str
+ * @returns
+ */
+function stripFrontMatter(str: string) {
+  return str.replace(/^---[\s\S]*?---/g, "").trim();
 }
 
 function testIndexMatch(scanText: string, index: IndexEntry): boolean {
@@ -87,19 +103,4 @@ function testIndexMatch(scanText: string, index: IndexEntry): boolean {
     }
   }
   return false;
-}
-
-interface ConvertFilesToPromptParams {
-  files: { content: string; title?: string; path: string }[];
-}
-
-export function convertFilesToPrompt({ files }: ConvertFilesToPromptParams) {
-  const lorebookPrompt = files.reduce((acc, file) => {
-    const fileText = stripFrontMatter(file.content);
-    const { cleanedText, header } = extractHeader(fileText);
-    const title = file.title || header || path.basename(file.path);
-    return acc + `<${title}>${cleanedText}</${title}>`;
-  }, "");
-
-  return lorebookPrompt;
 }

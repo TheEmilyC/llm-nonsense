@@ -21,9 +21,9 @@ export function StoriesList({ stories }: StoriesListParams) {
         <div className="flex flex-col gap-2">
           {stories.map((story) => (
             <Link
-              key={story.id}
-              href={`/story/${story.id}`}
               className="rounded-lg border px-4 py-3 hover:bg-muted transition-colors"
+              href={`/story/${story.id}`}
+              key={story.id}
             >
               <p className="font-medium text-sm">{story.name}</p>
             </Link>
