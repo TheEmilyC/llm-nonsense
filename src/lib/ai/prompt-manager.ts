@@ -1,4 +1,4 @@
-import { WORKING_DIRECTORY } from "@/lib/env-variables";
+import { PROMPT_FILE, WORKING_DIRECTORY } from "@/lib/env-variables";
 import fs from "fs/promises";
 import path, { join } from "path";
 
@@ -23,9 +23,7 @@ export async function assemblePrompts({ debug = false } = {}): Promise<{
   systemPrompt: string;
   userPrompt: string;
 }> {
-  const promptFragments = await readPropmptFile(
-    join(PROMPTS_DIR, "main-prompts/mpv1.json"),
-  );
+  const promptFragments = await readPropmptFile(join(PROMPTS_DIR, PROMPT_FILE));
 
   const systemPrompt = promptFragments
     .filter((f) => f.role === "system" && f.defaultEnable)
