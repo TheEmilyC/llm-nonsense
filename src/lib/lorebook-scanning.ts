@@ -5,11 +5,12 @@ import {
 } from "@/lib/constants";
 import path from "path";
 
-interface IndexEntry {
+export interface IndexEntry {
   constant?: boolean;
   keys: string[];
   position: number;
   filename: string;
+  summary: string;
 }
 
 /**
