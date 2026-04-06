@@ -24,18 +24,21 @@ import {
   ReasoningTrigger,
 } from "@/components/ui/reasoning";
 import { ScrollButton } from "@/components/ui/scroll-button";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { UIMessage } from "ai";
 import {
   ArrowUp,
   BookOpen,
+  Check,
   ChevronLeft,
   ChevronRight,
   Pencil,
   Square,
+  X,
 } from "lucide-react";
 import Image from "next/image";
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 
 function ChatAvatar({
   src,
@@ -95,6 +98,7 @@ interface ChatMessageProps {
   isStreaming: boolean;
   character: { id: string; name: string; avatarSrc: string };
   persona: { id: string; name: string; avatarSrc: string };
+  onEdit?: (newText: string) => void;
 }
 
 export function ChatMessage({
@@ -102,8 +106,25 @@ export function ChatMessage({
   isStreaming,
   character,
   persona,
+  onEdit,
 }: ChatMessageProps) {
   const isUser = message.role === "user";
+  const [isEditing, setIsEditing] = useState(false);
+  const [editText, setEditText] = useState("");
+
+  const startEdit = (currentText: string) => {
+    setEditText(currentText);
+    setIsEditing(true);
+  };
+
+  const saveEdit = () => {
+    onEdit?.(editText);
+    setIsEditing(false);
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+  };
 
   return (
     <Message className={cn("reading-body", isUser ? "justify-end" : "")}>
@@ -118,7 +139,7 @@ export function ChatMessage({
           alt={isUser ? persona.name : character.name}
           isUser={isUser}
         />
-        <div className="flex flex-col gap-2 p-3">
+        <div className="flex flex-col gap-2 p-3 min-w-0 flex-1">
           <span className="text-xs font-semibold tracking-wide uppercase opacity-60">
             {isUser ? persona.name : character.name}
           </span>
@@ -157,6 +178,42 @@ export function ChatMessage({
               );
             }
             if (part.type === "text") {
+              if (isEditing) {
+                return (
+                  <div key={partIndex} className="flex flex-col gap-2">
+                    <Textarea
+                      rows={25}
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          saveEdit();
+                        }
+                        if (e.key === "Escape") cancelEdit();
+                      }}
+                      className="bg-transparent border-muted-foreground/30 text-sm resize-none"
+                      autoFocus
+                    />
+                    <div className="flex gap-1">
+                      <button
+                        onClick={saveEdit}
+                        className="p-1 hover:text-foreground transition-colors text-muted-foreground"
+                        aria-label="Save edit"
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        className="p-1 hover:text-foreground transition-colors text-muted-foreground"
+                        aria-label="Cancel edit"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              }
               return (
                 <div key={partIndex} className="group/text">
                   <MessageContent
@@ -167,7 +224,10 @@ export function ChatMessage({
                   </MessageContent>
                   <MessageActions className="mt-1 opacity-0 group-hover/text:opacity-100 transition-opacity">
                     <MessageAction tooltip="Edit">
-                      <button className="p-1 hover:text-foreground transition-colors">
+                      <button
+                        className="p-1 hover:text-foreground transition-colors"
+                        onClick={() => startEdit(part.text)}
+                      >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                     </MessageAction>
@@ -188,6 +248,7 @@ interface ChatMessagesProps {
   status: "ready" | "submitted" | "streaming" | "error";
   character: { id: string; name: string; avatarSrc: string };
   persona: { id: string; name: string; avatarSrc: string };
+  onEdit?: (messageId: string, newText: string) => void;
 }
 
 export function ChatMessages({
@@ -195,6 +256,7 @@ export function ChatMessages({
   status,
   character,
   persona,
+  onEdit,
 }: ChatMessagesProps) {
   return (
     <div className="flex flex-col gap-4">
@@ -205,6 +267,7 @@ export function ChatMessages({
           isStreaming={status === "streaming" && i === messages.length - 1}
           character={character}
           persona={persona}
+          onEdit={onEdit ? (newText) => onEdit(message.id, newText) : undefined}
         />
       ))}
     </div>

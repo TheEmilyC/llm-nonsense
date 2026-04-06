@@ -13,7 +13,7 @@ import {
 import { Header } from "@/components/header";
 
 export function ChatView({ chat }: { chat: ChatWithMessagesDto }) {
-  const { messages, status, input, setInput, handleSubmit, swipe } =
+  const { messages, status, input, setInput, handleSubmit, editMessage, swipe } =
     useChatMessages(chat.id, chat.messages);
   const lastMessage = messages[messages.length - 1];
 
@@ -32,6 +32,7 @@ export function ChatView({ chat }: { chat: ChatWithMessagesDto }) {
               status={status}
               character={chat.character}
               persona={chat.persona}
+              onEdit={editMessage}
             />
             {status === "submitted" && (
               <ChatMessageThinking character={chat.character} />

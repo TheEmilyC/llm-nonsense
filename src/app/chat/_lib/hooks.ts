@@ -14,7 +14,7 @@ import { unwrapAction } from "@/lib/action-utils";
 import { useChat } from "@ai-sdk/react";
 import { useMutation } from "@tanstack/react-query";
 import { DefaultChatTransport, UIMessage } from "ai";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
 
 export function useDeleteChat() {
@@ -85,6 +85,17 @@ export function useChatMessages(
   const [input, setInput] = useState("");
   const { updateMessageContent } = useUpdateMessageContent();
 
+  // Map from UIMessage id (group id) to active content id for DB persistence
+  const contentIdMapRef = useRef(
+    new Map<string, string>(
+      initialMessages.flatMap((msg) => {
+        const activeContent =
+          msg.contents.find((c) => c.isActive) ?? msg.contents[0];
+        return activeContent ? [[msg.id, activeContent.id]] : [];
+      }),
+    ),
+  );
+
   const { messages, sendMessage, status, regenerate, setMessages } = useChat({
     messages: initialMessages.map((msg) => messageDtoToUIMessage(msg)),
     transport: new DefaultChatTransport({
@@ -148,12 +159,35 @@ export function useChatMessages(
     regenerate();
   };
 
+  const editMessage = (messageId: string, newText: string) => {
+    setMessages(
+      messages.map((m) =>
+        m.id === messageId
+          ? {
+              ...m,
+              parts: m.parts.map((p) =>
+                p.type === "text" ? { ...p, text: newText } : p,
+              ),
+            }
+          : m,
+      ),
+    );
+    const contentId = contentIdMapRef.current.get(messageId);
+    if (contentId) {
+      updateMessageContent({
+        id: contentId,
+        update: { parts: [{ type: "text", text: newText }] },
+      });
+    }
+  };
+
   return {
     messages,
     status,
     input,
     setInput,
     handleSubmit,
+    editMessage,
     swipe: {
       length: messageSwipes.length,
       swipeIndex,
