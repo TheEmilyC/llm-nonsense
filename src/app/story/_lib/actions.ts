@@ -20,7 +20,7 @@ export async function createStoryAction(
   const dataParseResult = storyFormSchema.safeParse(data);
   if (!dataParseResult.success) {
     console.error(dataParseResult.error);
-    return { success: false, error: "Malformed story data" };
+    return { error: "Malformed story data", success: false };
   }
   const newStory = dataParseResult.data;
 
@@ -50,16 +50,34 @@ export async function createStoryAction(
     story = await createStory({
       newStory: {
         ...newStory,
+        lorebookId: newStory.lorebookId ?? null,
         name,
         worldId: newStory.worldId ?? null,
-        lorebookId: newStory.lorebookId ?? null,
       },
     });
-    return { success: true, data: { newStoryId: story.id } };
+    return { data: { newStoryId: story.id }, success: true };
   } catch (err) {
     console.error(err);
-    return { success: false, error: "Create story failed" };
+    return { error: "Create story failed", success: false };
   }
+}
+
+export async function deleteStoryAction(
+  storyId: string,
+): Promise<ActionResponse<null>> {
+  const idParseResult = dbIdValidator.safeParse(storyId);
+  if (!idParseResult.success) {
+    return { error: "not found", status: HttpStatus.NOT_FOUND, success: false };
+  }
+  const id = idParseResult.data;
+
+  try {
+    await deleteStory(id);
+  } catch (err) {
+    console.error(err);
+    return { error: "Failed to delete story", success: false };
+  }
+  return { data: null, success: true };
 }
 
 export async function updateStoryAction(
@@ -69,12 +87,12 @@ export async function updateStoryAction(
   const formParseResult = storyFormSchema.safeParse(data);
   if (!formParseResult.success) {
     console.error(formParseResult.error);
-    return { success: false, error: "Malformed story data" };
+    return { error: "Malformed story data", success: false };
   }
   const idParseResult = dbIdValidator.safeParse(storyId);
   if (!idParseResult.success) {
     console.error(idParseResult.error);
-    return { success: false, error: "Malformed story data" };
+    return { error: "Malformed story data", success: false };
   }
   const id = idParseResult.data;
   const { ...update } = formParseResult.data;
@@ -84,26 +102,8 @@ export async function updateStoryAction(
     updatedStory = await updateStory({ id, update });
   } catch (err) {
     console.error(err);
-    return { success: false, error: "Story update failed" };
+    return { error: "Story update failed", success: false };
   }
 
-  return { success: true, data: toStoryDto(updatedStory) };
-}
-
-export async function deleteStoryAction(
-  storyId: string,
-): Promise<ActionResponse<null>> {
-  const idParseResult = dbIdValidator.safeParse(storyId);
-  if (!idParseResult.success) {
-    return { success: false, error: "not found", status: HttpStatus.NOT_FOUND };
-  }
-  const id = idParseResult.data;
-
-  try {
-    await deleteStory(id);
-  } catch (err) {
-    console.error(err);
-    return { success: false, error: "Failed to delete story" };
-  }
-  return { success: true, data: null };
+  return { data: toStoryDto(updatedStory), success: true };
 }

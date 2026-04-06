@@ -1,6 +1,5 @@
 "use client"
 
-import { cn } from "@/lib/utils"
 import { ChevronDownIcon } from "lucide-react"
 import React, {
   createContext,
@@ -9,6 +8,9 @@ import React, {
   useRef,
   useState,
 } from "react"
+
+import { cn } from "@/lib/utils"
+
 import { Markdown } from "./markdown"
 
 type ReasoningContextType = {
@@ -20,35 +22,50 @@ const ReasoningContext = createContext<ReasoningContextType | undefined>(
   undefined
 )
 
-function useReasoningContext() {
-  const context = useContext(ReasoningContext)
-  if (!context) {
-    throw new Error(
-      "useReasoningContext must be used within a Reasoning provider"
-    )
-  }
-  return context
+export type ReasoningContentProps = React.HTMLAttributes<HTMLDivElement> & {
+  children: React.ReactNode
+  className?: string
+  contentClassName?: string
+  markdown?: boolean
 }
 
 export type ReasoningProps = {
   children: React.ReactNode
   className?: string
-  open?: boolean
-  onOpenChange?: (open: boolean) => void
   isStreaming?: boolean
+  onOpenChange?: (open: boolean) => void
+  open?: boolean
 }
+export type ReasoningTriggerProps = React.HTMLAttributes<HTMLButtonElement> & {
+  children: React.ReactNode
+  className?: string
+}
+
 function Reasoning({
   children,
   className,
-  open,
-  onOpenChange,
   isStreaming,
+  onOpenChange,
+  open,
 }: ReasoningProps) {
   const [internalOpen, setInternalOpen] = useState(false)
+  const [prevIsStreaming, setPrevIsStreaming] = useState(isStreaming)
   const [wasAutoOpened, setWasAutoOpened] = useState(false)
 
   const isControlled = open !== undefined
   const isOpen = isControlled ? open : internalOpen
+
+  // Adjust state during render when isStreaming changes (React derived-state-from-props pattern)
+  if (prevIsStreaming !== isStreaming) {
+    setPrevIsStreaming(isStreaming)
+    if (isStreaming && !wasAutoOpened) {
+      setWasAutoOpened(true)
+      if (!isControlled) setInternalOpen(true)
+    } else if (!isStreaming && wasAutoOpened) {
+      setWasAutoOpened(false)
+      if (!isControlled) setInternalOpen(false)
+    }
+  }
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!isControlled) {
@@ -56,18 +73,6 @@ function Reasoning({
     }
     onOpenChange?.(newOpen)
   }
-
-  useEffect(() => {
-    if (isStreaming && !wasAutoOpened) {
-      if (!isControlled) setInternalOpen(true)
-      setWasAutoOpened(true)
-    }
-
-    if (!isStreaming && wasAutoOpened) {
-      if (!isControlled) setInternalOpen(false)
-      setWasAutoOpened(false)
-    }
-  }, [isStreaming, wasAutoOpened, isControlled])
 
   return (
     <ReasoningContext.Provider
@@ -80,44 +85,6 @@ function Reasoning({
     </ReasoningContext.Provider>
   )
 }
-
-export type ReasoningTriggerProps = {
-  children: React.ReactNode
-  className?: string
-} & React.HTMLAttributes<HTMLButtonElement>
-
-function ReasoningTrigger({
-  children,
-  className,
-  ...props
-}: ReasoningTriggerProps) {
-  const { isOpen, onOpenChange } = useReasoningContext()
-
-  return (
-    <button
-      className={cn("flex cursor-pointer items-center gap-2", className)}
-      onClick={() => onOpenChange(!isOpen)}
-      {...props}
-    >
-      <span className="text-primary">{children}</span>
-      <div
-        className={cn(
-          "transform transition-transform",
-          isOpen ? "rotate-180" : ""
-        )}
-      >
-        <ChevronDownIcon className="size-4" />
-      </div>
-    </button>
-  )
-}
-
-export type ReasoningContentProps = {
-  children: React.ReactNode
-  className?: string
-  markdown?: boolean
-  contentClassName?: string
-} & React.HTMLAttributes<HTMLDivElement>
 
 function ReasoningContent({
   children,
@@ -156,22 +123,22 @@ function ReasoningContent({
 
   return (
     <div
-      ref={contentRef}
       className={cn(
         "overflow-hidden transition-[max-height] duration-150 ease-out",
         className
       )}
+      ref={contentRef}
       style={{
-        maxHeight: isOpen ? contentRef.current?.scrollHeight : "0px",
+        maxHeight: isOpen ? undefined : "0px",
       }}
       {...props}
     >
       <div
-        ref={innerRef}
         className={cn(
           "text-muted-foreground prose prose-sm dark:prose-invert",
           contentClassName
         )}
+        ref={innerRef}
       >
         {content}
       </div>
@@ -179,4 +146,40 @@ function ReasoningContent({
   )
 }
 
-export { Reasoning, ReasoningTrigger, ReasoningContent }
+function ReasoningTrigger({
+  children,
+  className,
+  ...props
+}: ReasoningTriggerProps) {
+  const { isOpen, onOpenChange } = useReasoningContext()
+
+  return (
+    <button
+      className={cn("flex cursor-pointer items-center gap-2", className)}
+      onClick={() => onOpenChange(!isOpen)}
+      {...props}
+    >
+      <span className="text-primary">{children}</span>
+      <div
+        className={cn(
+          "transform transition-transform",
+          isOpen ? "rotate-180" : ""
+        )}
+      >
+        <ChevronDownIcon className="size-4" />
+      </div>
+    </button>
+  )
+}
+
+function useReasoningContext() {
+  const context = useContext(ReasoningContext)
+  if (!context) {
+    throw new Error(
+      "useReasoningContext must be used within a Reasoning provider"
+    )
+  }
+  return context
+}
+
+export { Reasoning, ReasoningContent, ReasoningTrigger }

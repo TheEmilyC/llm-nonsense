@@ -1,5 +1,10 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowUp, Square } from "lucide-react";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+
 import { useCheckPrompt } from "@/app/prompt/_lib/hooks";
 import {
   promptInspectorFormSchema,
@@ -15,29 +20,25 @@ import {
   PromptInputActions,
   PromptInputTextarea,
 } from "@/components/ui/prompt-input";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowUp, Square } from "lucide-react";
-import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
 
 const FORM_ID = "form-inspect-prompt";
 
 export function PromptInspector() {
-  const [prompt, setPrompt] = useState<string | null>(null);
+  const [prompt, setPrompt] = useState<null | string>(null);
   const [lorebookEntries, setLorebookEntries] = useState<
-    { path: string; title?: string }[] | null
+    null | { path: string; title?: string }[]
   >(null);
   const { checkPrompt, isPending } = useCheckPrompt();
   const form = useForm<PromptInspectorFormValues>({
-    resolver: zodResolver(promptInspectorFormSchema),
-    mode: "onSubmit",
     defaultValues: {
       message: "",
     },
+    mode: "onSubmit",
+    resolver: zodResolver(promptInspectorFormSchema),
   });
 
   async function onSubmitHandler(data: PromptInspectorFormValues) {
-    const { prompt: newPrompt, lorebookEntries: newLorebook } =
+    const { lorebookEntries: newLorebook, prompt: newPrompt } =
       await checkPrompt(data);
     setPrompt(newPrompt);
     if (newLorebook) {
@@ -59,16 +60,16 @@ export function PromptInspector() {
                 name={"message"}
                 render={({ field }) => (
                   <PromptInput
-                    value={field.value}
                     onValueChange={field.onChange}
+                    value={field.value}
                   >
                     <PromptInputTextarea placeholder="Send a message…" />
                     <PromptInputActions className="justify-end">
                       <PromptInputAction tooltip={isPending ? "Stop" : "Send"}>
                         <Button
-                          size="sm"
                           className="h-8 w-8 rounded-full"
                           disabled={!field.value.trim() && !isPending}
+                          size="sm"
                         >
                           {isPending ? (
                             <Square className="h-4 w-4" />

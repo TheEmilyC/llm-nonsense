@@ -13,37 +13,37 @@ export async function checkPromptAction(
   data: PromptInspectorFormValues,
 ): Promise<
   ActionResponse<{
-    prompt: string;
     lorebookEntries?: { path: string; title?: string }[];
+    prompt: string;
   }>
 > {
   const parseResult = promptInspectorFormSchema.safeParse(data);
 
   if (!parseResult.success) {
     console.error(parseResult.error);
-    return { success: false, error: "Malformed prompt" };
+    return { error: "Malformed prompt", success: false };
   }
   const { message } = parseResult.data;
   const lorebook = await getLorebookById("cmnmfyl1y0008rt2wxsraodda"); // TODO: remove hardcoding
-  const { prompt: promptRaw, lorebookEntries } = await buildPrompt({
-    lastMessage: message,
+  const { lorebookEntries, prompt: promptRaw } = await buildPrompt({
     character: {
-      name: "Test Character",
       description: "Test Character Description",
+      name: "Test Character",
       personality: "Character Personality",
       scenario: "Character Scenario",
     },
+    lastMessage: message,
+    lorebook: lorebook.status === LorebookStatus.Ready ? lorebook : undefined,
     persona: {
-      name: "Test Persona",
       description: "Test Persona Description",
+      name: "Test Persona",
     },
     world: {
-      name: "Test World",
       description: "Test World Description",
+      name: "Test World",
     },
-    lorebook: lorebook.status === LorebookStatus.Ready ? lorebook : undefined,
   });
   const prompt = JSON.stringify(promptRaw, null, 2).replace(/\\n/g, "\n");
 
-  return { success: true, data: { prompt, lorebookEntries } };
+  return { data: { lorebookEntries, prompt }, success: true };
 }

@@ -1,5 +1,19 @@
 "use client";
 
+import { UIMessage } from "ai";
+import {
+  ArrowUp,
+  BookOpen,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Pencil,
+  Square,
+  X,
+} from "lucide-react";
+import Image from "next/image";
+import { ReactNode, useState } from "react";
+
 import { Button } from "@/components/ui/button";
 import {
   ChatContainerContent,
@@ -26,45 +40,57 @@ import {
 import { ScrollButton } from "@/components/ui/scroll-button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-import { UIMessage } from "ai";
-import {
-  ArrowUp,
-  BookOpen,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Pencil,
-  Square,
-  X,
-} from "lucide-react";
-import Image from "next/image";
-import { ReactNode, useState } from "react";
 
-function ChatAvatar({
-  src,
-  alt,
-  isUser,
-}: {
-  src: string;
-  alt: string;
-  isUser: boolean;
-}) {
-  return (
-    <div className="relative w-45 min-h-40 max-h-80 shrink-0 self-stretch">
-      <Image src={src} alt={alt} fill className="object-cover" />
-      <div className="absolute inset-x-0 bottom-0 h-16 bg-linear-to-t to-transparent, from-secondary" />
-      <div
-        className={cn(
-          "absolute inset-y-0 w-16 to-transparent from-secondary",
-          isUser ? "right-0 bg-linear-to-l " : "left-0 bg-linear-to-r ",
-        )}
-      />
-    </div>
-  );
+export interface ChatHistoryContainerParams {
+  children: ReactNode;
 }
 
 interface ChatHistoryProps {
   children: ReactNode;
+}
+
+interface ChatInputParams {
+  input: string;
+  isLoading: boolean;
+  onInputChange: (value: string) => void;
+  onSubmit: () => void;
+}
+
+interface ChatMessageProps {
+  character: { avatarSrc: string; id: string; name: string; };
+  isStreaming: boolean;
+  message: UIMessage;
+  onEdit?: (newText: string) => void;
+  persona: { avatarSrc: string; id: string; name: string; };
+}
+
+interface ChatMessagesProps {
+  character: { avatarSrc: string; id: string; name: string; };
+  messages: UIMessage[];
+  onEdit?: (messageId: string, newText: string) => void;
+  persona: { avatarSrc: string; id: string; name: string; };
+  status: "error" | "ready" | "streaming" | "submitted";
+}
+
+interface ChatMessageThinkingProps {
+  character: { avatarSrc: string; name: string; };
+}
+
+interface ChatSwipeParams {
+  swipe: {
+    length: number;
+    nextSwipe: () => void;
+    prevSwipe: () => void;
+    swipeIndex: number;
+  };
+}
+
+export function ChatContainer({ children }: ChatHistoryContainerParams) {
+  return (
+    <div className=" rounded-xl border border-white/20 shadow-xl overflow-hidden">
+      {children}
+    </div>
+  );
 }
 
 export function ChatHistory({ children }: ChatHistoryProps) {
@@ -81,32 +107,49 @@ export function ChatHistory({ children }: ChatHistoryProps) {
   );
 }
 
-export interface ChatHistoryContainerParams {
-  children: ReactNode;
-}
-
-export function ChatContainer({ children }: ChatHistoryContainerParams) {
+export function ChatInput({
+  input,
+  isLoading,
+  onInputChange,
+  onSubmit,
+}: ChatInputParams) {
   return (
-    <div className=" rounded-xl border border-white/20 shadow-xl overflow-hidden">
-      {children}
+    <div className="border-t p-4">
+      <PromptInput
+        className="mx-auto max-w-3xl"
+        isLoading={isLoading}
+        onSubmit={onSubmit}
+        onValueChange={onInputChange}
+        value={input}
+      >
+        <PromptInputTextarea placeholder="Send a message…" />
+        <PromptInputActions className="justify-end">
+          <PromptInputAction tooltip={isLoading ? "Stop" : "Send"}>
+            <Button
+              className="h-8 w-8 rounded-full"
+              disabled={!input.trim() && !isLoading}
+              onClick={onSubmit}
+              size="sm"
+            >
+              {isLoading ? (
+                <Square className="h-4 w-4" />
+              ) : (
+                <ArrowUp className="h-4 w-4" />
+              )}
+            </Button>
+          </PromptInputAction>
+        </PromptInputActions>
+      </PromptInput>
     </div>
   );
 }
 
-interface ChatMessageProps {
-  message: UIMessage;
-  isStreaming: boolean;
-  character: { id: string; name: string; avatarSrc: string };
-  persona: { id: string; name: string; avatarSrc: string };
-  onEdit?: (newText: string) => void;
-}
-
 export function ChatMessage({
-  message,
-  isStreaming,
   character,
-  persona,
+  isStreaming,
+  message,
   onEdit,
+  persona,
 }: ChatMessageProps) {
   const isUser = message.role === "user";
   const [isEditing, setIsEditing] = useState(false);
@@ -135,9 +178,9 @@ export function ChatMessage({
         )}
       >
         <ChatAvatar
-          src={isUser ? persona.avatarSrc : character.avatarSrc}
           alt={isUser ? persona.name : character.name}
           isUser={isUser}
+          src={isUser ? persona.avatarSrc : character.avatarSrc}
         />
         <div className="flex flex-col gap-2 p-3 min-w-0 flex-1">
           <span className="text-xs font-semibold tracking-wide uppercase opacity-60">
@@ -146,13 +189,13 @@ export function ChatMessage({
           {message.parts.map((part, partIndex) => {
             if (part.type === "reasoning") {
               return (
-                <Reasoning key={partIndex} isStreaming={isStreaming}>
+                <Reasoning isStreaming={isStreaming} key={partIndex}>
                   <ReasoningTrigger className="text-sm text-muted-foreground">
                     Thinking
                   </ReasoningTrigger>
                   <ReasoningContent
-                    markdown
                     className="border-l-2 border-muted-foreground/30 pl-3 mt-1"
+                    markdown
                   >
                     {part.text}
                   </ReasoningContent>
@@ -164,8 +207,8 @@ export function ChatMessage({
                 (part.input as { entries?: string[] })?.entries ?? [];
               return (
                 <div
-                  key={partIndex}
                   className="flex items-start gap-1.5 text-xs text-muted-foreground/60"
+                  key={partIndex}
                 >
                   <BookOpen className="h-3.5 w-3.5 mt-0.5 shrink-0" />
                   <span>
@@ -180,10 +223,10 @@ export function ChatMessage({
             if (part.type === "text") {
               if (isEditing) {
                 return (
-                  <div key={partIndex} className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2" key={partIndex}>
                     <Textarea
-                      rows={25}
-                      value={editText}
+                      autoFocus
+                      className="bg-transparent border-muted-foreground/30 text-sm resize-none"
                       onChange={(e) => setEditText(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
@@ -192,21 +235,21 @@ export function ChatMessage({
                         }
                         if (e.key === "Escape") cancelEdit();
                       }}
-                      className="bg-transparent border-muted-foreground/30 text-sm resize-none"
-                      autoFocus
+                      rows={25}
+                      value={editText}
                     />
                     <div className="flex gap-1">
                       <button
-                        onClick={saveEdit}
-                        className="p-1 hover:text-foreground transition-colors text-muted-foreground"
                         aria-label="Save edit"
+                        className="p-1 hover:text-foreground transition-colors text-muted-foreground"
+                        onClick={saveEdit}
                       >
                         <Check className="h-3.5 w-3.5" />
                       </button>
                       <button
-                        onClick={cancelEdit}
-                        className="p-1 hover:text-foreground transition-colors text-muted-foreground"
                         aria-label="Cancel edit"
+                        className="p-1 hover:text-foreground transition-colors text-muted-foreground"
+                        onClick={cancelEdit}
                       >
                         <X className="h-3.5 w-3.5" />
                       </button>
@@ -215,10 +258,10 @@ export function ChatMessage({
                 );
               }
               return (
-                <div key={partIndex} className="group/text">
+                <div className="group/text" key={partIndex}>
                   <MessageContent
-                    markdown
                     className="rounded-none bg-transparent p-0"
+                    markdown
                   >
                     {part.text}
                   </MessageContent>
@@ -243,46 +286,34 @@ export function ChatMessage({
   );
 }
 
-interface ChatMessagesProps {
-  messages: UIMessage[];
-  status: "ready" | "submitted" | "streaming" | "error";
-  character: { id: string; name: string; avatarSrc: string };
-  persona: { id: string; name: string; avatarSrc: string };
-  onEdit?: (messageId: string, newText: string) => void;
-}
-
 export function ChatMessages({
-  messages,
-  status,
   character,
-  persona,
+  messages,
   onEdit,
+  persona,
+  status,
 }: ChatMessagesProps) {
   return (
     <div className="flex flex-col gap-4">
       {messages.map((message, i) => (
         <ChatMessage
+          character={character}
+          isStreaming={status === "streaming" && i === messages.length - 1}
           key={message.id}
           message={message}
-          isStreaming={status === "streaming" && i === messages.length - 1}
-          character={character}
-          persona={persona}
           onEdit={onEdit ? (newText) => onEdit(message.id, newText) : undefined}
+          persona={persona}
         />
       ))}
     </div>
   );
 }
 
-interface ChatMessageThinkingProps {
-  character: { name: string; avatarSrc: string };
-}
-
 export function ChatMessageThinking({ character }: ChatMessageThinkingProps) {
   return (
     <Message>
       <div className="flex flex-row-reverse w-full overflow-hidden rounded-lg bg-secondary shadow-lg ring-1 ring-black/10">
-        <ChatAvatar src={character.avatarSrc} alt="AI" isUser={false} />
+        <ChatAvatar alt="AI" isUser={false} src={character.avatarSrc} />
         <div className="flex flex-col gap-2 p-3">
           <span className="text-xs font-semibold tracking-wide uppercase opacity-60">
             {character.name}
@@ -296,24 +327,15 @@ export function ChatMessageThinking({ character }: ChatMessageThinkingProps) {
   );
 }
 
-interface ChatSwipeParams {
-  swipe: {
-    length: number;
-    swipeIndex: number;
-    prevSwipe: () => void;
-    nextSwipe: () => void;
-  };
-}
-
 export function ChatSwipe({
   swipe: { length, nextSwipe, prevSwipe, swipeIndex },
 }: ChatSwipeParams) {
   return (
     <div className="flex items-center gap-1 mt-1">
       <button
-        onClick={prevSwipe}
-        className="p-0.5 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
         aria-label="Previous response"
+        className="p-0.5 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+        onClick={prevSwipe}
       >
         <ChevronLeft className="h-3.5 w-3.5" />
       </button>
@@ -321,9 +343,9 @@ export function ChatSwipe({
         {swipeIndex + 1}/{length}
       </span>
       <button
-        onClick={nextSwipe}
-        className="p-0.5 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
         aria-label="Next response"
+        className="p-0.5 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+        onClick={nextSwipe}
       >
         <ChevronRight className="h-3.5 w-3.5" />
       </button>
@@ -331,46 +353,25 @@ export function ChatSwipe({
   );
 }
 
-interface ChatInputParams {
-  input: string;
-  onInputChange: (value: string) => void;
-  onSubmit: () => void;
-  isLoading: boolean;
-}
-
-export function ChatInput({
-  input,
-  isLoading,
-  onInputChange,
-  onSubmit,
-}: ChatInputParams) {
+function ChatAvatar({
+  alt,
+  isUser,
+  src,
+}: {
+  alt: string;
+  isUser: boolean;
+  src: string;
+}) {
   return (
-    <div className="border-t p-4">
-      <PromptInput
-        value={input}
-        onValueChange={onInputChange}
-        onSubmit={onSubmit}
-        isLoading={isLoading}
-        className="mx-auto max-w-3xl"
-      >
-        <PromptInputTextarea placeholder="Send a message…" />
-        <PromptInputActions className="justify-end">
-          <PromptInputAction tooltip={isLoading ? "Stop" : "Send"}>
-            <Button
-              size="sm"
-              className="h-8 w-8 rounded-full"
-              onClick={onSubmit}
-              disabled={!input.trim() && !isLoading}
-            >
-              {isLoading ? (
-                <Square className="h-4 w-4" />
-              ) : (
-                <ArrowUp className="h-4 w-4" />
-              )}
-            </Button>
-          </PromptInputAction>
-        </PromptInputActions>
-      </PromptInput>
+    <div className="relative w-45 min-h-40 max-h-80 shrink-0 self-stretch">
+      <Image alt={alt} className="object-cover" fill src={src} />
+      <div className="absolute inset-x-0 bottom-0 h-16 bg-linear-to-t to-transparent, from-secondary" />
+      <div
+        className={cn(
+          "absolute inset-y-0 w-16 to-transparent from-secondary",
+          isUser ? "right-0 bg-linear-to-l " : "left-0 bg-linear-to-r ",
+        )}
+      />
     </div>
   );
 }

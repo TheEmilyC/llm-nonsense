@@ -1,42 +1,43 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Globe, UserCircle, Users } from "lucide-react";
+import { Controller, useForm } from "react-hook-form";
+
 import { storyFormSchema, StoryFormValues } from "@/app/story/_lib/schema";
 import { CardOption, CardSelector } from "@/components/card-selector";
 import { FieldInput } from "@/components/form-fields/field-input";
 import { FieldSelect } from "@/components/form-fields/field-select";
 import { Field, FieldError } from "@/components/ui/field";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Globe, UserCircle, Users } from "lucide-react";
-import { Controller, useForm } from "react-hook-form";
 
 interface StoryFormParams {
-  formId: string;
   characters?: CardOption[];
+  defaultValues?: Partial<StoryFormValues>;
+  formId: string;
+  isEdit?: boolean;
+  lorebooks: { label: string; value: string; }[];
+  onSubmit: (data: StoryFormValues) => void;
   personas?: CardOption[];
   worlds?: CardOption[];
-  lorebooks: { value: string; label: string }[];
-  isEdit?: boolean;
-  defaultValues?: Partial<StoryFormValues>;
-  onSubmit: (data: StoryFormValues) => void;
 }
 
 export function StoryForm({
-  formId,
-  defaultValues,
   characters,
+  defaultValues,
+  formId,
+  isEdit,
+  lorebooks,
+  onSubmit,
   personas,
   worlds,
-  lorebooks,
-  isEdit,
-  onSubmit,
 }: StoryFormParams) {
   const form = useForm<StoryFormValues>({
-    resolver: zodResolver(storyFormSchema),
     defaultValues: {
       ...defaultValues,
       mode: isEdit ? "edit" : "create",
       name: defaultValues?.name ?? "",
     },
+    resolver: zodResolver(storyFormSchema),
   });
 
   return (
@@ -46,8 +47,8 @@ export function StoryForm({
         <div className="col-span-3">
           <FieldInput
             control={form.control}
-            name="name"
             label="Name"
+            name="name"
             placeholder={isEdit ? "Name" : "Leave blank for default"}
           />
         </div>
@@ -58,13 +59,13 @@ export function StoryForm({
             control={form.control}
             name="characterId"
             render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid} className="h-full">
+              <Field className="h-full" data-invalid={fieldState.invalid}>
                 <CardSelector
                   icon={Users}
                   label="Character"
+                  onChange={(char) => field.onChange(char.id)}
                   options={characters}
                   selectedId={field.value}
-                  onChange={(char) => field.onChange(char.id)}
                 />
                 {fieldState.invalid && (
                   <FieldError errors={[fieldState.error]} />
@@ -78,13 +79,13 @@ export function StoryForm({
             control={form.control}
             name="personaId"
             render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid} className="h-full">
+              <Field className="h-full" data-invalid={fieldState.invalid}>
                 <CardSelector
                   icon={UserCircle}
                   label="Persona"
+                  onChange={(per) => field.onChange(per.id)}
                   options={personas}
                   selectedId={field.value}
-                  onChange={(per) => field.onChange(per.id)}
                 />
                 {fieldState.invalid && (
                   <FieldError errors={[fieldState.error]} />
@@ -98,13 +99,13 @@ export function StoryForm({
             control={form.control}
             name="worldId"
             render={({ field, fieldState }) => (
-              <Field data-invalid={fieldState.invalid} className="h-full">
+              <Field className="h-full" data-invalid={fieldState.invalid}>
                 <CardSelector
                   icon={Globe}
                   label="World"
+                  onChange={(world) => field.onChange(world.id)}
                   options={worlds}
                   selectedId={field.value}
-                  onChange={(world) => field.onChange(world.id)}
                 />
                 {fieldState.invalid && (
                   <FieldError errors={[fieldState.error]} />
@@ -118,8 +119,8 @@ export function StoryForm({
         <div className="col-span-3">
           <FieldSelect
             control={form.control}
-            name="lorebookId"
             label="Lorebook"
+            name="lorebookId"
             options={lorebooks}
           />
         </div>

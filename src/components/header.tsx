@@ -5,23 +5,23 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 
 interface HeaderProps {
-  pageTitle?: string;
-  backLinkLabel?: string;
   backLinkDestination?: string;
+  backLinkLabel?: string;
   children?: React.ReactNode;
+  pageTitle?: string;
 }
 
 export function Header({
-  pageTitle,
-  backLinkLabel,
   backLinkDestination,
+  backLinkLabel,
   children,
+  pageTitle,
 }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 border-b px-6 py-4 flex items-center justify-between bg-background/80 backdrop-blur-md">
       <div className="flex items-center gap-3">
         {backLinkDestination && (
-          <Button variant={"outline"} asChild>
+          <Button asChild variant={"outline"}>
             <Link href={backLinkDestination}>← {backLinkLabel}</Link>
           </Button>
         )}

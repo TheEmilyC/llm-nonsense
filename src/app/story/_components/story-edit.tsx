@@ -1,5 +1,10 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+
 import { useCreateChatFromStory, useDeleteChat } from "@/app/chat/_lib/hooks";
 import { StoryForm } from "@/app/story/_components/story-form";
 import { useDeleteStory, useUpdateStory } from "@/app/story/_lib/hooks";
@@ -8,38 +13,34 @@ import { CardOption } from "@/components/card-selector";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 const FORM_ID = "form-edit-story";
 
 interface StoryEditParams {
+  characters?: CardOption[];
+  chats: { id: string; name: string }[];
+  lorebooks: { label: string; value: string; }[];
+  personas?: CardOption[];
   story: {
+    characterId: string;
     id: string;
     name: string;
-    characterId: string;
     personaId: string;
   };
-  characters?: CardOption[];
-  personas?: CardOption[];
   worlds?: CardOption[];
-  lorebooks: { value: string; label: string }[];
-  chats: { id: string; name: string }[];
 }
 
 export function StoryEdit({
-  story,
   characters,
-  personas,
-  worlds,
-  lorebooks,
   chats,
+  lorebooks,
+  personas,
+  story,
+  worlds,
 }: StoryEditParams) {
   const router = useRouter();
   const { deleteStory, isPending: isDeletePending } = useDeleteStory();
-  const { updateStory, isPending: isUpdatePending } = useUpdateStory();
+  const { isPending: isUpdatePending, updateStory } = useUpdateStory();
   const { createChatFromStory: createChat, isPending: isCreateChatPending } =
     useCreateChatFromStory();
 
@@ -66,42 +67,42 @@ export function StoryEdit({
   }
 
   async function onSubmitHandler(data: StoryFormValues) {
-    await updateStory({ storyId: story.id, data });
+    await updateStory({ data, storyId: story.id });
   }
 
   return (
     <div>
       <Header
-        pageTitle={story.name}
         backLinkDestination="/story"
         backLinkLabel="Stories"
+        pageTitle={story.name}
       >
         <Button
+          disabled={isPending}
+          onClick={onDeleteHandler}
           size="sm"
           type="button"
           variant="destructive"
-          disabled={isPending}
-          onClick={onDeleteHandler}
         >
           {isDeletePending ? "Deleting..." : "Delete"}
         </Button>
-        <Button size="sm" onClick={handleNewChat} disabled={isPending}>
+        <Button disabled={isPending} onClick={handleNewChat} size="sm">
           {isCreateChatPending ? "Starting Chat..." : "New Chat"}
         </Button>
-        <Button size="sm" type="submit" form={FORM_ID} disabled={isPending}>
+        <Button disabled={isPending} form={FORM_ID} size="sm" type="submit">
           {isUpdatePending ? "Saving..." : "Save"}
         </Button>
       </Header>
       <Content>
         <StoryForm
+          characters={characters}
+          defaultValues={story}
           formId={FORM_ID}
           isEdit
-          defaultValues={story}
+          lorebooks={lorebooks}
           onSubmit={onSubmitHandler}
-          characters={characters}
           personas={personas}
           worlds={worlds}
-          lorebooks={lorebooks}
         />
         <div className="mt-6 flex flex-col gap-2">
           <h2 className="text-sm font-semibold">Chats</h2>
@@ -109,19 +110,19 @@ export function StoryEdit({
             <p className="text-sm text-muted-foreground">No chats yet.</p>
           )}
           {chatList.map((chat) => (
-            <div key={chat.id} className="flex items-center gap-2">
+            <div className="flex items-center gap-2" key={chat.id}>
               <Link
-                href={`/chat/${chat.id}`}
                 className="flex-1 rounded-lg border px-4 py-3 hover:bg-muted transition-colors"
+                href={`/chat/${chat.id}`}
               >
                 <p className="text-sm font-medium">{chat.name}</p>
               </Link>
               <Button
+                className="self-stretch h-auto w-12"
+                disabled={isPending}
+                onClick={() => handleDeleteChat(chat.id, chat.name)}
                 size="icon"
                 variant="destructive"
-                disabled={isPending}
-                className="self-stretch h-auto w-12"
-                onClick={() => handleDeleteChat(chat.id, chat.name)}
               >
                 <Trash2 className="size-4" />
               </Button>

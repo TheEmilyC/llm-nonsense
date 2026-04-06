@@ -1,40 +1,44 @@
 "use server";
 
+import { cacheTag, revalidateTag } from "next/cache";
+
 import { STORY_CACHE_KEY } from "@/app/story/_lib/schema";
 import { prisma } from "@/lib/prisma";
-import { cacheTag, revalidateTag } from "next/cache";
+
 import { Story } from "../../../../generated/client";
 
 export interface CreateStoryParams {
   newStory: Pick<
     Story,
-    "personaId" | "characterId" | "name" | "worldId" | "lorebookId"
+    "characterId" | "lorebookId" | "name" | "personaId" | "worldId"
+  >;
+}
+
+export interface UpdateStoryParams {
+  id: string;
+  update: Partial<
+    Pick<Story, "characterId" | "lorebookId" | "name" | "personaId" | "worldId">
   >;
 }
 
 export async function createStory({ newStory }: CreateStoryParams) {
   const story = await prisma.story.create({
     data: {
-      name: newStory.name,
       characterId: newStory.characterId,
+      lorebookId: newStory.lorebookId,
+      name: newStory.name,
       personaId: newStory.personaId,
       worldId: newStory.worldId,
-      lorebookId: newStory.lorebookId,
     },
   });
   revalidateTag(STORY_CACHE_KEY, "max");
   return story;
 }
 
-export async function getStoryList() {
-  "use cache";
-  cacheTag(STORY_CACHE_KEY);
-
-  const stories = await prisma.story.findMany();
-  return stories.map((story) => ({
-    id: story.id,
-    name: story.name,
-  }));
+export async function deleteStory(id: string) {
+  await prisma.story.delete({ where: { id } });
+  revalidateTag(STORY_CACHE_KEY, "max");
+  revalidateTag(`${STORY_CACHE_KEY}-${id}`, "max");
 }
 
 export async function getStoryById(id: string) {
@@ -50,11 +54,15 @@ export async function getStoryByIdOrFail(id: string) {
   return result;
 }
 
-export interface UpdateStoryParams {
-  id: string;
-  update: Partial<
-    Pick<Story, "name" | "characterId" | "personaId" | "worldId" | "lorebookId">
-  >;
+export async function getStoryList() {
+  "use cache";
+  cacheTag(STORY_CACHE_KEY);
+
+  const stories = await prisma.story.findMany();
+  return stories.map((story) => ({
+    id: story.id,
+    name: story.name,
+  }));
 }
 
 export async function updateStory({ id, update }: UpdateStoryParams) {
@@ -91,10 +99,4 @@ export async function updateStory({ id, update }: UpdateStoryParams) {
   revalidateTag(STORY_CACHE_KEY, "max");
   revalidateTag(`${STORY_CACHE_KEY}-${id}`, "max");
   return story;
-}
-
-export async function deleteStory(id: string) {
-  await prisma.story.delete({ where: { id } });
-  revalidateTag(STORY_CACHE_KEY, "max");
-  revalidateTag(`${STORY_CACHE_KEY}-${id}`, "max");
 }

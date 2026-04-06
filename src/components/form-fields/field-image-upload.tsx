@@ -1,34 +1,35 @@
-import { ImageUpload } from "@/components/image-upload";
-import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Control, Controller, FieldValues, Path } from "react-hook-form";
 
+import { ImageUpload } from "@/components/image-upload";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+
 interface FieldImageUploadParams<T extends FieldValues> {
-  name: Path<T>;
+  acceptedFormats: "image" | "png";
   control: Control<T>;
-  label: string;
   initialImgSrc?: string;
-  acceptedFormats: "png" | "image";
+  label: string;
+  name: Path<T>;
 }
 
 export function FieldImageUpload<T extends FieldValues>({
-  name,
-  control,
-  label,
-  initialImgSrc,
   acceptedFormats,
+  control,
+  initialImgSrc,
+  label,
+  name,
 }: FieldImageUploadParams<T>) {
   return (
     <Controller
-      name={name}
       control={control}
+      name={name}
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid}>
           <FieldLabel htmlFor={`${name}-input`}>{label}</FieldLabel>
           <ImageUpload
-            imageSrc={initialImgSrc}
-            onChange={field.onChange}
             acceptedFormats={acceptedFormats}
+            imageSrc={initialImgSrc}
             name={name}
+            onChange={field.onChange}
           />
           {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
         </Field>

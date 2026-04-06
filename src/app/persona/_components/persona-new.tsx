@@ -1,12 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import { PersonaForm } from "@/app/persona/_components/persona-form";
 import { useCreatePersona } from "@/app/persona/_lib/hooks";
 import { PersonaFormValues } from "@/app/persona/_lib/schema";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 
 const FORM_ID = "form-new-persona";
 
@@ -22,11 +23,11 @@ export function PersonaNew() {
   return (
     <div>
       <Header
-        pageTitle="New Persona"
         backLinkDestination="/persona"
         backLinkLabel="Personas"
+        pageTitle="New Persona"
       >
-        <Button size="sm" disabled={isPending} type="submit" form={FORM_ID}>
+        <Button disabled={isPending} form={FORM_ID} size="sm" type="submit">
           {isPending ? "Saving..." : "Save"}
         </Button>
       </Header>

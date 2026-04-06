@@ -1,3 +1,5 @@
+import { Control, Controller, FieldValues, Path } from "react-hook-form";
+
 import { Field, FieldLabel } from "@/components/ui/field";
 import {
   Select,
@@ -7,29 +9,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Control, Controller, FieldValues, Path } from "react-hook-form";
 
 interface FieldSelectParams<T extends FieldValues> {
-  name: Path<T>;
   control: Control<T>;
-  label: string;
-  placeholder?: string;
-  options: { value: string; label: string }[];
   emptyMessage?: string;
+  label: string;
+  name: Path<T>;
+  options: { label: string; value: string; }[];
+  placeholder?: string;
 }
 
 export function FieldSelect<T extends FieldValues>({
-  name,
   control,
-  label,
-  placeholder,
-  options,
   emptyMessage,
+  label,
+  name,
+  options,
+  placeholder,
 }: FieldSelectParams<T>) {
   return (
     <Controller
-      name={name}
       control={control}
+      name={name}
       render={({ field, fieldState }) => (
         <Field data-invalid={fieldState.invalid}>
           <FieldLabel>{label}</FieldLabel>
@@ -42,15 +43,15 @@ export function FieldSelect<T extends FieldValues>({
               value={field.value ?? ""}
             >
               <SelectTrigger
+                aria-invalid={fieldState.invalid}
                 asChild
                 className="w-70"
-                aria-invalid={fieldState.invalid}
-                value={field.value}
                 onReset={() => field.onChange(undefined)}
+                value={field.value}
               >
                 <SelectValue
-                  placeholder={placeholder || label}
                   defaultValue={field.value}
+                  placeholder={placeholder || label}
                 />
               </SelectTrigger>
               <SelectContent>

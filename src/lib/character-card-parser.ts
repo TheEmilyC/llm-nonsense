@@ -5,7 +5,38 @@ import extract from "png-chunks-extract";
 
 export { characterCardSchema } from "@/lib/character-card-schema";
 export type { CharacterCard } from "@/lib/character-card-schema";
-import { characterCardSchema, type CharacterCard } from "@/lib/character-card-schema";
+import { type CharacterCard, characterCardSchema } from "@/lib/character-card-schema";
+
+interface EncodeCharacterCardParam {
+  cardPath: string;
+  characterCard: CharacterCard;
+  format?: string;
+}
+
+export async function encodeCharacterCard({
+  cardPath,
+  characterCard,
+  format,
+}: EncodeCharacterCardParam) {
+  const fileFormat = format ?? "png";
+  switch (fileFormat) {
+    case "png":
+      const buffer = await fs.readFile(cardPath);
+      const characterString = JSON.stringify(characterCard);
+      const encodedImageBuffer = writeCharacterToBuffer(
+        buffer,
+        characterString,
+      );
+
+      await fs.writeFile(cardPath, encodedImageBuffer);
+      return;
+  }
+  throw new Error("unsupported format");
+}
+
+export function getCacheKey(inputFile: string) {
+  return inputFile.replace(".png", "");
+}
 
 /**
  * Parses a card image and returns the character metadata
@@ -62,33 +93,6 @@ export function readCharacterFromBuffer(image: Buffer): string {
   throw new Error("No PNG metadata");
 }
 
-interface EncodeCharacterCardParam {
-  cardPath: string;
-  characterCard: CharacterCard;
-  format?: string;
-}
-
-export async function encodeCharacterCard({
-  cardPath,
-  characterCard,
-  format,
-}: EncodeCharacterCardParam) {
-  const fileFormat = format ?? "png";
-  switch (fileFormat) {
-    case "png":
-      const buffer = await fs.readFile(cardPath);
-      const characterString = JSON.stringify(characterCard);
-      const encodedImageBuffer = writeCharacterToBuffer(
-        buffer,
-        characterString,
-      );
-
-      await fs.writeFile(cardPath, encodedImageBuffer);
-      return;
-  }
-  throw new Error("unsupported format");
-}
-
 export function writeCharacterToBuffer(image: Buffer, characterData: string) {
   const chunks = extract(new Uint8Array(image));
   const tEXtChunks = chunks.filter((chunk) => chunk.name === "tEXt");
@@ -137,8 +141,8 @@ export function writeCharacterToBuffer(image: Buffer, characterData: string) {
  */
 function encode(
   chunks: {
-    name: string;
     data: Uint8Array;
+    name: string;
   }[],
 ) {
   const uint8 = new Uint8Array(4);
@@ -165,7 +169,7 @@ function encode(
   output[7] = 0x0a;
 
   for (let i = 0; i < chunks.length; i++) {
-    const { name, data } = chunks[i];
+    const { data, name } = chunks[i];
     const size = data.length;
     const nameChars = [
       name.charCodeAt(0),
@@ -199,8 +203,4 @@ function encode(
   }
 
   return output;
-}
-
-export function getCacheKey(inputFile: string) {
-  return inputFile.replace(".png", "");
 }

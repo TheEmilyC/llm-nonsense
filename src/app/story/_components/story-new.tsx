@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import { StoryForm } from "@/app/story/_components/story-form";
 import { useCreateStory } from "@/app/story/_lib/hooks";
 import { StoryFormValues } from "@/app/story/_lib/schema";
@@ -7,30 +9,29 @@ import { CardOption } from "@/components/card-selector";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 
 const FORM_ID = "form-new-story";
 
 interface StoryNewParams {
   characters: CardOption[];
-  personas: CardOption[];
-  worlds?: CardOption[];
   initialCharacterId?: string;
   initialPersonaId?: string;
   initialWorldId?: string;
-  lorebooks: { value: string; label: string }[];
+  lorebooks: { label: string; value: string; }[];
+  personas: CardOption[];
+  worlds?: CardOption[];
 }
 
 export function StoryNew({
   characters,
-  personas,
-  worlds,
   initialCharacterId,
   initialPersonaId,
   lorebooks,
+  personas,
+  worlds,
 }: StoryNewParams) {
   const router = useRouter();
-  const { createStory, isPending, error } = useCreateStory();
+  const { createStory, error, isPending } = useCreateStory();
 
   async function onSubmitHandler(data: StoryFormValues) {
     const { newStoryId } = await createStory(data);
@@ -40,11 +41,11 @@ export function StoryNew({
   return (
     <div>
       <Header
-        pageTitle="New Story"
         backLinkDestination="/story"
         backLinkLabel="Stories"
+        pageTitle="New Story"
       >
-        <Button size="sm" type="submit" form={FORM_ID} disabled={isPending}>
+        <Button disabled={isPending} form={FORM_ID} size="sm" type="submit">
           {isPending ? "Starting…" : "Begin"}
         </Button>
       </Header>
@@ -52,16 +53,16 @@ export function StoryNew({
       <Content>
         {error && <p className="text-destructive">{error}</p>}
         <StoryForm
-          formId={FORM_ID}
           characters={characters}
-          personas={personas}
-          worlds={worlds}
-          onSubmit={onSubmitHandler}
           defaultValues={{
             characterId: initialCharacterId,
             personaId: initialPersonaId,
           }}
+          formId={FORM_ID}
           lorebooks={lorebooks}
+          onSubmit={onSubmitHandler}
+          personas={personas}
+          worlds={worlds}
         />
       </Content>
     </div>

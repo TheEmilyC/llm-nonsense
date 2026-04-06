@@ -1,3 +1,7 @@
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import z from "zod";
+
 import { getCharacterList } from "@/app/character/_lib/data";
 import { getChatsForStory } from "@/app/chat/_lib/data";
 import { getLorebookEntityList } from "@/app/lorebook/_lib/data";
@@ -12,9 +16,6 @@ import {
   buildWorldImageUrl,
 } from "@/lib/image";
 import { dbIdValidator } from "@/lib/validators";
-import { notFound } from "next/navigation";
-import { Suspense } from "react";
-import z from "zod";
 
 interface StoryPageParams {
   params: Promise<{ id: string }>;
@@ -23,6 +24,14 @@ interface StoryPageParams {
 const storyPageParamsSchema = z.object({
   id: dbIdValidator,
 });
+
+export default function StoryPage({ params }: StoryPageParams) {
+  return (
+    <Suspense>
+      <StoryPageContent params={params} />
+    </Suspense>
+  );
+}
 
 async function StoryPageContent({ params }: StoryPageParams) {
   const [characterList, personaList, worldList, lorebookResult, routeParams] =
@@ -42,40 +51,32 @@ async function StoryPageContent({ params }: StoryPageParams) {
 
   const characters = characterList.map((char) => ({
     id: char.id,
-    name: char.name,
     imageUrl: buildCharacterImageUrl({ id: char.id, pngHash: char.pngHash }),
+    name: char.name,
   }));
   const personas = personaList.map((per) => ({
     id: per.id,
-    name: per.name,
     imageUrl: buildPersonaImageUrl({ id: per.id, imgHash: per.imageHash }),
+    name: per.name,
   }));
   const worlds = worldList.map((wrd) => ({
     id: wrd.id,
-    name: wrd.name,
     imageUrl: buildWorldImageUrl({ id: wrd.id, imgHash: wrd.imageHash }),
+    name: wrd.name,
   }));
   const lorebooks = lorebookResult.map((lb) => ({
-    value: lb.id,
     label: lb.name,
+    value: lb.id,
   }));
 
   return (
     <StoryEdit
-      story={toStoryDto(story)}
       characters={characters}
-      personas={personas}
-      worlds={worlds}
-      lorebooks={lorebooks}
       chats={chats}
+      lorebooks={lorebooks}
+      personas={personas}
+      story={toStoryDto(story)}
+      worlds={worlds}
     />
-  );
-}
-
-export default function StoryPage({ params }: StoryPageParams) {
-  return (
-    <Suspense>
-      <StoryPageContent params={params} />
-    </Suspense>
   );
 }

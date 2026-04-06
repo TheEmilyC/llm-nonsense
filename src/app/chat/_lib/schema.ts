@@ -1,6 +1,8 @@
-import { dbIdValidator } from "@/lib/validators";
 import { UIDataTypes, UIMessage, UIMessagePart, UITools } from "ai";
 import z from "zod";
+
+import { dbIdValidator } from "@/lib/validators";
+
 import { MessageContent } from "../../../../generated/client";
 import { MessageRole } from "../../../../generated/enums";
 
@@ -8,17 +10,17 @@ export type MessagePart = UIMessagePart<UIDataTypes, UITools>;
 export const messagePartSchema = z.custom<MessagePart>();
 
 const profileSchema = z.object({
+  avatarSrc: z.string(),
   id: dbIdValidator,
   name: z.string(),
-  avatarSrc: z.string(),
 });
 
 export const messageContentDtoSchema = z.object({
   id: z.string().min(1),
-  role: z.enum(MessageRole),
+  isActive: z.boolean(),
   metadata: z.record(z.string(), z.unknown()).optional(),
   parts: z.custom<MessagePart>().array(),
-  isActive: z.boolean(),
+  role: z.enum(MessageRole),
 });
 export type MessageContentDto = z.infer<typeof messageContentDtoSchema>;
 
@@ -32,8 +34,8 @@ export function messageContentToDto(
 }
 
 export const chatMessageDtoSchema = z.object({
-  id: z.string().min(1, "id is required"), // created by Vercel so doesn't match dbIdValidator pattern
   contents: messageContentDtoSchema.array(),
+  id: z.string().min(1, "id is required"), // created by Vercel so doesn't match dbIdValidator pattern
 });
 export type ChatMessageDto = z.infer<typeof chatMessageDtoSchema>;
 
@@ -45,22 +47,22 @@ export function messageDtoToUIMessage(chatMessage: ChatMessageDto): UIMessage {
 
   return {
     id: chatMessage.id,
-    role: activeContent.role,
-    parts: activeContent.parts,
     metadata: activeContent.metadata,
+    parts: activeContent.parts,
+    role: activeContent.role,
   };
 }
 
 export const chatWithMessagesDtoSchema = z.object({
+  character: profileSchema,
   id: dbIdValidator,
+  lorebookId: dbIdValidator.optional(),
+  messages: chatMessageDtoSchema.array(),
   name: z.string().min(1, "Name is required"),
+  persona: profileSchema,
   storyId: dbIdValidator,
   storyName: z.string().min(1, "Story Name is required"),
-  lorebookId: dbIdValidator.optional(),
   worldId: dbIdValidator.optional(),
-  messages: chatMessageDtoSchema.array(),
-  character: profileSchema,
-  persona: profileSchema,
 });
 export type ChatWithMessagesDto = z.infer<typeof chatWithMessagesDtoSchema>;
 

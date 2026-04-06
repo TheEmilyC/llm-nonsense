@@ -1,3 +1,5 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
 import {
   createStoryAction,
   deleteStoryAction,
@@ -5,15 +7,19 @@ import {
 } from "@/app/story/_lib/actions";
 import { STORY_CACHE_KEY, StoryFormValues } from "@/app/story/_lib/schema";
 import { unwrapAction } from "@/lib/action-utils";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+export interface UpdateStoryMutationParams {
+  data: StoryFormValues;
+  storyId: string;
+}
 
 export function useCreateStory() {
   const queryClient = useQueryClient();
 
   const {
-    mutateAsync: createStory,
-    isPending,
     error,
+    isPending,
+    mutateAsync: createStory,
   } = useMutation({
     mutationFn: async (data: StoryFormValues) =>
       unwrapAction(await createStoryAction(data)),
@@ -24,38 +30,8 @@ export function useCreateStory() {
 
   return {
     createStory,
-    isPending,
     error: error ? (error as Error).message : null,
-  };
-}
-
-export interface UpdateStoryMutationParams {
-  storyId: string;
-  data: StoryFormValues;
-}
-
-export function useUpdateStory() {
-  const queryClient = useQueryClient();
-
-  const {
-    mutateAsync: updateStory,
     isPending,
-    error,
-  } = useMutation({
-    mutationFn: async ({ storyId, data }: UpdateStoryMutationParams) =>
-      unwrapAction(await updateStoryAction(storyId, data)),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: [STORY_CACHE_KEY, "list"] });
-      queryClient.invalidateQueries({
-        queryKey: [STORY_CACHE_KEY, variables.storyId],
-      });
-    },
-  });
-
-  return {
-    updateStory,
-    isPending,
-    error: error ? (error as Error).message : null,
   };
 }
 
@@ -63,9 +39,9 @@ export function useDeleteStory() {
   const queryClient = useQueryClient();
 
   const {
-    mutateAsync: deleteStory,
-    isPending,
     error,
+    isPending,
+    mutateAsync: deleteStory,
   } = useMutation({
     mutationFn: async ({ storyId }: { storyId: string }) =>
       unwrapAction(await deleteStoryAction(storyId)),
@@ -79,7 +55,32 @@ export function useDeleteStory() {
 
   return {
     deleteStory,
-    isPending,
     error: error ? (error as Error).message : null,
+    isPending,
+  };
+}
+
+export function useUpdateStory() {
+  const queryClient = useQueryClient();
+
+  const {
+    error,
+    isPending,
+    mutateAsync: updateStory,
+  } = useMutation({
+    mutationFn: async ({ data, storyId }: UpdateStoryMutationParams) =>
+      unwrapAction(await updateStoryAction(storyId, data)),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: [STORY_CACHE_KEY, "list"] });
+      queryClient.invalidateQueries({
+        queryKey: [STORY_CACHE_KEY, variables.storyId],
+      });
+    },
+  });
+
+  return {
+    error: error ? (error as Error).message : null,
+    isPending,
+    updateStory,
   };
 }

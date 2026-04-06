@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import { CharacterForm } from "@/app/character/_components/character-form";
 import {
   useDeleteCharacter,
@@ -9,7 +11,6 @@ import { CharacterDto, CharacterFormValues } from "@/app/character/_lib/schema";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 
 const FORM_ID = "form-edit-character";
 
@@ -20,7 +21,7 @@ export interface CharacterEditParams {
 export function CharacterEdit({ character }: CharacterEditParams) {
   const router = useRouter();
   const { deleteCharacter, isPending: isDeletePending } = useDeleteCharacter();
-  const { updateCharacter, isPending: isUpdatePending } = useUpdateCharacter();
+  const { isPending: isUpdatePending, updateCharacter } = useUpdateCharacter();
 
   const isPending = isDeletePending || isUpdatePending;
 
@@ -37,27 +38,27 @@ export function CharacterEdit({ character }: CharacterEditParams) {
   return (
     <div>
       <Header
-        pageTitle={character.name}
         backLinkDestination="/character"
         backLinkLabel="Character"
+        pageTitle={character.name}
       >
         <Button
+          disabled={isPending}
+          onClick={deleteHandler}
           size="sm"
           type="button"
           variant="destructive"
-          disabled={isPending}
-          onClick={deleteHandler}
         >
           {isDeletePending ? "Deleting..." : "Delete"}
         </Button>
-        <Button size="sm" type="submit" form={FORM_ID} disabled={isPending}>
+        <Button disabled={isPending} form={FORM_ID} size="sm" type="submit">
           {isUpdatePending ? "Saving..." : "Save"}
         </Button>
       </Header>
       <Content>
         <CharacterForm
-          formId={FORM_ID}
           defaultValues={character}
+          formId={FORM_ID}
           imageSrc={character.imageUrl}
           onSubmit={onSubmitHandler}
         />

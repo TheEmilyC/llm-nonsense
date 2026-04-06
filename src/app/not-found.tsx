@@ -9,8 +9,8 @@ export default function NotFound() {
           The resource you were looking for could not be found.
         </p>
         <Link
-          href="/"
           className="text-sm underline underline-offset-4 hover:text-foreground text-muted-foreground"
+          href="/"
         >
           Go home
         </Link>

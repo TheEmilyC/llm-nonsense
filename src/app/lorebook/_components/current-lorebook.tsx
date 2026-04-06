@@ -1,5 +1,7 @@
 "use client";
 
+import { RefreshCw } from "lucide-react";
+
 import { useLorebook } from "@/app/lorebook/_lib/hooks";
 import { LorebookDto, LorebookStatus } from "@/app/lorebook/_lib/schema";
 import { Badge } from "@/components/ui/badge";
@@ -9,20 +11,19 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { RefreshCw } from "lucide-react";
 
 interface CurrentLorebookProps {
-  lorebookId: string;
   initialLorebook?: LorebookDto;
+  lorebookId: string;
 }
 
 export function CurrentLorebook({
-  lorebookId,
   initialLorebook,
+  lorebookId,
 }: CurrentLorebookProps) {
-  const { lorebook, refreshLorebook, isPending } = useLorebook({
-    lorebookId,
+  const { isPending, lorebook, refreshLorebook } = useLorebook({
     initialLorebook,
+    lorebookId,
   });
 
   if (!lorebook) {
@@ -34,12 +35,12 @@ export function CurrentLorebook({
       <span className="text-muted-foreground">
         Current{" "}
         <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
           disabled={isPending}
           onClick={() => refreshLorebook()}
+          size="icon-xs"
           title="Retry connection"
+          type="button"
+          variant="ghost"
         >
           <RefreshCw className={isPending ? "animate-spin" : undefined} />
         </Button>

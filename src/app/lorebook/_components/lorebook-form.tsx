@@ -1,42 +1,43 @@
 "use client";
 
-import { useTestLorebookConnection } from "@/app/lorebook/_lib/hooks";
-import {
-  LorebookFormValues,
-  lorebookFormSchema,
-} from "@/app/lorebook/_lib/schema";
-import { FieldInput } from "@/components/form-fields/field-input";
-import { Button } from "@/components/ui/button";
-import { FieldGroup } from "@/components/ui/field";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 
+import { useTestLorebookConnection } from "@/app/lorebook/_lib/hooks";
+import {
+  lorebookFormSchema,
+  LorebookFormValues,
+} from "@/app/lorebook/_lib/schema";
+import { FieldInput } from "@/components/form-fields/field-input";
+import { Button } from "@/components/ui/button";
+import { FieldGroup } from "@/components/ui/field";
+
 interface LorebookFormProps {
-  formId: string;
   defaultValues?: LorebookFormValues;
+  formId: string;
   onSubmit: (data: LorebookFormValues) => void;
 }
 
 export function LorebookForm({
-  formId,
   defaultValues,
+  formId,
   onSubmit,
 }: LorebookFormProps) {
   const form = useForm<LorebookFormValues>({
-    resolver: zodResolver(lorebookFormSchema),
+    defaultValues: defaultValues || { apiKey: "", name: "", port: 27123 },
     mode: "onTouched",
-    defaultValues: defaultValues || { name: "", apiKey: "", port: 27123 },
+    resolver: zodResolver(lorebookFormSchema),
   });
 
-  const { testLorebookConnection, isPending: isTestingConnection } =
+  const { isPending: isTestingConnection, testLorebookConnection } =
     useTestLorebookConnection();
-  const [verifiedCredentials, setVerifiedCredentials] = useState<{
-    port: number;
+  const [verifiedCredentials, setVerifiedCredentials] = useState<null | {
     apiKey: string;
-  } | null>(
+    port: number;
+  }>(
     defaultValues
-      ? { port: defaultValues.port, apiKey: defaultValues.apiKey }
+      ? { apiKey: defaultValues.apiKey, port: defaultValues.port }
       : null,
   );
 
@@ -50,12 +51,12 @@ export function LorebookForm({
   async function handleTestConnection() {
     try {
       await testLorebookConnection({
-        port: form.getValues("port"),
         apiKey: form.getValues("apiKey"),
+        port: form.getValues("port"),
       });
       setVerifiedCredentials({
-        port: form.getValues("port"),
         apiKey: form.getValues("apiKey"),
+        port: form.getValues("port"),
       });
       form.clearErrors("root");
     } catch {
@@ -76,21 +77,21 @@ export function LorebookForm({
   return (
     <form id={formId} onSubmit={form.handleSubmit(handleSubmit)}>
       <FieldGroup>
-        <FieldInput control={form.control} name="name" label="Name" />
+        <FieldInput control={form.control} label="Name" name="name" />
         <FieldInput
           control={form.control}
-          name="port"
           label="Port"
+          name="port"
           type="number"
         />
-        <FieldInput control={form.control} name="apiKey" label="API Key" />
+        <FieldInput control={form.control} label="API Key" name="apiKey" />
         <div className="flex items-center gap-3">
           <Button
-            type="button"
-            variant="outline"
-            size="sm"
             disabled={isTestingConnection}
             onClick={handleTestConnection}
+            size="sm"
+            type="button"
+            variant="outline"
           >
             {isTestingConnection
               ? "Testing..."

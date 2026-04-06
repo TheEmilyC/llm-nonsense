@@ -7,21 +7,21 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 interface TagListProps {
-  value?: string[];
-  onChange: (tags: string[]) => void;
+  className?: string;
   name?: string;
+  onChange: (tags: string[]) => void;
   options?: string[];
   placeholder?: string;
-  className?: string;
+  value?: string[];
 }
 
 export function TagList({
-  value = [],
-  onChange,
+  className,
   name,
+  onChange,
   options = [],
   placeholder = "Add tag…",
-  className,
+  value = [],
 }: TagListProps) {
   const [inputValue, setInputValue] = React.useState("");
   const [open, setOpen] = React.useState(false);
@@ -92,33 +92,32 @@ export function TagList({
   }, []);
 
   return (
-    <div ref={containerRef} className={cn("relative", className)}>
+    <div className={cn("relative", className)} ref={containerRef}>
       {name && value.map((tag) => (
-        <input key={tag} type="hidden" name={name} value={tag} />
+        <input key={tag} name={name} type="hidden" value={tag} />
       ))}
       <div
         className="flex flex-wrap gap-1.5 min-h-9 w-full rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-xs focus-within:ring-[3px] focus-within:ring-ring/50 focus-within:border-ring cursor-text"
         onClick={() => inputRef.current?.focus()}
       >
         {value.map((tag) => (
-          <Badge key={tag} variant="secondary" className="h-6 gap-1 pr-1">
+          <Badge className="h-6 gap-1 pr-1" key={tag} variant="secondary">
             {tag}
             <button
-              type="button"
+              aria-label={`Remove ${tag}`}
+              className="rounded-sm opacity-60 hover:opacity-100 focus:outline-none"
               onClick={(e) => {
                 e.stopPropagation();
                 removeTag(tag);
               }}
-              className="rounded-sm opacity-60 hover:opacity-100 focus:outline-none"
-              aria-label={`Remove ${tag}`}
+              type="button"
             >
               <X className="size-3" />
             </button>
           </Badge>
         ))}
         <input
-          ref={inputRef}
-          value={inputValue}
+          className="flex-1 min-w-20 bg-transparent outline-none placeholder:text-muted-foreground"
           onChange={(e) => {
             setInputValue(e.target.value);
             setOpen(true);
@@ -127,7 +126,8 @@ export function TagList({
           onFocus={() => setOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder={value.length === 0 ? placeholder : ""}
-          className="flex-1 min-w-20 bg-transparent outline-none placeholder:text-muted-foreground"
+          ref={inputRef}
+          value={inputValue}
         />
       </div>
 
@@ -136,38 +136,38 @@ export function TagList({
           <ul className="max-h-52 overflow-auto p-1 text-sm">
             {filtered.map((option, i) => (
               <li
-                key={option}
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  addTag(option);
-                }}
-                onMouseEnter={() => setActiveIndex(i)}
                 className={cn(
                   "flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5",
                   activeIndex === i
                     ? "bg-accent text-accent-foreground"
                     : "hover:bg-accent hover:text-accent-foreground",
                 )}
+                key={option}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  addTag(option);
+                }}
+                onMouseEnter={() => setActiveIndex(i)}
               >
                 {option}
               </li>
             ))}
             {canAddCustom && (
               <li
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  addTag(inputValue);
-                }}
-                onMouseEnter={() => setActiveIndex(filtered.length)}
                 className={cn(
                   "flex cursor-pointer select-none items-center gap-1.5 rounded-sm px-2 py-1.5 text-muted-foreground",
                   activeIndex === filtered.length
                     ? "bg-accent text-accent-foreground"
                     : "hover:bg-accent hover:text-accent-foreground",
                 )}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  addTag(inputValue);
+                }}
+                onMouseEnter={() => setActiveIndex(filtered.length)}
               >
                 <span className="text-xs font-medium">Add</span>
-                <Badge variant="outline" className="h-5">
+                <Badge className="h-5" variant="outline">
                   {inputValue.trim()}
                 </Badge>
               </li>

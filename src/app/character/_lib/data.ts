@@ -1,6 +1,7 @@
 "use server";
 
 import fs from "fs/promises";
+import { cacheTag, revalidateTag } from "next/cache";
 import { join } from "path";
 
 import {
@@ -18,44 +19,25 @@ import { CHARACTER_CARD_DIRECTORY, DEFAULT_AVATAR_PATH } from "@/lib/constants";
 import { WORKING_DIRECTORY } from "@/lib/env-variables";
 import { createImageHash } from "@/lib/image";
 import { prisma } from "@/lib/prisma";
-import { cacheTag, revalidateTag } from "next/cache";
 
 const CHARACTER_CARD_PATH = join(WORKING_DIRECTORY, CHARACTER_CARD_DIRECTORY);
 
-export async function getCharacterList(): Promise<CharacterListItem[]> {
-  "use cache";
-  cacheTag(CHARACTER_CACHE_KEY);
-  const characterList = await prisma.character.findMany();
-  return characterList.map((char) => ({
-    id: char.id,
-    name: char.name,
-    pngHash: char.pngHash,
-  }));
-}
-
-export async function getCharacterById(
-  id: string,
-): Promise<CharacterRecord | null> {
-  "use cache";
-  cacheTag(`${CHARACTER_CACHE_KEY}-${id}`);
-
-  const entity = await prisma.character.findUnique({ where: { id } });
-  if (!entity) return null;
-  const card = await parseCharacterCard(join(WORKING_DIRECTORY, entity.png));
-  return { entity, card };
-}
-
-export async function getCharacterByIdOrFail(
-  id: string,
-): Promise<CharacterRecord> {
-  const result = await getCharacterById(id);
-  if (!result) throw new Error(`Character ID:${id} does not exist`);
-  return result;
-}
-
 export interface CreateCharacterParameters {
   characterCard: CharacterCard;
-  image: File | Buffer | undefined;
+  image: Buffer | File | undefined;
+}
+
+export interface SaveCharacterImageParams {
+  characterCard: CharacterCard;
+  image: Buffer | File | undefined;
+}
+
+export interface UpdateCharacterParameters {
+  id: string;
+  update: {
+    card?: Partial<CharacterCard>;
+    image?: File;
+  };
 }
 
 export async function createCharacter({
@@ -82,7 +64,7 @@ export async function createCharacter({
     });
 
   revalidateTag(CHARACTER_CACHE_KEY, "max");
-  return { entity: characterEntity, card: characterCard };
+  return { card: characterCard, entity: characterEntity };
 }
 
 export async function deleteCharacter(id: string) {
@@ -98,12 +80,75 @@ export async function deleteCharacter(id: string) {
   revalidateTag(`${CHARACTER_CACHE_KEY}-${id}`, "max");
 }
 
-export interface UpdateCharacterParameters {
-  id: string;
-  update: {
-    card?: Partial<CharacterCard>;
-    image?: File;
-  };
+export async function getCharacterById(
+  id: string,
+): Promise<CharacterRecord | null> {
+  "use cache";
+  cacheTag(`${CHARACTER_CACHE_KEY}-${id}`);
+
+  const entity = await prisma.character.findUnique({ where: { id } });
+  if (!entity) return null;
+  const card = await parseCharacterCard(join(WORKING_DIRECTORY, entity.png));
+  return { card, entity };
+}
+
+export async function getCharacterByIdOrFail(
+  id: string,
+): Promise<CharacterRecord> {
+  const result = await getCharacterById(id);
+  if (!result) throw new Error(`Character ID:${id} does not exist`);
+  return result;
+}
+
+export async function getCharacterList(): Promise<CharacterListItem[]> {
+  "use cache";
+  cacheTag(CHARACTER_CACHE_KEY);
+  const characterList = await prisma.character.findMany();
+  return characterList.map((char) => ({
+    id: char.id,
+    name: char.name,
+    pngHash: char.pngHash,
+  }));
+}
+
+export async function saveCharacterImage({
+  characterCard,
+  image,
+}: SaveCharacterImageParams) {
+  // Get image buffer
+  let imageBuffer;
+  if (image instanceof File)
+    imageBuffer = Buffer.from(await image.arrayBuffer());
+  else if (image instanceof Buffer) imageBuffer = image;
+  else
+    imageBuffer = await fs.readFile(
+      join(WORKING_DIRECTORY, DEFAULT_AVATAR_PATH),
+    );
+
+  const encodedImageBuffer = writeCharacterToBuffer(
+    imageBuffer,
+    JSON.stringify(characterCard),
+  );
+
+  // save image
+  await fs.mkdir(CHARACTER_CARD_PATH, { recursive: true });
+  let fileName = `${characterCard.name}.png`;
+  let filePath = join(CHARACTER_CARD_PATH, fileName);
+  let counter = 1;
+  while (
+    await fs
+      .access(filePath)
+      .then(() => true)
+      .catch(() => false)
+  ) {
+    fileName = `${characterCard.name}${counter}.png`;
+    filePath = join(CHARACTER_CARD_PATH, fileName);
+    counter++;
+  }
+  await fs.writeFile(filePath, encodedImageBuffer);
+  const pngHash = createImageHash(imageBuffer);
+
+  return { fileName, filePath, pngHash };
 }
 
 export async function updateCharacter({
@@ -150,56 +195,11 @@ export async function updateCharacter({
   }
 
   const updatedCharacter: CharacterRecord = {
-    entity: characterEntity,
     card: updatedCard,
+    entity: characterEntity,
   };
 
   revalidateTag(CHARACTER_CACHE_KEY, "max");
   revalidateTag(`${CHARACTER_CACHE_KEY}-${id}`, "max");
   return updatedCharacter;
-}
-
-export interface SaveCharacterImageParams {
-  characterCard: CharacterCard;
-  image: File | Buffer | undefined;
-}
-
-export async function saveCharacterImage({
-  characterCard,
-  image,
-}: SaveCharacterImageParams) {
-  // Get image buffer
-  let imageBuffer;
-  if (image instanceof File)
-    imageBuffer = Buffer.from(await image.arrayBuffer());
-  else if (image instanceof Buffer) imageBuffer = image;
-  else
-    imageBuffer = await fs.readFile(
-      join(WORKING_DIRECTORY, DEFAULT_AVATAR_PATH),
-    );
-
-  const encodedImageBuffer = writeCharacterToBuffer(
-    imageBuffer,
-    JSON.stringify(characterCard),
-  );
-
-  // save image
-  await fs.mkdir(CHARACTER_CARD_PATH, { recursive: true });
-  let fileName = `${characterCard.name}.png`;
-  let filePath = join(CHARACTER_CARD_PATH, fileName);
-  let counter = 1;
-  while (
-    await fs
-      .access(filePath)
-      .then(() => true)
-      .catch(() => false)
-  ) {
-    fileName = `${characterCard.name}${counter}.png`;
-    filePath = join(CHARACTER_CARD_PATH, fileName);
-    counter++;
-  }
-  await fs.writeFile(filePath, encodedImageBuffer);
-  const pngHash = createImageHash(imageBuffer);
-
-  return { fileName, filePath, pngHash };
 }

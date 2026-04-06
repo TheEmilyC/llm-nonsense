@@ -1,3 +1,6 @@
+import { cacheLife, cacheTag, revalidateTag } from "next/cache";
+import path from "path";
+
 import {
   GetLorebookIndexResposne,
   getObsidianIndexResposneSchema,
@@ -14,12 +17,26 @@ import {
 } from "@/lib/env-variables";
 import { HttpStatus } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
-import { cacheLife, cacheTag, revalidateTag } from "next/cache";
-import path from "path";
+
 import { Lorebook as LorebookEntity } from "../../../../generated/client";
 
 export interface CreateLorebookEntityParams {
-  newLorebook: Pick<LorebookEntity, "name" | "apiKey" | "port">;
+  newLorebook: Pick<LorebookEntity, "apiKey" | "name" | "port">;
+}
+
+export interface GetLorebookEntryListParams {
+  files: string[];
+  lorebookId: string;
+}
+
+export interface UpdateLorebookEntityParams {
+  id: string;
+  update: Partial<Pick<LorebookEntity, "apiKey" | "name" | "port">>;
+}
+
+interface GetLorebookEntryParams {
+  fileName: string;
+  lorebookId: string;
 }
 
 export async function createLorebookEntity({
@@ -36,53 +53,9 @@ export async function createLorebookEntity({
   return entity;
 }
 
-export async function getLorebookEntityList(): Promise<LorebookEntity[]> {
-  "use cache";
-  cacheTag(LOREBOOK_CACHE_KEY);
-
-  return await prisma.lorebook.findMany();
-}
-
-export interface UpdateLorebookEntityParams {
-  id: string;
-  update: Partial<Pick<LorebookEntity, "apiKey" | "name" | "port">>;
-}
-
-export async function updateLorebookEntity({
-  id,
-  update,
-}: UpdateLorebookEntityParams): Promise<LorebookEntity> {
-  const orgLorebook = await getLorebookEntityById(id);
-  if (!orgLorebook) throw new Error("Lorebook does not exist");
-
-  const entityUpdate: Partial<LorebookEntity> = {};
-  if (update.apiKey !== undefined && update.apiKey !== orgLorebook.apiKey)
-    entityUpdate.apiKey = update.apiKey;
-
-  if (update.name !== undefined && update.name !== orgLorebook.name)
-    entityUpdate.name = update.name;
-
-  if (update.port !== undefined && update.port !== orgLorebook.port)
-    entityUpdate.port = update.port;
-
-  const entity = await prisma.lorebook.update({
-    where: { id },
-    data: entityUpdate,
-  });
-
-  revalidateTag(LOREBOOK_CACHE_KEY, "max");
-  return entity;
-}
-
 export async function deleteLorebookEntity(id: string): Promise<void> {
   await prisma.lorebook.delete({ where: { id } });
   revalidateTag(LOREBOOK_CACHE_KEY, "max");
-}
-
-export async function getLorebookEntityById(id: string) {
-  "use cache";
-  cacheTag(LOREBOOK_CACHE_KEY);
-  return prisma.lorebook.findUnique({ where: { id } });
 }
 
 export async function getLorebookById(
@@ -101,12 +74,12 @@ export async function getLorebookById(
   let index: GetLorebookIndexResposne;
   try {
     const indexResponse = await fetch(`${OBSIDIAN_URL}:${entity.port}/search`, {
+      body: `TABLE title, tags, keys, summary, constant, position FROM ${LOREBOOK_TAG} and !${LOREBOOK_NEVER_TAG} and !"system/Templates"`,
       headers: {
         Authorization: `Bearer ${entity.apiKey}`,
         "Content-type": "application/vnd.olrapi.dataview.dql+txt",
       },
       method: "POST",
-      body: `TABLE title, tags, keys, summary, constant, position FROM ${LOREBOOK_TAG} and !${LOREBOOK_NEVER_TAG} and !"system/Templates"`,
     });
     if (!indexResponse.ok) {
       console.error(
@@ -125,23 +98,23 @@ export async function getLorebookById(
 
   // build lorebook
   const lorebook: Lorebook = {
-    status: LorebookStatus.Ready,
     id: entity.id,
-    name: entity.name,
     index: Array.isArray(index)
       ? index.map((idx) => ({
-          filename: idx.filename,
-          name: idx.result.title ?? path.basename(idx.filename),
-          summary: idx.result.summary ?? "",
-          tags: idx.result.tags,
-          keys: idx.result.keys ?? [],
           constant:
             idx.result.constant && idx.result.constant === "true"
               ? true
               : false,
+          filename: idx.filename,
+          keys: idx.result.keys ?? [],
+          name: idx.result.title ?? path.basename(idx.filename),
           position: idx.result.position ?? 10,
+          summary: idx.result.summary ?? "",
+          tags: idx.result.tags,
         }))
       : [],
+    name: entity.name,
+    status: LorebookStatus.Ready,
   };
   if (debug) {
     console.debug("Lorebook Index", JSON.stringify(lorebook, null, 2));
@@ -149,9 +122,17 @@ export async function getLorebookById(
   return lorebook;
 }
 
-interface GetLorebookEntryParams {
-  fileName: string;
-  lorebookId: string;
+export async function getLorebookEntityById(id: string) {
+  "use cache";
+  cacheTag(LOREBOOK_CACHE_KEY);
+  return prisma.lorebook.findUnique({ where: { id } });
+}
+
+export async function getLorebookEntityList(): Promise<LorebookEntity[]> {
+  "use cache";
+  cacheTag(LOREBOOK_CACHE_KEY);
+
+  return await prisma.lorebook.findMany();
 }
 
 export async function getLorebookEntry({
@@ -169,8 +150,8 @@ export async function getLorebookEntry({
     `${OBSIDIAN_URL}:${lorebookEntity.port}/vault/${fileName}`,
     {
       headers: {
-        Authorization: `Bearer ${lorebookEntity.apiKey}`,
         Accept: "application/vnd.olrapi.note+json",
+        Authorization: `Bearer ${lorebookEntity.apiKey}`,
       },
     },
   );
@@ -183,11 +164,6 @@ export async function getLorebookEntry({
   }
 
   return file;
-}
-
-export interface GetLorebookEntryListParams {
-  lorebookId: string;
-  files: string[];
 }
 
 export async function getLorebookEntryList({
@@ -212,4 +188,30 @@ export async function testLorebookConnection(api: ObsidianApiConnection) {
   }
 
   return true;
+}
+
+export async function updateLorebookEntity({
+  id,
+  update,
+}: UpdateLorebookEntityParams): Promise<LorebookEntity> {
+  const orgLorebook = await getLorebookEntityById(id);
+  if (!orgLorebook) throw new Error("Lorebook does not exist");
+
+  const entityUpdate: Partial<LorebookEntity> = {};
+  if (update.apiKey !== undefined && update.apiKey !== orgLorebook.apiKey)
+    entityUpdate.apiKey = update.apiKey;
+
+  if (update.name !== undefined && update.name !== orgLorebook.name)
+    entityUpdate.name = update.name;
+
+  if (update.port !== undefined && update.port !== orgLorebook.port)
+    entityUpdate.port = update.port;
+
+  const entity = await prisma.lorebook.update({
+    data: entityUpdate,
+    where: { id },
+  });
+
+  revalidateTag(LOREBOOK_CACHE_KEY, "max");
+  return entity;
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
 import {
@@ -11,34 +12,33 @@ import { FieldInput } from "@/components/form-fields/field-input";
 import { FieldTagList } from "@/components/form-fields/field-taglist";
 import { FieldTextareaField } from "@/components/form-fields/field-textarea";
 import { FieldGroup } from "@/components/ui/field";
-import { zodResolver } from "@hookform/resolvers/zod";
 
 interface CharacterFormProps {
-  formId: string;
   defaultValues?: CharacterFormValues;
+  formId: string;
   imageSrc?: string;
   onSubmit: (data: CharacterFormValues) => void;
 }
 
 export function CharacterForm({
-  formId,
   defaultValues,
+  formId,
   imageSrc,
   onSubmit,
 }: CharacterFormProps) {
   const form = useForm<CharacterFormValues>({
-    resolver: zodResolver(characterFormSchema),
-    mode: "onTouched",
     defaultValues: defaultValues || {
-      name: "",
-      tags: [],
+      creator_notes: "",
       description: "",
-      personality: "",
-      scenario: "",
       first_mes: "",
       mes_example: "",
-      creator_notes: "",
+      name: "",
+      personality: "",
+      scenario: "",
+      tags: [],
     },
+    mode: "onTouched",
+    resolver: zodResolver(characterFormSchema),
   });
 
   return (
@@ -47,47 +47,47 @@ export function CharacterForm({
         <div className="grid grid-cols-3 gap-4">
           <div className="col-span-1">
             <FieldImageUpload
-              control={form.control}
-              name="image"
-              label=""
               acceptedFormats="png"
+              control={form.control}
               initialImgSrc={imageSrc}
+              label=""
+              name="image"
             />
           </div>
           <div className="col-span-2 flex flex-col gap-4">
-            <FieldInput control={form.control} name="name" label="Name" />
-            <FieldTagList control={form.control} name="tags" label="Tags" />
+            <FieldInput control={form.control} label="Name" name="name" />
+            <FieldTagList control={form.control} label="Tags" name="tags" />
           </div>
           <div className="col-span-3 flex flex-col gap-4">
             <FieldTextareaField
               control={form.control}
-              name="description"
               label="Description"
+              name="description"
             />
             <FieldTextareaField
               control={form.control}
-              name="personality"
               label="Personality"
+              name="personality"
             />
             <FieldTextareaField
               control={form.control}
-              name="scenario"
               label="Scenario"
+              name="scenario"
             />
             <FieldTextareaField
               control={form.control}
-              name="first_mes"
               label="First Message"
+              name="first_mes"
             />
             <FieldTextareaField
               control={form.control}
-              name="mes_example"
               label="Example Messages"
+              name="mes_example"
             />
             <FieldTextareaField
               control={form.control}
-              name="creator_notes"
               label="Creator Notes"
+              name="creator_notes"
             />
           </div>
         </div>

@@ -1,7 +1,8 @@
-import { getWorldById } from "@/app/world/_lib/data";
-import { HttpStatus } from "@/lib/http";
 import fs from "fs/promises";
 import { NextResponse } from "next/server";
+
+import { getWorldById } from "@/app/world/_lib/data";
+import { HttpStatus } from "@/lib/http";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -21,8 +22,8 @@ export async function GET(_req: Request, { params }: Params) {
 
     return new NextResponse(imageBuffer, {
       headers: {
-        "Content-Type": "image/png",
         "Cache-Control": "public, max-age=31536000, immutable",
+        "Content-Type": "image/png",
       },
     });
   } catch {

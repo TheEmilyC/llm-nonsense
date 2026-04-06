@@ -1,5 +1,7 @@
 "use server";
 
+import { notFound } from "next/navigation";
+
 import {
   createCharacter,
   deleteCharacter,
@@ -19,7 +21,55 @@ import {
   readCharacterFromBuffer,
 } from "@/lib/character-card-parser";
 import { dbIdValidator } from "@/lib/validators";
-import { notFound } from "next/navigation";
+
+export async function createCharacterAction(
+  data: CharacterFormValues,
+): Promise<ActionResponse<{ id: string }>> {
+  const formParseResult = characterFormSchema.safeParse(data);
+  if (!formParseResult.success) {
+    console.error(formParseResult.error);
+    return { error: "Malformed character data", success: false };
+  }
+  const { image, ...card } = formParseResult.data;
+  const characterCard = {
+    avatar: "none",
+    chat: "",
+    create_date: new Date(),
+    creatorcomment: "",
+    fav: false,
+    spec: "chara_card_v3",
+    spec_version: "3.0",
+    talkativeness: "0.5",
+    ...card,
+  };
+
+  let character;
+  try {
+    character = await createCharacter({ characterCard, image });
+  } catch (err) {
+    console.error(err);
+    return { error: "Character create failed", success: false };
+  }
+
+  return { data: { id: character.entity.id }, success: true };
+}
+
+export async function deleteCharacterAction(
+  characterId: string,
+): Promise<ActionResponse<null>> {
+  const idParseResult = dbIdValidator.safeParse(characterId);
+  if (!idParseResult.success) {
+    notFound();
+  }
+  const id = idParseResult.data;
+  try {
+    await deleteCharacter(id);
+  } catch (err) {
+    console.error(err);
+    return { error: "failed to delete character", success: false };
+  }
+  return { data: null, success: true };
+}
 
 export async function importCharacterFromPNGAction(
   data: ImportFromPngForm,
@@ -28,7 +78,7 @@ export async function importCharacterFromPNGAction(
 
   if (!parseResult.success) {
     console.error(parseResult.error);
-    return { success: false, error: "Character import failed" };
+    return { error: "Character import failed", success: false };
   }
   const { png } = parseResult.data;
 
@@ -45,30 +95,13 @@ export async function importCharacterFromPNGAction(
     });
   } catch (err) {
     console.error(err);
-    return { success: false, error: "Character import failed" };
+    return { error: "Character import failed", success: false };
   }
   if (!character) {
     console.error("character missing after create");
-    return { success: false, error: "Character import failed" };
+    return { error: "Character import failed", success: false };
   }
-  return { success: true, data: { id: character.entity.id } };
-}
-
-export async function deleteCharacterAction(
-  characterId: string,
-): Promise<ActionResponse<null>> {
-  const idParseResult = dbIdValidator.safeParse(characterId);
-  if (!idParseResult.success) {
-    notFound();
-  }
-  const id = idParseResult.data;
-  try {
-    await deleteCharacter(id);
-  } catch (err) {
-    console.error(err);
-    return { success: false, error: "failed to delete character" };
-  }
-  return { success: true, data: null };
+  return { data: { id: character.entity.id }, success: true };
 }
 
 export async function updateCharacterAction(
@@ -78,7 +111,7 @@ export async function updateCharacterAction(
   const formParseResult = characterFormSchema.safeParse(data);
   if (!formParseResult.success) {
     console.error(formParseResult.error);
-    return { success: false, error: "Malformed character data" };
+    return { error: "Malformed character data", success: false };
   }
   const idParseResult = dbIdValidator.safeParse(characterId);
   if (!idParseResult.success) {
@@ -93,40 +126,8 @@ export async function updateCharacterAction(
     character = await updateCharacter({ id, update: { card, image } });
   } catch (err) {
     console.error(err);
-    return { success: false, error: "Character update failed" };
+    return { error: "Character update failed", success: false };
   }
 
-  return { success: true, data: toCharacterDto(character) };
-}
-
-export async function createCharacterAction(
-  data: CharacterFormValues,
-): Promise<ActionResponse<{ id: string }>> {
-  const formParseResult = characterFormSchema.safeParse(data);
-  if (!formParseResult.success) {
-    console.error(formParseResult.error);
-    return { success: false, error: "Malformed character data" };
-  }
-  const { image, ...card } = formParseResult.data;
-  const characterCard = {
-    creatorcomment: "",
-    avatar: "none",
-    chat: "",
-    talkativeness: "0.5",
-    fav: false,
-    spec: "chara_card_v3",
-    spec_version: "3.0",
-    create_date: new Date(),
-    ...card,
-  };
-
-  let character;
-  try {
-    character = await createCharacter({ characterCard, image });
-  } catch (err) {
-    console.error(err);
-    return { success: false, error: "Character create failed" };
-  }
-
-  return { success: true, data: { id: character.entity.id } };
+  return { data: toCharacterDto(character), success: true };
 }

@@ -1,12 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+
 import { CharacterForm } from "@/app/character/_components/character-form";
 import { useCreateCharacter } from "@/app/character/_lib/hooks";
 import { CharacterFormValues } from "@/app/character/_lib/schema";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
 
 const FORM_ID = "form-new-character";
 
@@ -22,11 +23,11 @@ export function CharacterNew() {
   return (
     <div>
       <Header
-        pageTitle="New Character"
         backLinkDestination="/character"
         backLinkLabel="Characters"
+        pageTitle="New Character"
       >
-        <Button size="sm" type="submit" form={FORM_ID} disabled={isPending}>
+        <Button disabled={isPending} form={FORM_ID} size="sm" type="submit">
           {isPending ? "Saving..." : "Save"}
         </Button>
       </Header>
