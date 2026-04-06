@@ -1,0 +1,21 @@
+services:
+  app:
+    build: .
+    ports:
+      - "3010:3010"
+    env_file:
+      - .env
+    environment:
+      # Override DATABASE_URL with an absolute path inside the container.
+      # The actual file lives in the 'db-data' volume below so it persists
+      # across restarts and container rebuilds.
+      DATABASE_URL: "file:/app/data/llm-nonsense.db"
+      # Allows the container to reach services running on your host machine
+      # (e.g. Obsidian). Set OBSIDIAN_URL=http://host.docker.internal in .env.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - db-data:/app/data
+
+volumes:
+  db-data:
