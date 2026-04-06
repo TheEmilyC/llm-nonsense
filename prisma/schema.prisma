@@ -72,7 +72,7 @@ enum MessageRole {
 model ChatMessage {
   id         String           @id @default(cuid())
   chatId     String
-  chat       Chat             @relation(fields: [chatId], references: [id])
+  chat       Chat             @relation(fields: [chatId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   contents   MessageContent[]
   createdAt  DateTime         @default(now())
   modifiedAt DateTime         @default(now()) @updatedAt
@@ -81,7 +81,7 @@ model ChatMessage {
 model MessageContent {
   id         String      @id @default(cuid())
   messageId  String
-  message    ChatMessage @relation(fields: [messageId], references: [id])
+  message    ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   role       MessageRole
   isActive   Boolean     @default(false)
   metadata   Json?
