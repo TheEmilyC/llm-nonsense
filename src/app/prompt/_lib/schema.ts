@@ -2,13 +2,27 @@ import z from "zod";
 
 import { dbIdValidator } from "@/lib/validators";
 
-import { MessageRole, PromptInjectTag } from "../../../../generated/enums";
+import { MessageRole } from "@/app/chat/_lib/schema";
 
 export const PROMPT_CACHE_KEY = "prompt";
 
 export enum PromptFragmentType {
   content = "content",
   inject = "inject",
+}
+
+export enum PromptInjectTag {
+  lastMessage = "lastMessage",
+  chatHistory = "chatHistory",
+  characterName = "characterName",
+  characterDescription = "characterDescription",
+  characterPersonality = "characterPersonality",
+  characterScenario = "characterScenario",
+  personaName = "personaName",
+  personaDescription = "personaDescription",
+  worldName = "worldName",
+  worldDescription = "worldDescription",
+  lorebook = "lorebook",
 }
 
 const baseFragmentSchema = z.object({

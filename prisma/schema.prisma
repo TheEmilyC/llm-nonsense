@@ -125,6 +125,7 @@ model Prompt {
 
 enum PromptInjectTag {
   lastMessage
+  chatHistory
   characterName
   characterDescription
   characterPersonality

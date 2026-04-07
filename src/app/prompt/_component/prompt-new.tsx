@@ -2,14 +2,13 @@
 
 import { useRouter } from "next/navigation";
 
+import { MessageRole } from "@/app/chat/_lib/schema";
 import { PromptForm } from "@/app/prompt/_component/prompt-form";
 import { useCreatePrompt } from "@/app/prompt/_lib/hooks";
-import { PromptFormValues } from "@/app/prompt/_lib/schema";
+import { PromptFormValues, PromptInjectTag } from "@/app/prompt/_lib/schema";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
-
-import { MessageRole, PromptInjectTag } from "../../../../generated/enums";
 
 const FORM_ID = "form-new-prompt";
 
@@ -84,6 +83,13 @@ const DEFAULT_PROMPT: PromptFormValues = {
       injectTag: PromptInjectTag.lastMessage,
       name: "Last Message",
       role: MessageRole.user,
+      type: "inject",
+    },
+    {
+      enabled: true,
+      injectTag: PromptInjectTag.chatHistory,
+      name: "Chat History",
+      role: MessageRole.system,
       type: "inject",
     },
   ],

@@ -6,9 +6,9 @@ import { dbIdValidator } from "@/lib/validators";
 import { MessageContent } from "../../../../generated/client";
 
 export enum MessageRole {
-  ASSISTANT = "assistant",
-  SYSTEM = "system",
-  USER = "user",
+  assistant = "assistant",
+  system = "system",
+  user = "user",
 }
 
 export type MessagePart = UIMessagePart<UIDataTypes, UITools>;
