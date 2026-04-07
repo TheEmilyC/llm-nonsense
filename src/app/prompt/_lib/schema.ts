@@ -33,6 +33,7 @@ export const promptFragmentDtoSchema = z.discriminatedUnion("type", [
   contentFragmentSchema,
   injectFragmentSchema,
 ]);
+export type PromptFragmentDto = z.infer<typeof promptFragmentDtoSchema>;
 
 export const promptFragmentCreateSchema = baseFragmentSchema
   .omit({
@@ -48,8 +49,6 @@ export const promptFragmentUpdateSchema = baseFragmentSchema.extend({
   id: dbIdValidator.optional(),
   injectTag: z.enum(PromptInjectTag).optional(),
 });
-
-export type PromptFragmentDto = z.infer<typeof promptFragmentDtoSchema>;
 
 export const promptDtoSchema = z.object({
   id: dbIdValidator,

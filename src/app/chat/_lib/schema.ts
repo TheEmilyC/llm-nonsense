@@ -4,7 +4,12 @@ import z from "zod";
 import { dbIdValidator } from "@/lib/validators";
 
 import { MessageContent } from "../../../../generated/client";
-import { MessageRole } from "../../../../generated/enums";
+
+export enum MessageRole {
+  ASSISTANT = "assistant",
+  SYSTEM = "system",
+  USER = "user",
+}
 
 export type MessagePart = UIMessagePart<UIDataTypes, UITools>;
 export const messagePartSchema = z.custom<MessagePart>();
