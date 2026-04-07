@@ -125,6 +125,15 @@ model Prompt {
 
 enum PromptInjectTag {
   lastMessage
+  characterName
+  characterDescription
+  characterPersonality
+  characterScenario
+  personaName
+  personaDescription
+  worldName
+  worldDescription
+  lorebook
 }
 
 model PromptFragment {

@@ -1,5 +1,6 @@
 "use client";
 
+import { move } from "@dnd-kit/helpers";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
 import { GripVertical } from "lucide-react";
@@ -14,7 +15,7 @@ interface SortableItemProps {
 }
 
 interface SortableListProps<T> {
-  getId: (item: T) => string;
+  getItemId: (item: T, index: number) => string;
   items: T[];
   onItemClick: (item: T) => void;
   onOrderChange: (items: T[]) => void;
@@ -22,24 +23,34 @@ interface SortableListProps<T> {
 }
 
 export function SortableList<T>({
-  getId,
+  getItemId,
   items,
   onItemClick,
+  onOrderChange,
   renderItem,
 }: SortableListProps<T>) {
   return (
-    <DragDropProvider>
+    <DragDropProvider
+      onDragEnd={(event) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- move requires an id property but uses references to move items
+        const newItems = move(items as any, event) as T[];
+        onOrderChange(newItems);
+      }}
+    >
       <div className="flex flex-col gap-1">
-        {items.map((item, index) => (
-          <SortableItem
-            id={getId(item)}
-            index={index}
-            key={getId(item)}
-            onClick={() => onItemClick(item)}
-          >
-            {renderItem(item)}
-          </SortableItem>
-        ))}
+        {items.map((item, index) => {
+          const id = getItemId(item, index);
+          return (
+            <SortableItem
+              id={id}
+              index={index}
+              key={id}
+              onClick={() => onItemClick(item)}
+            >
+              {renderItem(item)}
+            </SortableItem>
+          );
+        })}
       </div>
     </DragDropProvider>
   );

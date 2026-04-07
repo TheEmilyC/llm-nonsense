@@ -11,10 +11,14 @@ import {
   updatePrompt,
 } from "@/app/prompt/_lib/data";
 import {
+  CreatePromptParams,
   promptFormSchema,
   PromptFormValues,
+  promptFragmentCreateSchema,
+  promptFragmentUpdateSchema,
   promptInspectorFormSchema,
   PromptInspectorFormValues,
+  UpdatePromptParams,
 } from "@/app/prompt/_lib/schema";
 import { ActionResponse } from "@/lib/action-utils";
 import { dbIdValidator } from "@/lib/validators";
@@ -66,9 +70,16 @@ export async function createPromptAction(
     console.error(parseResult.error);
     return { error: "Malformed prompt data", success: false };
   }
+  const { name, promptFragments: rawFragments } = parseResult.data;
+  const newPrompt: CreatePromptParams = {
+    name: name,
+    promptFragments: promptFragmentCreateSchema
+      .array()
+      .parse(rawFragments.map((frag, idx) => ({ ...frag, order: idx }))),
+  };
   try {
-    const newPrompt = await createPrompt({ name: parseResult.data.name });
-    return { data: { id: newPrompt.id }, success: true };
+    const prompt = await createPrompt(newPrompt);
+    return { data: { id: prompt.id }, success: true };
   } catch (err) {
     console.error(err);
     return { error: "Prompt create failed", success: false };
@@ -100,16 +111,25 @@ export async function updatePromptAction(
     console.error(idParseResult.error);
     return { error: "Malformed prompt id", success: false };
   }
+  const id = idParseResult.data;
   const parseResult = promptFormSchema.safeParse(data);
   if (!parseResult.success) {
     console.error(parseResult.error);
     return { error: "Malformed prompt data", success: false };
   }
+  const { name, promptFragments: rawFragments } = parseResult.data;
+
+  const updateData: UpdatePromptParams = {
+    id,
+    update: {
+      name,
+      promptFragments: promptFragmentUpdateSchema
+        .array()
+        .parse(rawFragments.map((frag, idx) => ({ ...frag, order: idx }))),
+    },
+  };
   try {
-    const updated = await updatePrompt({
-      id: idParseResult.data,
-      update: { name: parseResult.data.name },
-    });
+    const updated = await updatePrompt(updateData);
     return { data: { id: updated.id }, success: true };
   } catch (err) {
     console.error(err);

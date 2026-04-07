@@ -9,7 +9,85 @@ import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
 
+import { MessageRole, PromptInjectTag } from "../../../../generated/enums";
+
 const FORM_ID = "form-new-prompt";
+
+const DEFAULT_PROMPT: PromptFormValues = {
+  name: "",
+  promptFragments: [
+    {
+      enabled: true,
+      injectTag: PromptInjectTag.characterName,
+      name: "Character Name",
+      role: MessageRole.system,
+      type: "inject",
+    },
+    {
+      enabled: true,
+      injectTag: PromptInjectTag.characterDescription,
+      name: "Character Description",
+      role: MessageRole.system,
+      type: "inject",
+    },
+    {
+      enabled: true,
+      injectTag: PromptInjectTag.characterPersonality,
+      name: "Character Personality",
+      role: MessageRole.system,
+      type: "inject",
+    },
+    {
+      enabled: true,
+      injectTag: PromptInjectTag.characterScenario,
+      name: "Character Scenario",
+      role: MessageRole.system,
+      type: "inject",
+    },
+    {
+      enabled: true,
+      injectTag: PromptInjectTag.personaName,
+      name: "Persona Name",
+      role: MessageRole.system,
+      type: "inject",
+    },
+    {
+      enabled: true,
+      injectTag: PromptInjectTag.personaDescription,
+      name: "Persona Description",
+      role: MessageRole.system,
+      type: "inject",
+    },
+    {
+      enabled: true,
+      injectTag: PromptInjectTag.worldName,
+      name: "World Name",
+      role: MessageRole.system,
+      type: "inject",
+    },
+    {
+      enabled: true,
+      injectTag: PromptInjectTag.worldDescription,
+      name: "World Description",
+      role: MessageRole.system,
+      type: "inject",
+    },
+    {
+      enabled: true,
+      injectTag: PromptInjectTag.lorebook,
+      name: "Lorebook",
+      role: MessageRole.system,
+      type: "inject",
+    },
+    {
+      enabled: true,
+      injectTag: PromptInjectTag.lastMessage,
+      name: "Last Message",
+      role: MessageRole.user,
+      type: "inject",
+    },
+  ],
+};
 
 export function PromptNew() {
   const router = useRouter();
@@ -32,7 +110,11 @@ export function PromptNew() {
         </Button>
       </Header>
       <Content>
-        <PromptForm formId={FORM_ID} onSubmit={onSubmitHandler} />
+        <PromptForm
+          defaultValues={DEFAULT_PROMPT}
+          formId={FORM_ID}
+          onSubmit={onSubmitHandler}
+        />
       </Content>
     </div>
   );

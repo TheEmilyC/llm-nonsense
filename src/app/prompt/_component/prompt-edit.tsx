@@ -54,7 +54,7 @@ export function PromptEdit({ prompt }: PromptEditProps) {
       </Header>
       <Content>
         <PromptForm
-          defaultValues={{ name: prompt.name }}
+          defaultValues={prompt}
           formId={FORM_ID}
           onSubmit={onSubmitHandler}
         />
