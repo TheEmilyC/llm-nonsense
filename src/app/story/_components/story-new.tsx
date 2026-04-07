@@ -17,8 +17,9 @@ interface StoryNewParams {
   initialCharacterId?: string;
   initialPersonaId?: string;
   initialWorldId?: string;
-  lorebooks: { label: string; value: string; }[];
+  lorebooks: { label: string; value: string }[];
   personas: CardOption[];
+  prompts: { label: string; value: string }[];
   worlds?: CardOption[];
 }
 
@@ -28,6 +29,7 @@ export function StoryNew({
   initialPersonaId,
   lorebooks,
   personas,
+  prompts,
   worlds,
 }: StoryNewParams) {
   const router = useRouter();
@@ -62,6 +64,7 @@ export function StoryNew({
           lorebooks={lorebooks}
           onSubmit={onSubmitHandler}
           personas={personas}
+          prompts={prompts}
           worlds={worlds}
         />
       </Content>

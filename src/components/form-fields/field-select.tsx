@@ -15,7 +15,7 @@ interface FieldSelectParams<T extends FieldValues> {
   emptyMessage?: string;
   label: string;
   name: Path<T>;
-  options: { label: string; value: string; }[];
+  options: { label: string; value: string }[];
   placeholder?: string;
 }
 

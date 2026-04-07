@@ -8,7 +8,7 @@ import { useState } from "react";
 import { useCreateChatFromStory, useDeleteChat } from "@/app/chat/_lib/hooks";
 import { StoryForm } from "@/app/story/_components/story-form";
 import { useDeleteStory, useUpdateStory } from "@/app/story/_lib/hooks";
-import { StoryFormValues } from "@/app/story/_lib/schema";
+import { StoryDto, StoryFormValues } from "@/app/story/_lib/schema";
 import { CardOption } from "@/components/card-selector";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
@@ -19,14 +19,10 @@ const FORM_ID = "form-edit-story";
 interface StoryEditParams {
   characters?: CardOption[];
   chats: { id: string; name: string }[];
-  lorebooks: { label: string; value: string; }[];
+  lorebooks: { label: string; value: string }[];
   personas?: CardOption[];
-  story: {
-    characterId: string;
-    id: string;
-    name: string;
-    personaId: string;
-  };
+  prompts: { label: string; value: string }[];
+  story: StoryDto;
   worlds?: CardOption[];
 }
 
@@ -35,6 +31,7 @@ export function StoryEdit({
   chats,
   lorebooks,
   personas,
+  prompts,
   story,
   worlds,
 }: StoryEditParams) {
@@ -47,7 +44,11 @@ export function StoryEdit({
   const { deleteChat, isPending: isDeleteChatPending } = useDeleteChat();
   const [chatList, setChatList] = useState(chats);
 
-  const isPending = isDeletePending || isUpdatePending || isCreateChatPending || isDeleteChatPending;
+  const isPending =
+    isDeletePending ||
+    isUpdatePending ||
+    isCreateChatPending ||
+    isDeleteChatPending;
 
   async function onDeleteHandler() {
     if (!confirm(`Delete "${story.name}"? This cannot be undone.`)) return;
@@ -102,6 +103,7 @@ export function StoryEdit({
           lorebooks={lorebooks}
           onSubmit={onSubmitHandler}
           personas={personas}
+          prompts={prompts}
           worlds={worlds}
         />
         <div className="mt-6 flex flex-col gap-2">

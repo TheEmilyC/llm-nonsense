@@ -4,6 +4,7 @@ import z from "zod";
 import { getCharacterList } from "@/app/character/_lib/data";
 import { getLorebookEntityList } from "@/app/lorebook/_lib/data";
 import { getPersonaList } from "@/app/persona/_lib/data";
+import { getPromptList } from "@/app/prompt/_lib/data";
 import { StoryNew } from "@/app/story/_components/story-new";
 import { getWorldList } from "@/app/world/_lib/data";
 import {
@@ -36,14 +37,21 @@ export default function NewStoryPage({ searchParams }: NewStoryPageParams) {
 }
 
 async function NewStoryPageContent({ searchParams }: NewStoryPageParams) {
-  const [characterList, personaList, worldList, lorebookResult, params] =
-    await Promise.all([
-      getCharacterList(),
-      getPersonaList(),
-      getWorldList(),
-      getLorebookEntityList(),
-      searchParams,
-    ]);
+  const [
+    characterList,
+    personaList,
+    worldList,
+    lorebookResult,
+    promptResult,
+    params,
+  ] = await Promise.all([
+    getCharacterList(),
+    getPersonaList(),
+    getWorldList(),
+    getLorebookEntityList(),
+    getPromptList(),
+    searchParams,
+  ]);
 
   const characters = characterList.map((char) => ({
     id: char.id,
@@ -64,6 +72,10 @@ async function NewStoryPageContent({ searchParams }: NewStoryPageParams) {
     label: lb.name,
     value: lb.id,
   }));
+  const prompts = promptResult.map((pmt) => ({
+    label: pmt.name,
+    value: pmt.id,
+  }));
 
   const { characterId, personaId, worldId } =
     newStoryParamsSchema.parse(params);
@@ -76,6 +88,7 @@ async function NewStoryPageContent({ searchParams }: NewStoryPageParams) {
       initialWorldId={worldId}
       lorebooks={lorebooks}
       personas={personas}
+      prompts={prompts}
       worlds={worlds}
     />
   );
