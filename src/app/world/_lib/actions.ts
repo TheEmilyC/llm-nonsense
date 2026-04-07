@@ -1,6 +1,5 @@
 "use server";
 
-import { refresh } from "next/cache";
 import { notFound } from "next/navigation";
 
 import { createWorld, deleteWorld, updateWorld } from "@/app/world/_lib/data";
@@ -69,7 +68,6 @@ export async function updateWorldAction(
 
   try {
     const updated = await updateWorld({ id, image, update });
-    refresh();
     return { data: toWorldDto(updated), success: true };
   } catch (err) {
     console.error(err);
