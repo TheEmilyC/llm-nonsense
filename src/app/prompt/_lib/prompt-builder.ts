@@ -44,12 +44,9 @@ export class PromptBuilder {
 
   build(): ChatMessage[] {
     return this.prompt.reduce<ChatMessage[]>((acc, fragment) => {
-      // chatHistory expands to its injected messages inline
       if (fragment.injectTag === PromptInjectTag.chatHistory) {
         return acc.concat(this.chatHistory ?? []);
       }
-
-      if (!fragment.role) return acc;
 
       const last = acc[acc.length - 1];
       if (last && last.role === fragment.role) {

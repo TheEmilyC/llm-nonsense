@@ -5,6 +5,7 @@ import { Bot, Cpu, Lock, Trash2, User } from "lucide-react";
 import { useState } from "react";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 
+import { MessageRole } from "@/app/chat/_lib/schema";
 import { promptFormSchema, PromptFormValues } from "@/app/prompt/_lib/schema";
 import { FieldInput } from "@/components/form-fields/field-input";
 import { SortableList } from "@/components/sortable-list";
@@ -36,8 +37,6 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
-
-import { MessageRole } from "../../../../generated/enums";
 
 const ROLE_OPTIONS = [
   { label: "System", value: MessageRole.system },
@@ -126,7 +125,7 @@ export function PromptForm({
               <div
                 className={cn(
                   " flex items-center justify-between gap-2",
-                  !watchedFragments[index].enabled && "opacity-50",
+                  !watchedFragments[index]?.enabled && "opacity-50",
                 )}
               >
                 <div className="flex items-center gap-2">
