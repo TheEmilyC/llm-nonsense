@@ -1,8 +1,7 @@
 import z from "zod";
 
-import { dbIdValidator } from "@/lib/validators";
-
 import { MessageRole } from "@/app/chat/_lib/schema";
+import { dbIdValidator } from "@/lib/validators";
 
 export const PROMPT_CACHE_KEY = "prompt";
 
@@ -12,17 +11,17 @@ export enum PromptFragmentType {
 }
 
 export enum PromptInjectTag {
-  lastMessage = "lastMessage",
-  chatHistory = "chatHistory",
-  characterName = "characterName",
   characterDescription = "characterDescription",
+  characterName = "characterName",
   characterPersonality = "characterPersonality",
   characterScenario = "characterScenario",
-  personaName = "personaName",
-  personaDescription = "personaDescription",
-  worldName = "worldName",
-  worldDescription = "worldDescription",
+  chatHistory = "chatHistory",
+  lastMessage = "lastMessage",
   lorebook = "lorebook",
+  personaDescription = "personaDescription",
+  personaName = "personaName",
+  worldDescription = "worldDescription",
+  worldName = "worldName",
 }
 
 const baseFragmentSchema = z.object({
@@ -40,6 +39,7 @@ const contentFragmentSchema = baseFragmentSchema.extend({
 
 const injectFragmentSchema = baseFragmentSchema.extend({
   injectTag: z.enum(PromptInjectTag),
+  role: z.enum(MessageRole),
   type: z.literal(PromptFragmentType.inject),
 });
 
