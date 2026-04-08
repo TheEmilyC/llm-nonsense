@@ -15,6 +15,9 @@ RUN pnpm install --frozen-lockfile
 # Copy source
 COPY . .
 
+# Build/Update database
+RUN pnpm prisma migrate deploy
+
 # Generate Prisma client
 RUN pnpm db-generate
 
@@ -26,4 +29,4 @@ ENV NODE_ENV=production
 ENV PORT=3010
 
 # Run DB migrations then start the server
-CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy && pnpm start"]
+CMD ["sh", "-c", "pnpm start"]
