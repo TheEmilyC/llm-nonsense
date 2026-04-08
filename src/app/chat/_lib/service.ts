@@ -1,5 +1,6 @@
 "use server";
 
+import { AnthropicLanguageModelOptions } from "@ai-sdk/anthropic";
 import { createIdGenerator, stepCountIs, streamText, tool } from "ai";
 import z from "zod";
 
@@ -71,6 +72,12 @@ export async function constructChatResponse(
         console.debug("raw llm response", JSON.stringify(response, null, 2));
     },
     prompt: prompt,
+    providerOptions: {
+      anthropic: {
+        effort: "max",
+        thinking: { type: "adaptive" },
+      } satisfies AnthropicLanguageModelOptions,
+    },
     stopWhen: stepCountIs(20),
     tools: {
       ...(lorebook?.status === LorebookStatus.Ready && {
