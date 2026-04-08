@@ -11,7 +11,6 @@ import {
 } from "@/app/chat/_lib/data";
 import {
   MessageContentDto,
-  messageContentToDto,
   UpdateContentActionParams,
   updateContentActionParamsSchema,
 } from "@/app/chat/_lib/schema";
@@ -119,7 +118,7 @@ export async function updateMessageContentAction(
       id,
       update,
     });
-    return { data: messageContentToDto(messageContent), success: true };
+    return { data: messageContent, success: true };
   } catch (err) {
     console.error(err);
     return { error: "Failed to update chat", success: false };

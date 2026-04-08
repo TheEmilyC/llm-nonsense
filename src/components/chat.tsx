@@ -14,6 +14,7 @@ import {
 import Image from "next/image";
 import { ReactNode, useState } from "react";
 
+import { ChatProfile } from "@/app/chat/_lib/schema";
 import { Button } from "@/components/ui/button";
 import {
   ChatContainerContent,
@@ -57,23 +58,23 @@ interface ChatInputParams {
 }
 
 interface ChatMessageProps {
-  character: { avatarSrc: string; id: string; name: string; };
+  character: ChatProfile;
   isStreaming: boolean;
   message: UIMessage;
   onEdit?: (newText: string) => void;
-  persona: { avatarSrc: string; id: string; name: string; };
+  persona: ChatProfile;
 }
 
 interface ChatMessagesProps {
-  character: { avatarSrc: string; id: string; name: string; };
+  character: ChatProfile;
   messages: UIMessage[];
   onEdit?: (messageId: string, newText: string) => void;
-  persona: { avatarSrc: string; id: string; name: string; };
+  persona: ChatProfile;
   status: "error" | "ready" | "streaming" | "submitted";
 }
 
 interface ChatMessageThinkingProps {
-  character: { avatarSrc: string; name: string; };
+  character: ChatProfile;
 }
 
 interface ChatSwipeParams {

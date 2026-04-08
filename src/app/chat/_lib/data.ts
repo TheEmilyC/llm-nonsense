@@ -1,12 +1,18 @@
-import {
-  ChatWithMessagesDto,
-  MessageContentDto,
-  messageContentToDto,
-} from "@/app/chat/_lib/schema";
-import { buildCharacterImageUrl, buildPersonaImageUrl } from "@/lib/image";
-import { prisma } from "@/lib/prisma";
+"use server";
 
-import { ChatMessage, MessageContent } from "../../../../generated/client";
+import { cacheTag, revalidateTag } from "next/cache";
+
+import {
+  CHAT_CACHE_KEY,
+  ChatListDto,
+  chatListDtoSchema,
+  ChatSessionDto,
+  chatSessionDtoSchema,
+  MessageContentDto,
+  messageContentDtoSchema,
+} from "@/app/chat/_lib/schema";
+import { Chat, ChatMessage, MessageContent } from "@/generated/client";
+import { prisma } from "@/lib/prisma";
 
 export interface CreateChatMessageContentParams {
   chatId: string;
@@ -20,7 +26,7 @@ export interface CreateChatMessageParams {
   newMessage: Pick<ChatMessage, "chatId">;
 }
 
-export interface GetMessagesForChatParams {
+export interface GetChatSessionParams {
   id: string;
   skip?: number;
   take?: number;
@@ -51,6 +57,7 @@ export async function createChat({ newChat }: CreateChatParams) {
     },
   });
 
+  revalidateTag(CHAT_CACHE_KEY, "max");
   return chat;
 }
 
@@ -101,49 +108,26 @@ export async function createChatMessageContent({
     });
   });
 
+  revalidateTag(`${CHAT_CACHE_KEY}-${chatId}`, "max");
   return messageContentToDto(result);
 }
 
 export async function deleteChat(id: string) {
-  return prisma.chat.delete({ where: { id } });
-}
-
-export async function getChatsForStory(storyId: string) {
-  return prisma.chat.findMany({
-    orderBy: { createdAt: "desc" },
-    select: { id: true, name: true },
-    where: { storyId },
-  });
-}
-
-export async function getMessageById(id: string): Promise<ChatMessage | null> {
-  return await prisma.chatMessage.findUnique({ where: { id } });
-}
-
-export async function getMessageByIdOrFail(id: string): Promise<ChatMessage> {
-  const result = await getMessageById(id);
-  if (!result) throw new Error(`Message does not exist`);
+  const result = await prisma.chat.delete({ where: { id } });
+  revalidateTag(CHAT_CACHE_KEY, "max");
+  revalidateTag(`${CHAT_CACHE_KEY}-${id}`, "max");
   return result;
 }
 
-export async function getMessageContentById(
-  id: string,
-): Promise<MessageContent | null> {
-  return prisma.messageContent.findUnique({ where: { id } });
-}
-
-export async function getMessageContentByIdOrFail(id: string) {
-  const result = await getMessageContentById(id);
-  if (!result) throw new Error("Message content does not exist");
-  return result;
-}
-
-export async function getMessagesForChat({
+export async function getChatSession({
   id,
   skip = 0,
   take = 50,
-}: GetMessagesForChatParams): Promise<ChatWithMessagesDto | null> {
-  const chat = await prisma.chat.findUnique({
+}: GetChatSessionParams): Promise<ChatSessionDto> {
+  "use cache";
+  cacheTag(CHAT_CACHE_KEY, `${CHAT_CACHE_KEY}-${id}`);
+
+  const chat = await prisma.chat.findUniqueOrThrow({
     include: {
       messages: {
         include: { contents: { where: { isActive: true } } },
@@ -155,14 +139,20 @@ export async function getMessagesForChat({
         include: {
           character: true,
           persona: true,
+          prompt: {
+            include: {
+              promptFragments: {
+                orderBy: { order: "asc" },
+                where: { enabled: true },
+              },
+            },
+          },
           world: true,
         },
       },
     },
     where: { id },
   });
-
-  if (!chat) return null;
 
   chat.messages.reverse();
   if (chat.messages.length > 0) {
@@ -174,15 +164,8 @@ export async function getMessagesForChat({
     lastMessage.contents = fullContents;
   }
 
-  return {
-    character: {
-      avatarSrc: buildCharacterImageUrl({
-        id: chat.story.character.id,
-        pngHash: chat.story.character.pngHash,
-      }),
-      id: chat.story.character.id,
-      name: chat.story.character.name,
-    },
+  return chatSessionDtoSchema.parse({
+    character: chat.story.character,
     id: chat.id,
     lorebookId: chat.story.lorebookId ?? undefined,
     messages: chat.messages.map((msg) => ({
@@ -195,24 +178,35 @@ export async function getMessagesForChat({
       id: msg.id,
     })),
     name: chat.name,
-    persona: {
-      avatarSrc: buildPersonaImageUrl({
-        id: chat.story.persona.id,
-        imgHash: chat.story.persona.imageHash,
-      }),
-      id: chat.story.persona.id,
-      name: chat.story.persona.name,
+    persona: chat.story.persona,
+    prompt: chat.story.prompt,
+    story: {
+      id: chat.storyId,
+      name: chat.story.name,
     },
-    storyId: chat.storyId,
-    storyName: chat.story.name,
-  };
+  } as ChatSessionDto);
+}
+
+export async function getChatsForStory(
+  storyId: string,
+): Promise<ChatListDto[]> {
+  "use cache";
+  cacheTag(CHAT_CACHE_KEY);
+
+  const result = await prisma.chat.findMany({
+    orderBy: { createdAt: "desc" },
+    select: { id: true, name: true },
+    where: { storyId },
+  });
+
+  return chatListToDto(result);
 }
 
 export async function updateMessageContent({
   id,
   update,
-}: UpdateMessageContentParams): Promise<MessageContent> {
-  return prisma.$transaction(async (tx) => {
+}: UpdateMessageContentParams): Promise<MessageContentDto> {
+  const result = await prisma.$transaction(async (tx) => {
     if (update.isActive) {
       const messageId =
         update.messageId ??
@@ -226,14 +220,27 @@ export async function updateMessageContent({
     }
 
     return tx.messageContent.update({
-      data: {
-        isActive: update.isActive,
-        messageId: update.messageId,
-        metadata: update.metadata,
-        parts: update.parts,
-        role: update.role,
-      },
+      data: update,
       where: { id },
     });
+  });
+
+  const message = await prisma.chatMessage.findUnique({
+    select: { chatId: true },
+    where: { id: result.messageId },
+  });
+  if (message) revalidateTag(`${CHAT_CACHE_KEY}-${message.chatId}`, "max");
+
+  return messageContentToDto(result);
+}
+
+function chatListToDto(chatList: Partial<Chat>[]): ChatListDto[] {
+  return chatListDtoSchema.array().parse(chatList);
+}
+
+function messageContentToDto(content: MessageContent): MessageContentDto {
+  return messageContentDtoSchema.parse({
+    ...content,
+    metadata: content.metadata ?? undefined,
   });
 }

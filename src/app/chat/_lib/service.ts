@@ -12,10 +12,7 @@ import {
 import z from "zod";
 
 import { getCharacterByIdOrFail } from "@/app/character/_lib/data";
-import {
-  createChatMessageContent,
-  getMessagesForChat,
-} from "@/app/chat/_lib/data";
+import { createChatMessageContent, getChatSession } from "@/app/chat/_lib/data";
 import {
   messageDtoToUIMessage,
   MessagePart,
@@ -152,7 +149,7 @@ export async function constructChatResponse(
       },
     });
 
-  const chat = await getMessagesForChat({ id: chatId });
+  const chat = await getChatSession({ id: chatId });
   if (!chat) throw new Error("Chat does not exist");
   const lorebook = chat.lorebookId
     ? await getLorebookById(chat.lorebookId)
@@ -167,7 +164,7 @@ export async function constructChatResponse(
     lorebook: lorebook?.status === LorebookStatus.Ready ? lorebook : undefined,
     messages: regenerate ? canonicalMessages.slice(0, -1) : canonicalMessages,
     personaId: chat.persona.id,
-    worldId: chat.worldId,
+    worldId: chat.world?.id,
   });
   if (debug) console.debug("prompt", prompt);
 

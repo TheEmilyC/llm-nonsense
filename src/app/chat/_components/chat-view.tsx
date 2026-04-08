@@ -1,7 +1,7 @@
 "use client";
 
 import { useChatMessages } from "@/app/chat/_lib/hooks";
-import { ChatWithMessagesDto } from "@/app/chat/_lib/schema";
+import { ChatMessageDto, ChatProfile } from "@/app/chat/_lib/schema";
 import {
   ChatContainer,
   ChatHistory,
@@ -12,7 +12,14 @@ import {
 } from "@/components/chat";
 import { Header } from "@/components/header";
 
-export function ChatView({ chat }: { chat: ChatWithMessagesDto }) {
+export interface ChatViewParams {
+  character: ChatProfile;
+  chat: { id: string; messages: ChatMessageDto[]; name: string };
+  persona: ChatProfile;
+  story: { id: string; name: string };
+}
+
+export function ChatView({ character, chat, persona, story }: ChatViewParams) {
   const {
     editMessage,
     handleSubmit,
@@ -27,22 +34,22 @@ export function ChatView({ chat }: { chat: ChatWithMessagesDto }) {
   return (
     <div className="flex h-screen flex-col bg-background">
       <Header
-        backLinkDestination={`/story/${chat.storyId}`}
-        backLinkLabel={chat.storyName}
+        backLinkDestination={`/story/${story.id}`}
+        backLinkLabel={story.name}
         pageTitle={chat.name}
       />
       <div className="mx-auto max-w-6xl p-6">
         <ChatContainer>
           <ChatHistory>
             <ChatMessages
-              character={chat.character}
+              character={character}
               messages={messages}
               onEdit={editMessage}
-              persona={chat.persona}
+              persona={persona}
               status={status}
             />
             {status === "submitted" && (
-              <ChatMessageThinking character={chat.character} />
+              <ChatMessageThinking character={character} />
             )}
             {lastMessage.role === "assistant" && status !== "streaming" && (
               <ChatSwipe swipe={swipe} />

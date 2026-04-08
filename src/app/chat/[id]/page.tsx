@@ -1,9 +1,10 @@
-import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import z from "zod";
 
 import { ChatView } from "@/app/chat/_components/chat-view";
-import { getMessagesForChat } from "@/app/chat/_lib/data";
+import { getChatSession } from "@/app/chat/_lib/data";
+import { ChatProfile } from "@/app/chat/_lib/schema";
+import { buildCharacterImageUrl, buildPersonaImageUrl } from "@/lib/image";
 import { dbIdValidator } from "@/lib/validators";
 
 interface Props {
@@ -24,8 +25,35 @@ export default function ChatPage({ params }: Props) {
 
 async function ChatPageContent({ params }: Props) {
   const { id } = chatPageParamsSchema.parse(await params);
-  const chatDto = await getMessagesForChat({ id });
-  if (!chatDto) notFound();
+  const chatSession = await getChatSession({ id });
+  const characterProfile: ChatProfile = {
+    avatarSrc: buildCharacterImageUrl({
+      id: chatSession.character.id,
+      pngHash: chatSession.character.pngHash,
+    }),
+    id: chatSession.character.id,
+    name: chatSession.character.name,
+  };
+  const personaProfile: ChatProfile = {
+    avatarSrc: buildPersonaImageUrl({
+      id: chatSession.persona.id,
+      imgHash: chatSession.persona.imageHash,
+    }),
+    id: chatSession.persona.id,
+    name: chatSession.persona.name,
+  };
+  const chat = {
+    id: chatSession.id,
+    messages: chatSession.messages,
+    name: chatSession.name,
+  };
 
-  return <ChatView chat={chatDto} />;
+  return (
+    <ChatView
+      character={characterProfile}
+      chat={chat}
+      persona={personaProfile}
+      story={chatSession.story}
+    />
+  );
 }

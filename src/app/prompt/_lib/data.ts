@@ -12,9 +12,8 @@ import {
   promptListItemDtoSchema,
   UpdatePromptParams,
 } from "@/app/prompt/_lib/schema";
+import { Prompt, PromptFragment } from "@/generated/client";
 import { prisma } from "@/lib/prisma";
-
-import { Prompt, PromptFragment } from "../../../../generated/client";
 
 export async function createPrompt({
   name,
