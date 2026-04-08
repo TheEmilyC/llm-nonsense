@@ -16,7 +16,11 @@ import {
   createChatMessageContent,
   getMessagesForChat,
 } from "@/app/chat/_lib/data";
-import { messageDtoToUIMessage, MessagePart } from "@/app/chat/_lib/schema";
+import {
+  messageDtoToUIMessage,
+  MessagePart,
+  MessageRole,
+} from "@/app/chat/_lib/schema";
 import {
   getLorebookById,
   getLorebookEntryList,
@@ -36,8 +40,6 @@ import {
   IndexEntry,
   scanLorebookIndex,
 } from "@/lib/lorebook-scanning";
-
-import { MessageRole } from "../../../../generated/enums";
 
 interface BuildPromptFromChatParams {
   characterId: string;

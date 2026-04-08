@@ -23,8 +23,6 @@ import { constructPromptMessages } from "@/lib/ai/prompt-manager";
 import { HttpStatus } from "@/lib/http";
 import { dbIdValidator } from "@/lib/validators";
 
-import { MessageRole } from "../../../../generated/enums";
-
 export async function createChatFromStoryAction(
   storyId: string,
 ): Promise<ActionResponse<{ id: string }>> {
@@ -78,7 +76,7 @@ export async function createChatFromStoryAction(
               type: "text",
             },
           ],
-          role: MessageRole.assistant,
+          role: "assistant",
         },
       });
     }

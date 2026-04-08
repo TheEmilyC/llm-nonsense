@@ -1,6 +1,6 @@
 import z from "zod";
 
-import { MessageRole } from "@/app/chat/_lib/schema";
+import { messageRoleSchema } from "@/app/chat/_lib/schema";
 import { dbIdValidator } from "@/lib/validators";
 
 export const PROMPT_CACHE_KEY = "prompt";
@@ -29,7 +29,7 @@ const baseFragmentSchema = z.object({
   id: dbIdValidator,
   name: z.string().min(1, "Name is required"),
   order: z.number(),
-  role: z.enum(MessageRole),
+  role: messageRoleSchema,
 });
 
 const contentFragmentSchema = baseFragmentSchema.extend({
@@ -39,7 +39,7 @@ const contentFragmentSchema = baseFragmentSchema.extend({
 
 const injectFragmentSchema = baseFragmentSchema.extend({
   injectTag: z.enum(PromptInjectTag),
-  role: z.enum(MessageRole),
+  role: messageRoleSchema,
   type: z.literal(PromptFragmentType.inject),
 });
 

@@ -5,11 +5,8 @@ import { dbIdValidator } from "@/lib/validators";
 
 import { MessageContent } from "../../../../generated/client";
 
-export enum MessageRole {
-  assistant = "assistant",
-  system = "system",
-  user = "user",
-}
+export const messageRoleSchema = z.enum(["assistant", "system", "user"]);
+export type MessageRole = z.infer<typeof messageRoleSchema>;
 
 export type MessagePart = UIMessagePart<UIDataTypes, UITools>;
 export const messagePartSchema = z.custom<MessagePart>();
@@ -25,7 +22,7 @@ export const messageContentDtoSchema = z.object({
   isActive: z.boolean(),
   metadata: z.record(z.string(), z.unknown()).optional(),
   parts: z.custom<MessagePart>().array(),
-  role: z.enum(MessageRole),
+  role: messageRoleSchema,
 });
 export type MessageContentDto = z.infer<typeof messageContentDtoSchema>;
 

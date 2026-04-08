@@ -39,15 +39,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
 const ROLE_OPTIONS = [
-  { label: "System", value: MessageRole.system },
-  { label: "User", value: MessageRole.user },
-  { label: "Assistant", value: MessageRole.assistant },
+  { label: "System", value: "system" },
+  { label: "User", value: "user" },
+  { label: "Assistant", value: "assistant" },
 ];
 
 const ROLE_ICONS: Record<MessageRole, typeof User> = {
-  [MessageRole.assistant]: Bot,
-  [MessageRole.system]: Cpu,
-  [MessageRole.user]: User,
+  ["assistant"]: Bot,
+  ["system"]: Cpu,
+  ["user"]: User,
 };
 
 interface PromptFormProps {
@@ -101,7 +101,7 @@ export function PromptForm({
                 content: "",
                 enabled: true,
                 name: "New Fragment",
-                role: MessageRole.system,
+                role: "system",
                 type: "content",
               })
             }

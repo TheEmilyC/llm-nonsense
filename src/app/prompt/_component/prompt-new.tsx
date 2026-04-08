@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation";
 
-import { MessageRole } from "@/app/chat/_lib/schema";
 import { PromptForm } from "@/app/prompt/_component/prompt-form";
 import { useCreatePrompt } from "@/app/prompt/_lib/hooks";
 import { PromptFormValues, PromptInjectTag } from "@/app/prompt/_lib/schema";
@@ -19,77 +18,77 @@ const DEFAULT_PROMPT: PromptFormValues = {
       enabled: true,
       injectTag: PromptInjectTag.characterName,
       name: "Character Name",
-      role: MessageRole.system,
+      role: "system",
       type: "inject",
     },
     {
       enabled: true,
       injectTag: PromptInjectTag.characterDescription,
       name: "Character Description",
-      role: MessageRole.system,
+      role: "system",
       type: "inject",
     },
     {
       enabled: true,
       injectTag: PromptInjectTag.characterPersonality,
       name: "Character Personality",
-      role: MessageRole.system,
+      role: "system",
       type: "inject",
     },
     {
       enabled: true,
       injectTag: PromptInjectTag.characterScenario,
       name: "Character Scenario",
-      role: MessageRole.system,
+      role: "system",
       type: "inject",
     },
     {
       enabled: true,
       injectTag: PromptInjectTag.personaName,
       name: "Persona Name",
-      role: MessageRole.system,
+      role: "system",
       type: "inject",
     },
     {
       enabled: true,
       injectTag: PromptInjectTag.personaDescription,
       name: "Persona Description",
-      role: MessageRole.system,
+      role: "system",
       type: "inject",
     },
     {
       enabled: true,
       injectTag: PromptInjectTag.worldName,
       name: "World Name",
-      role: MessageRole.system,
+      role: "system",
       type: "inject",
     },
     {
       enabled: true,
       injectTag: PromptInjectTag.worldDescription,
       name: "World Description",
-      role: MessageRole.system,
+      role: "system",
       type: "inject",
     },
     {
       enabled: true,
       injectTag: PromptInjectTag.lorebook,
       name: "Lorebook",
-      role: MessageRole.system,
+      role: "system",
       type: "inject",
     },
     {
       enabled: true,
       injectTag: PromptInjectTag.lastMessage,
       name: "Last Message",
-      role: MessageRole.user,
+      role: "user",
       type: "inject",
     },
     {
       enabled: true,
       injectTag: PromptInjectTag.chatHistory,
       name: "Chat History",
-      role: MessageRole.system,
+      role: "system",
       type: "inject",
     },
   ],
