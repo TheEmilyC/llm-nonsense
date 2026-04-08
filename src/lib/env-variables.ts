@@ -11,6 +11,3 @@ export const LOREBOOK_ALWAYS_TAG =
 
 export const LOREBOOK_NEVER_TAG =
   process.env.LOREBOOK_NEVER_TAG ?? "#lorebook-never";
-
-// Feature Flags
-export const USE_LOREBOOK_TOOLCALL = process.env.USE_LOREBOOK_TOOLCALL ?? true;
