@@ -7,7 +7,6 @@ import {
   PROMPT_CACHE_KEY,
   PromptDto,
   promptDtoSchema,
-  PromptFragmentType,
   PromptListItemDto,
   promptListItemDtoSchema,
   UpdatePromptParams,
@@ -111,15 +110,7 @@ export async function updatePrompt({
 function toDto(
   prompt: Prompt & { promptFragments: PromptFragment[] },
 ): PromptDto {
-  return promptDtoSchema.parse({
-    ...prompt,
-    promptFragments: prompt.promptFragments.map((frag) => ({
-      ...frag,
-      type: frag.injectTag
-        ? PromptFragmentType.inject
-        : PromptFragmentType.content,
-    })),
-  });
+  return promptDtoSchema.parse(prompt);
 }
 
 function toListDto(

@@ -1,39 +1,44 @@
 import z from "zod";
 
-import { messageRoleSchema } from "@/app/chat/_lib/schema";
+import { messageRoleSchema } from "@/app/_shared/schema";
 import { dbIdValidator } from "@/lib/validators";
 
 export const PROMPT_CACHE_KEY = "prompt";
 
 export enum PromptFragmentType {
+  chatHistory = "chatHistory",
   content = "content",
   inject = "inject",
 }
 
 export enum PromptInjectTag {
   characterDescription = "characterDescription",
-  characterName = "characterName",
   characterPersonality = "characterPersonality",
   characterScenario = "characterScenario",
-  chatHistory = "chatHistory",
   lastMessage = "lastMessage",
   lorebook = "lorebook",
   personaDescription = "personaDescription",
-  personaName = "personaName",
   worldDescription = "worldDescription",
-  worldName = "worldName",
 }
+
+const basePromptSchema = z.object({
+  createdAt: z.date(),
+  id: dbIdValidator,
+  maxTokens: z.number(),
+  modifiedAt: z.date(),
+  name: z.string().min(1, "Name is required"),
+});
 
 const baseFragmentSchema = z.object({
   enabled: z.boolean(),
   id: dbIdValidator,
   name: z.string().min(1, "Name is required"),
   order: z.number(),
-  role: messageRoleSchema,
 });
 
 const contentFragmentSchema = baseFragmentSchema.extend({
   content: z.string().min(1),
+  role: messageRoleSchema,
   type: z.literal(PromptFragmentType.content),
 });
 
@@ -43,35 +48,41 @@ const injectFragmentSchema = baseFragmentSchema.extend({
   type: z.literal(PromptFragmentType.inject),
 });
 
+const chatHistoryFragmentSchema = baseFragmentSchema.extend({
+  type: z.literal(PromptFragmentType.chatHistory),
+});
+
 export const promptFragmentDtoSchema = z.discriminatedUnion("type", [
   contentFragmentSchema,
   injectFragmentSchema,
+  chatHistoryFragmentSchema,
 ]);
 export type PromptFragmentDto = z.infer<typeof promptFragmentDtoSchema>;
 
-export const promptFragmentCreateSchema = baseFragmentSchema
-  .omit({
+export const promptFragmentCreateSchema = z.discriminatedUnion("type", [
+  contentFragmentSchema.omit({ id: true }),
+  injectFragmentSchema.omit({ id: true }),
+  chatHistoryFragmentSchema.omit({ id: true }),
+]);
+
+export const promptFragmentUpdateSchema = z.discriminatedUnion("type", [
+  contentFragmentSchema.extend({ id: dbIdValidator.optional() }),
+  injectFragmentSchema.extend({ id: dbIdValidator.optional() }),
+  chatHistoryFragmentSchema.extend({ id: dbIdValidator.optional() }),
+]);
+
+export const promptDtoSchema = basePromptSchema
+  .pick({
     id: true,
+    maxTokens: true,
+    name: true,
   })
   .extend({
-    content: z.string().optional(),
-    injectTag: z.enum(PromptInjectTag).optional(),
+    promptFragments: promptFragmentDtoSchema.array(),
   });
-
-export const promptFragmentUpdateSchema = baseFragmentSchema.extend({
-  content: z.string().optional(),
-  id: dbIdValidator.optional(),
-  injectTag: z.enum(PromptInjectTag).optional(),
-});
-
-export const promptDtoSchema = z.object({
-  id: dbIdValidator,
-  name: z.string().min(1, "Name is required"),
-  promptFragments: promptFragmentDtoSchema.array(),
-});
 export type PromptDto = z.infer<typeof promptDtoSchema>;
 
-export const createPromptParamsSchema = promptDtoSchema
+export const createPromptParamsSchema = basePromptSchema
   .pick({
     name: true,
   })
@@ -80,51 +91,42 @@ export const createPromptParamsSchema = promptDtoSchema
   });
 export type CreatePromptParams = z.infer<typeof createPromptParamsSchema>;
 
-export const updatePromptParamsSchema = z.object({
-  id: dbIdValidator,
-  update: z.object({
-    name: z.string().optional(),
-    promptFragments: promptFragmentUpdateSchema.array(),
-  }),
-});
+export const updatePromptParamsSchema = basePromptSchema
+  .pick({ id: true })
+  .extend({
+    update: z.object({
+      name: z.string().optional(),
+      promptFragments: promptFragmentUpdateSchema.array(),
+    }),
+  });
 export type UpdatePromptParams = z.infer<typeof updatePromptParamsSchema>;
 
-export const promptListItemDtoSchema = z.object({
-  createdAt: z.date(),
-  id: dbIdValidator,
-  name: z.string().min(1),
+export const promptListItemDtoSchema = basePromptSchema.pick({
+  createdAt: true,
+  id: true,
+  name: true,
 });
 export type PromptListItemDto = z.infer<typeof promptListItemDtoSchema>;
 
-export const promptInspectorFormSchema = z.object({
-  message: z.string().min(1),
-});
-export type PromptInspectorFormValues = z.infer<
-  typeof promptInspectorFormSchema
->;
-
-const baseFragmentFormSchema = baseFragmentSchema
-  .omit({
-    order: true,
-  })
-  .extend({
-    id: z.string().optional(),
-  });
-
 export const promptFragmentFormSchema = z.discriminatedUnion("type", [
-  baseFragmentFormSchema.extend({
-    content: z.string().min(1),
-    type: z.literal("content"),
-  }),
-  baseFragmentFormSchema.extend({
-    injectTag: z.enum(PromptInjectTag),
-    type: z.literal("inject"),
-  }),
+  contentFragmentSchema
+    .omit({ order: true })
+    .extend({ id: dbIdValidator.optional() }),
+  injectFragmentSchema
+    .omit({ order: true })
+    .extend({ id: dbIdValidator.optional() }),
+  chatHistoryFragmentSchema
+    .omit({ order: true })
+    .extend({ id: dbIdValidator.optional() }),
 ]);
 export type PromptFragmentFormValues = z.infer<typeof promptFragmentFormSchema>;
 
-export const promptFormSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  promptFragments: promptFragmentFormSchema.array(),
-});
+export const promptFormSchema = basePromptSchema
+  .pick({
+    maxTokens: true,
+    name: true,
+  })
+  .extend({
+    promptFragments: promptFragmentFormSchema.array(),
+  });
 export type PromptFormValues = z.infer<typeof promptFormSchema>;

@@ -1,12 +1,15 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Bot, Cpu, Lock, Trash2, User } from "lucide-react";
+import { Bot, Clock, Cpu, Lock, Trash2, User } from "lucide-react";
 import { useState } from "react";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 
-import { MessageRole } from "@/app/chat/_lib/schema";
-import { promptFormSchema, PromptFormValues } from "@/app/prompt/_lib/schema";
+import {
+  promptFormSchema,
+  PromptFormValues,
+  PromptFragmentType,
+} from "@/app/prompt/_lib/schema";
 import { FieldInput } from "@/components/form-fields/field-input";
 import { SortableList } from "@/components/sortable-list";
 import { Button } from "@/components/ui/button";
@@ -44,8 +47,9 @@ const ROLE_OPTIONS = [
   { label: "Assistant", value: "assistant" },
 ];
 
-const ROLE_ICONS: Record<MessageRole, typeof User> = {
+const ROLE_ICONS: Record<string, typeof User> = {
   ["assistant"]: Bot,
+  ["history"]: Clock,
   ["system"]: Cpu,
   ["user"]: User,
 };
@@ -64,7 +68,11 @@ export function PromptForm({
   const [editingIndex, setEditingIndex] = useState<null | number>(null);
 
   const form = useForm<PromptFormValues>({
-    defaultValues: defaultValues || { name: "", promptFragments: [] },
+    defaultValues: defaultValues || {
+      maxTokens: 80000,
+      name: "",
+      promptFragments: [],
+    },
     mode: "onTouched",
     resolver: zodResolver(promptFormSchema),
   });
@@ -91,6 +99,12 @@ export function PromptForm({
     <form id={formId} onSubmit={form.handleSubmit(onSubmit)}>
       <FieldGroup>
         <FieldInput control={form.control} label="Name" name="name" />
+        <FieldInput
+          control={form.control}
+          label="Max Tokens"
+          name="maxTokens"
+          type="number"
+        />
       </FieldGroup>
       <FieldSet className="mt-6">
         <div className="flex items-center justify-between">
@@ -102,7 +116,7 @@ export function PromptForm({
                 enabled: true,
                 name: "New Fragment",
                 role: "system",
-                type: "content",
+                type: PromptFragmentType.content,
               })
             }
             size="sm"
@@ -120,7 +134,10 @@ export function PromptForm({
           onOrderChange={handleOrderChange}
           renderItem={(field) => {
             const index = fields.findIndex((f) => f._rhfId === field._rhfId);
-            const Icon = ROLE_ICONS[field.role];
+            const Icon =
+              field.type === PromptFragmentType.chatHistory
+                ? ROLE_ICONS["history"]
+                : ROLE_ICONS[field.role];
             return (
               <div
                 className={cn(
@@ -148,13 +165,13 @@ export function PromptForm({
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-muted-foreground">
-                    {field.type === "inject" ? field.injectTag : "content"}
+                    {field.type === PromptFragmentType.content && "content"}
+                    {field.type === PromptFragmentType.inject &&
+                      field.injectTag}
+                    {field.type === PromptFragmentType.chatHistory &&
+                      "chatHistory"}
                   </span>
-                  {field.type === "inject" ? (
-                    <div className="flex size-7 shrink-0 items-center justify-center">
-                      <Lock className="h-3.5 w-3.5 text-muted-foreground/50" />
-                    </div>
-                  ) : (
+                  {field.type === "content" ? (
                     <Button
                       onClick={(e) => {
                         e.preventDefault();
@@ -167,6 +184,10 @@ export function PromptForm({
                     >
                       <Trash2 className="text-muted-foreground" />
                     </Button>
+                  ) : (
+                    <div className="flex size-7 shrink-0 items-center justify-center">
+                      <Lock className="h-3.5 w-3.5 text-muted-foreground/50" />
+                    </div>
                   )}
                 </div>
               </div>
@@ -198,29 +219,35 @@ export function PromptForm({
                   </Field>
                 )}
               />
-              <Controller
-                control={form.control}
-                name={`promptFragments.${editingIndex}.role`}
-                render={({ field }) => (
-                  <Field>
-                    <FieldLabel>Role</FieldLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          {ROLE_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </Field>
-                )}
-              />
+              {editingFragment?.type !== PromptFragmentType.chatHistory && (
+                <Controller
+                  control={form.control}
+                  name={`promptFragments.${editingIndex}.role`}
+                  render={({ field }) => (
+                    <Field>
+                      <FieldLabel>Role</FieldLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            {ROLE_OPTIONS.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    </Field>
+                  )}
+                />
+              )}
+
               {editingFragment?.type === "content" && (
                 <Controller
                   control={form.control}

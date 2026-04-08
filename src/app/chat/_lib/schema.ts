@@ -1,15 +1,14 @@
 import { UIDataTypes, UIMessage, UIMessagePart, UITools } from "ai";
 import z from "zod";
 
+import { messageRoleSchema } from "@/app/_shared/schema";
+import { promptFragmentDtoSchema } from "@/app/prompt/_lib/schema";
 import { dbIdValidator } from "@/lib/validators";
 
 export const CHAT_CACHE_KEY = "chat";
 
 export const messagePartSchema = z.custom<MessagePart>();
 export type MessagePart = UIMessagePart<UIDataTypes, UITools>;
-
-export const messageRoleSchema = z.enum(["assistant", "system", "user"]);
-export type MessageRole = z.infer<typeof messageRoleSchema>;
 
 export const chatProfileSchema = z.object({
   avatarSrc: z.string().min(1),
@@ -60,6 +59,23 @@ export const chatMessageDtoSchema = baseChatMessageSchema
   .extend({ contents: messageContentDtoSchema.array() });
 export type ChatMessageDto = z.infer<typeof chatMessageDtoSchema>;
 
+export function messageDtoToAiMessage(chatMessage: ChatMessageDto) {
+  const activeContent =
+    chatMessage.contents.find((msg) => msg.isActive) ?? chatMessage.contents[0];
+  if (!activeContent)
+    throw new Error(`No content for message ${chatMessage.id}`);
+
+  const content = activeContent.parts
+    .filter((part) => part.type === "text")
+    .map((part) => part.text)
+    .join("\n");
+
+  return {
+    content,
+    role: activeContent.role,
+  };
+}
+
 export function messageDtoToUIMessage(chatMessage: ChatMessageDto): UIMessage {
   const activeContent =
     chatMessage.contents.find((msg) => msg.isActive) ?? chatMessage.contents[0];
@@ -94,7 +110,8 @@ export const chatSessionDtoSchema = baseChatSchema
     }),
     prompt: z.object({
       id: dbIdValidator,
-      promptFragments: z.object({ id: dbIdValidator }).array(),
+      maxTokens: z.number(),
+      promptFragments: promptFragmentDtoSchema.array(),
     }),
     story: z.object({
       id: dbIdValidator,

@@ -15,10 +15,10 @@ import {
   updateContentActionParamsSchema,
 } from "@/app/chat/_lib/schema";
 import { getPersonaByIdOrFail } from "@/app/persona/_lib/data";
+import { hydratePrompt } from "@/app/prompt/_lib/prompt-builder";
 import { getStoryById } from "@/app/story/_lib/data";
 import { getWorldByIdOrFail } from "@/app/world/_lib/data";
 import { ActionResponse } from "@/lib/action-utils";
-import { constructPromptMessages } from "@/lib/ai/prompt-manager";
 import { HttpStatus } from "@/lib/http";
 import { dbIdValidator } from "@/lib/validators";
 
@@ -53,11 +53,9 @@ export async function createChatFromStoryAction(
 
     // preload character first message
     if (character.card.first_mes.length > 0) {
-      const [message] = constructPromptMessages({
-        character: character.card,
-        persona,
-        prompts: [character.card.first_mes],
-        world,
+      const message = hydratePrompt(character.card.first_mes, {
+        char: character.card.name,
+        user: persona.name,
       });
       const idGenerator = createIdGenerator({
         prefix: "msg",

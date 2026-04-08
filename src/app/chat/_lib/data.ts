@@ -154,10 +154,9 @@ export async function getChatSession({
     where: { id },
   });
 
-  chat.messages.reverse();
   if (chat.messages.length > 0) {
     // fetch all content for last message
-    const lastMessage = chat.messages[chat.messages.length - 1];
+    const lastMessage = chat.messages[0];
     const fullContents = await prisma.messageContent.findMany({
       where: { messageId: lastMessage.id },
     });

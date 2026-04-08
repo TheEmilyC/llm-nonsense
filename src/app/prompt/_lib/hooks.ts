@@ -3,34 +3,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
-  checkPromptAction,
   createPromptAction,
   deletePromptAction,
   updatePromptAction,
 } from "@/app/prompt/_lib/actions";
-import {
-  PROMPT_CACHE_KEY,
-  PromptFormValues,
-  PromptInspectorFormValues,
-} from "@/app/prompt/_lib/schema";
+import { PROMPT_CACHE_KEY, PromptFormValues } from "@/app/prompt/_lib/schema";
 import { unwrapAction } from "@/lib/action-utils";
-
-export function useCheckPrompt() {
-  const {
-    error,
-    isPending,
-    mutateAsync: checkPrompt,
-  } = useMutation({
-    mutationFn: async (data: PromptInspectorFormValues) =>
-      unwrapAction(await checkPromptAction(data)),
-  });
-
-  return {
-    checkPrompt,
-    error: error ? (error as Error).message : null,
-    isPending,
-  };
-}
 
 export function useCreatePrompt() {
   const queryClient = useQueryClient();

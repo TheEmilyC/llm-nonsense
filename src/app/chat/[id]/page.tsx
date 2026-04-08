@@ -44,7 +44,7 @@ async function ChatPageContent({ params }: Props) {
   };
   const chat = {
     id: chatSession.id,
-    messages: chatSession.messages,
+    messages: chatSession.messages.reverse(),
     name: chatSession.name,
   };
 

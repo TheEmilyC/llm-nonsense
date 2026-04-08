@@ -117,6 +117,7 @@ model Lorebook {
 model Prompt {
   id              String           @id @default(cuid())
   name            String
+  maxTokens       Int              @default(80000)
   promptFragments PromptFragment[]
   createdAt       DateTime         @default(now())
   modifiedAt      DateTime         @default(now()) @updatedAt
@@ -126,27 +127,31 @@ model Prompt {
 enum PromptInjectTag {
   lastMessage
   chatHistory
-  characterName
   characterDescription
   characterPersonality
   characterScenario
-  personaName
   personaDescription
-  worldName
   worldDescription
   lorebook
 }
 
+enum PromptFragmentType {
+  chatHistory
+  content
+  inject
+}
+
 model PromptFragment {
-  id         String           @id @default(cuid())
+  id         String             @id @default(cuid())
   name       String
-  role       MessageRole
-  enabled    Boolean          @default(true)
+  type       PromptFragmentType
+  role       MessageRole?
+  enabled    Boolean            @default(true)
   content    String?
   injectTag  PromptInjectTag?
   order      Int
-  prompt     Prompt?          @relation(fields: [promptId], references: [id])
+  prompt     Prompt?            @relation(fields: [promptId], references: [id])
   promptId   String?
-  createdAt  DateTime         @default(now())
-  modifiedAt DateTime         @default(now()) @updatedAt
+  createdAt  DateTime           @default(now())
+  modifiedAt DateTime           @default(now()) @updatedAt
 }
