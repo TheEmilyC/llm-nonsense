@@ -15,9 +15,10 @@ interface StoryFormParams {
   defaultValues?: Partial<StoryFormValues>;
   formId: string;
   isEdit?: boolean;
-  lorebooks: { label: string; value: string; }[];
+  lorebooks: { label: string; value: string }[];
   onSubmit: (data: StoryFormValues) => void;
   personas?: CardOption[];
+  prompts: { label: string; value: string }[];
   worlds?: CardOption[];
 }
 
@@ -29,6 +30,7 @@ export function StoryForm({
   lorebooks,
   onSubmit,
   personas,
+  prompts,
   worlds,
 }: StoryFormParams) {
   const form = useForm<StoryFormValues>({
@@ -112,6 +114,16 @@ export function StoryForm({
                 )}
               </Field>
             )}
+          />
+        </div>
+
+        {/* PROMPT ROW */}
+        <div className="col-span-3">
+          <FieldSelect
+            control={form.control}
+            label="Prompt"
+            name="promptId"
+            options={prompts}
           />
         </div>
 

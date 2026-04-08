@@ -4,10 +4,11 @@ import { getCharacterById } from "@/app/character/_lib/data";
 import { getPersonaById } from "@/app/persona/_lib/data";
 import { createStory, deleteStory, updateStory } from "@/app/story/_lib/data";
 import {
+  createStoryParamsSchema,
   StoryDto,
   storyFormSchema,
   StoryFormValues,
-  toStoryDto,
+  updateStoryParamsSchema,
 } from "@/app/story/_lib/schema";
 import { getWorldById } from "@/app/world/_lib/data";
 import { ActionResponse } from "@/lib/action-utils";
@@ -22,15 +23,15 @@ export async function createStoryAction(
     console.error(dataParseResult.error);
     return { error: "Malformed story data", success: false };
   }
-  const newStory = dataParseResult.data;
+  const formData = dataParseResult.data;
 
   let name: string = "";
-  if (!newStory.name) {
+  if (!formData.name) {
     // generate name
     const [character, persona, world] = await Promise.all([
-      newStory.characterId ? getCharacterById(newStory.characterId) : null,
-      newStory.personaId ? getPersonaById(newStory.personaId) : null,
-      newStory.worldId ? getWorldById(newStory.worldId) : null,
+      formData.characterId ? getCharacterById(formData.characterId) : null,
+      formData.personaId ? getPersonaById(formData.personaId) : null,
+      formData.worldId ? getWorldById(formData.worldId) : null,
     ]);
     if (character) name += character.card.name;
     if (persona) {
@@ -42,19 +43,16 @@ export async function createStoryAction(
       name += world.name;
     }
   } else {
-    name = newStory.name;
+    name = formData.name;
   }
 
   let story;
+  const newStory = createStoryParamsSchema.parse({
+    ...formData,
+    name,
+  });
   try {
-    story = await createStory({
-      newStory: {
-        ...newStory,
-        lorebookId: newStory.lorebookId ?? null,
-        name,
-        worldId: newStory.worldId ?? null,
-      },
-    });
+    story = await createStory(newStory);
     return { data: { newStoryId: story.id }, success: true };
   } catch (err) {
     console.error(err);
@@ -95,15 +93,17 @@ export async function updateStoryAction(
     return { error: "Malformed story data", success: false };
   }
   const id = idParseResult.data;
-  const { ...update } = formParseResult.data;
+  const formData = formParseResult.data;
 
-  let updatedStory;
+  const update = updateStoryParamsSchema.parse({ ...formData, id });
+
+  let updatedStory: StoryDto;
   try {
-    updatedStory = await updateStory({ id, update });
+    updatedStory = await updateStory(update);
   } catch (err) {
     console.error(err);
     return { error: "Story update failed", success: false };
   }
 
-  return { data: toStoryDto(updatedStory), success: true };
+  return { data: updatedStory, success: true };
 }

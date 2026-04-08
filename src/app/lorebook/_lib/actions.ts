@@ -93,6 +93,7 @@ export async function testConnectionAction({
       return { error: "Unknown error", success: false };
     }
   } catch (err) {
+    console.error(err);
     return { error: (err as Error).message, success: false };
   }
 }

@@ -17,6 +17,8 @@
   "dependencies": {
     "@ai-sdk/deepseek": "^2.0.26",
     "@ai-sdk/react": "^3.0.139",
+    "@dnd-kit/helpers": "^0.3.2",
+    "@dnd-kit/react": "^0.3.2",
     "@hookform/resolvers": "^5.2.2",
     "@openrouter/ai-sdk-provider": "^2.3.3",
     "@prisma/adapter-better-sqlite3": "^7.5.0",

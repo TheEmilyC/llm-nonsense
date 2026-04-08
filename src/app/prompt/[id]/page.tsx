@@ -1,0 +1,31 @@
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import z from "zod";
+
+import { PromptEdit } from "@/app/prompt/_component/prompt-edit";
+import { getPromptById } from "@/app/prompt/_lib/data";
+import { dbIdValidator } from "@/lib/validators";
+
+interface PromptEditPageParams {
+  params: Promise<{ id: string }>;
+}
+
+const promptEditPageParamsSchema = z.object({
+  id: dbIdValidator,
+});
+
+export default function PromptEditPage({ params }: PromptEditPageParams) {
+  return (
+    <Suspense>
+      <PromptEditPageContent params={params} />
+    </Suspense>
+  );
+}
+
+async function PromptEditPageContent({ params }: PromptEditPageParams) {
+  const { id } = promptEditPageParamsSchema.parse(await params);
+  const prompt = await getPromptById(id);
+  if (!prompt) notFound();
+
+  return <PromptEdit prompt={prompt} />;
+}

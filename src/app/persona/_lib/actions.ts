@@ -1,6 +1,5 @@
 "use server";
 
-import { refresh } from "next/cache";
 import { notFound } from "next/navigation";
 
 import {
@@ -73,7 +72,6 @@ export async function updatePersonaAction(
 
   try {
     const updated = await updatePersona({ id, image, update });
-    refresh();
     return { data: toPersonaDto(updated), success: true };
   } catch (err) {
     console.error(err);

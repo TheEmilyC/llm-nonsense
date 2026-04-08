@@ -2,37 +2,26 @@
 
 import { cacheTag, revalidateTag } from "next/cache";
 
-import { STORY_CACHE_KEY } from "@/app/story/_lib/schema";
+import {
+  CreateStoryParams,
+  STORY_CACHE_KEY,
+  StoryDto,
+  storyDtoSchema,
+  StoryListItemDto,
+  storyListItemDtoSchema,
+  UpdateStoryParams,
+} from "@/app/story/_lib/schema";
+import { Story } from "@/generated/client";
 import { prisma } from "@/lib/prisma";
 
-import { Story } from "../../../../generated/client";
-
-export interface CreateStoryParams {
-  newStory: Pick<
-    Story,
-    "characterId" | "lorebookId" | "name" | "personaId" | "worldId"
-  >;
-}
-
-export interface UpdateStoryParams {
-  id: string;
-  update: Partial<
-    Pick<Story, "characterId" | "lorebookId" | "name" | "personaId" | "worldId">
-  >;
-}
-
-export async function createStory({ newStory }: CreateStoryParams) {
+export async function createStory(
+  newStory: CreateStoryParams,
+): Promise<StoryDto> {
   const story = await prisma.story.create({
-    data: {
-      characterId: newStory.characterId,
-      lorebookId: newStory.lorebookId,
-      name: newStory.name,
-      personaId: newStory.personaId,
-      worldId: newStory.worldId,
-    },
+    data: newStory,
   });
   revalidateTag(STORY_CACHE_KEY, "max");
-  return story;
+  return toStoryDto(story);
 }
 
 export async function deleteStory(id: string) {
@@ -41,62 +30,50 @@ export async function deleteStory(id: string) {
   revalidateTag(`${STORY_CACHE_KEY}-${id}`, "max");
 }
 
-export async function getStoryById(id: string) {
+export async function getStoryById(id: string): Promise<null | StoryDto> {
   "use cache";
   cacheTag(`${STORY_CACHE_KEY}-${id}`);
-
-  return await prisma.story.findUnique({ where: { id } });
+  const result = await prisma.story.findUnique({ where: { id } });
+  if (!result) return null;
+  return toStoryDto(result);
 }
 
-export async function getStoryByIdOrFail(id: string) {
+export async function getStoryByIdOrFail(id: string): Promise<StoryDto> {
   const result = await getStoryById(id);
   if (!result) throw new Error(`Story ID:${id} does not exist`);
   return result;
 }
 
-export async function getStoryList() {
+export async function getStoryList(): Promise<StoryListItemDto[]> {
   "use cache";
   cacheTag(STORY_CACHE_KEY);
 
   const stories = await prisma.story.findMany();
-  return stories.map((story) => ({
-    id: story.id,
-    name: story.name,
-  }));
+  return toStoryListDto(stories);
 }
 
-export async function updateStory({ id, update }: UpdateStoryParams) {
-  const orgStory = await getStoryById(id);
-  if (!orgStory) throw new Error("Story does not exist");
-
-  const entityUpdate: Partial<Story> = {};
-  if (update.name !== undefined && update.name !== orgStory.name)
-    entityUpdate.name = update.name;
-
-  if (
-    update.characterId !== undefined &&
-    update.characterId !== orgStory.characterId
-  )
-    entityUpdate.characterId = update.characterId;
-
-  if (update.personaId !== undefined && update.personaId !== orgStory.personaId)
-    entityUpdate.personaId = update.personaId;
-
-  if (update.worldId !== undefined && update.worldId !== orgStory.worldId)
-    entityUpdate.worldId = update.worldId;
-
-  if (
-    update.lorebookId !== undefined &&
-    update.lorebookId !== orgStory.lorebookId
-  )
-    entityUpdate.lorebookId = update.lorebookId;
-
+export async function updateStory({
+  id,
+  update,
+}: UpdateStoryParams): Promise<StoryDto> {
   const story = await prisma.story.update({
-    data: entityUpdate,
+    data: update,
     where: { id },
   });
 
   revalidateTag(STORY_CACHE_KEY, "max");
   revalidateTag(`${STORY_CACHE_KEY}-${id}`, "max");
-  return story;
+  return toStoryDto(story);
+}
+
+function toStoryDto(story: Story): StoryDto {
+  return storyDtoSchema.parse({
+    ...story,
+    lorebookId: story.lorebookId ?? undefined,
+    worldId: story.worldId ?? undefined,
+  });
+}
+
+function toStoryListDto(stories: Story[]): StoryListItemDto[] {
+  return storyListItemDtoSchema.array().parse(stories);
 }

@@ -11,19 +11,16 @@ import {
 } from "@/app/chat/_lib/data";
 import {
   MessageContentDto,
-  messageContentToDto,
   UpdateContentActionParams,
   updateContentActionParamsSchema,
 } from "@/app/chat/_lib/schema";
 import { getPersonaByIdOrFail } from "@/app/persona/_lib/data";
+import { hydratePrompt } from "@/app/prompt/_lib/prompt-builder";
 import { getStoryById } from "@/app/story/_lib/data";
 import { getWorldByIdOrFail } from "@/app/world/_lib/data";
 import { ActionResponse } from "@/lib/action-utils";
-import { constructPromptMessages } from "@/lib/ai/prompt-manager";
 import { HttpStatus } from "@/lib/http";
 import { dbIdValidator } from "@/lib/validators";
-
-import { MessageRole } from "../../../../generated/enums";
 
 export async function createChatFromStoryAction(
   storyId: string,
@@ -56,11 +53,9 @@ export async function createChatFromStoryAction(
 
     // preload character first message
     if (character.card.first_mes.length > 0) {
-      const [message] = constructPromptMessages({
-        character: character.card,
-        persona,
-        prompts: [character.card.first_mes],
-        world,
+      const message = hydratePrompt(character.card.first_mes, {
+        char: character.card.name,
+        user: persona.name,
       });
       const idGenerator = createIdGenerator({
         prefix: "msg",
@@ -78,7 +73,7 @@ export async function createChatFromStoryAction(
               type: "text",
             },
           ],
-          role: MessageRole.assistant,
+          role: "assistant",
         },
       });
     }
@@ -121,7 +116,7 @@ export async function updateMessageContentAction(
       id,
       update,
     });
-    return { data: messageContentToDto(messageContent), success: true };
+    return { data: messageContent, success: true };
   } catch (err) {
     console.error(err);
     return { error: "Failed to update chat", success: false };

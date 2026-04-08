@@ -6,9 +6,9 @@ import { getCharacterList } from "@/app/character/_lib/data";
 import { getChatsForStory } from "@/app/chat/_lib/data";
 import { getLorebookEntityList } from "@/app/lorebook/_lib/data";
 import { getPersonaList } from "@/app/persona/_lib/data";
+import { getPromptList } from "@/app/prompt/_lib/data";
 import { StoryEdit } from "@/app/story/_components/story-edit";
 import { getStoryById } from "@/app/story/_lib/data";
-import { toStoryDto } from "@/app/story/_lib/schema";
 import { getWorldList } from "@/app/world/_lib/data";
 import {
   buildCharacterImageUrl,
@@ -34,14 +34,21 @@ export default function StoryPage({ params }: StoryPageParams) {
 }
 
 async function StoryPageContent({ params }: StoryPageParams) {
-  const [characterList, personaList, worldList, lorebookResult, routeParams] =
-    await Promise.all([
-      getCharacterList(),
-      getPersonaList(),
-      getWorldList(),
-      getLorebookEntityList(),
-      params,
-    ]);
+  const [
+    characterList,
+    personaList,
+    worldList,
+    lorebookResult,
+    promptResult,
+    routeParams,
+  ] = await Promise.all([
+    getCharacterList(),
+    getPersonaList(),
+    getWorldList(),
+    getLorebookEntityList(),
+    getPromptList(),
+    params,
+  ]);
   const { id } = storyPageParamsSchema.parse(routeParams);
   const [story, chats] = await Promise.all([
     getStoryById(id),
@@ -68,6 +75,10 @@ async function StoryPageContent({ params }: StoryPageParams) {
     label: lb.name,
     value: lb.id,
   }));
+  const prompts = promptResult.map((pmt) => ({
+    label: pmt.name,
+    value: pmt.id,
+  }));
 
   return (
     <StoryEdit
@@ -75,7 +86,8 @@ async function StoryPageContent({ params }: StoryPageParams) {
       chats={chats}
       lorebooks={lorebooks}
       personas={personas}
-      story={toStoryDto(story)}
+      prompts={prompts}
+      story={story}
       worlds={worlds}
     />
   );

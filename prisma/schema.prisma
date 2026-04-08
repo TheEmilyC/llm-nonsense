@@ -49,6 +49,8 @@ model Story {
   lorebookId  String?
   lorebook    Lorebook? @relation(fields: [lorebookId], references: [id])
   chats       Chat[]
+  promptId    String
+  prompt      Prompt    @relation(fields: [promptId], references: [id])
   createdAt   DateTime  @default(now())
   modifiedAt  DateTime  @default(now()) @updatedAt
 }
@@ -110,4 +112,46 @@ model Lorebook {
   stories    Story[]
   createdAt  DateTime @default(now())
   modifiedAt DateTime @default(now()) @updatedAt
+}
+
+model Prompt {
+  id              String           @id @default(cuid())
+  name            String
+  maxTokens       Int              @default(80000)
+  promptFragments PromptFragment[]
+  createdAt       DateTime         @default(now())
+  modifiedAt      DateTime         @default(now()) @updatedAt
+  stories         Story[]
+}
+
+enum PromptInjectTag {
+  lastMessage
+  chatHistory
+  characterDescription
+  characterPersonality
+  characterScenario
+  personaDescription
+  worldDescription
+  lorebook
+}
+
+enum PromptFragmentType {
+  chatHistory
+  content
+  inject
+}
+
+model PromptFragment {
+  id         String             @id @default(cuid())
+  name       String
+  type       PromptFragmentType
+  role       MessageRole?
+  enabled    Boolean            @default(true)
+  content    String?
+  injectTag  PromptInjectTag?
+  order      Int
+  prompt     Prompt?            @relation(fields: [promptId], references: [id])
+  promptId   String?
+  createdAt  DateTime           @default(now())
+  modifiedAt DateTime           @default(now()) @updatedAt
 }

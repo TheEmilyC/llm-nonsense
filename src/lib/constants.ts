@@ -10,7 +10,6 @@ export const PERSONA_DIRECTORY = "data/personas";
 export const WORLD_DIRECTORY = "data/worlds";
 
 // -- Lorebook --
-export const LOREBOOK_SCAN_DEPTH = 2;
 export const LOREBOOK_CASE_SENSITIVE = false;
 export const LOREBOOK_MATCH_WHOLE_WORDS = false;
 export const LOREBOOK_MAX_MATCHES = 15;
