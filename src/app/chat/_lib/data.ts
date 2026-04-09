@@ -119,6 +119,16 @@ export async function deleteChat(id: string) {
   return result;
 }
 
+export async function deleteChatMessage(id: string) {
+  const message = await prisma.chatMessage.findUnique({
+    select: { chatId: true },
+    where: { id },
+  });
+  const result = await prisma.chatMessage.delete({ where: { id } });
+  if (message) revalidateTag(`${CHAT_CACHE_KEY}-${message.chatId}`, "max");
+  return result;
+}
+
 export async function getChatSession({
   id,
   skip = 0,

@@ -7,6 +7,7 @@ import {
   createChat,
   createChatMessageContent,
   deleteChat,
+  deleteChatMessage,
   updateMessageContent,
 } from "@/app/chat/_lib/data";
 import {
@@ -98,6 +99,22 @@ export async function deleteChatAction(
   } catch (err) {
     console.error(err);
     return { error: "Failed to delete chat", success: false };
+  }
+}
+
+export async function deleteMessageAction(
+  messageId: string,
+): Promise<ActionResponse<void>> {
+  const parseResult = dbIdValidator.safeParse(messageId);
+  if (!parseResult.success) {
+    return { error: "Malformed message id", success: false };
+  }
+  try {
+    await deleteChatMessage(messageId);
+    return { data: undefined, success: true };
+  } catch (err) {
+    console.error(err);
+    return { error: "Failed to delete message", success: false };
   }
 }
 
