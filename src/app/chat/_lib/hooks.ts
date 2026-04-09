@@ -49,28 +49,29 @@ export function useChatMessages(
     ),
   );
 
-  const { messages, regenerate, sendMessage, setMessages, status, stop } = useChat({
-    messages: initialMessages.map((msg) => messageDtoToUIMessage(msg)),
-    onFinish: ({ message }) => {
-      if (isSwipeGenerate) {
-        setMessageSwipes((prev) => [...prev, message]);
-        _setSwipeIndex(messageSwipes.length);
-      } else {
-        setMessageSwipes([message]);
-        _setSwipeIndex(0);
-      }
-      setIsSwipeGenerate(false);
-    },
-    transport: new DefaultChatTransport({
-      api: `/api/chat/${chatId}`,
-      prepareSendMessagesRequest({ id, messages, trigger }) {
-        //only send the last message to the server
-        return {
-          body: { content: messages[messages.length - 1], id, trigger },
-        };
+  const { messages, regenerate, sendMessage, setMessages, status, stop } =
+    useChat({
+      messages: initialMessages.map((msg) => messageDtoToUIMessage(msg)),
+      onFinish: ({ message }) => {
+        if (isSwipeGenerate) {
+          setMessageSwipes((prev) => [...prev, message]);
+          _setSwipeIndex(messageSwipes.length);
+        } else {
+          setMessageSwipes([message]);
+          _setSwipeIndex(0);
+        }
+        setIsSwipeGenerate(false);
       },
-    }),
-  });
+      transport: new DefaultChatTransport({
+        api: `/api/chat/${chatId}`,
+        prepareSendMessagesRequest({ id, messages, trigger }) {
+          //only send the last message to the server
+          return {
+            body: { content: messages[messages.length - 1], id, trigger },
+          };
+        },
+      }),
+    });
 
   const debouncedUpdateMessageContent = useDebouncedCallback(
     (id: string) => updateMessageContent({ id, update: { isActive: true } }),
@@ -195,7 +196,6 @@ export function useUpdateMessageContent() {
 }
 
 function getMessageSwipes(message: ChatMessageDto): UIMessage[] {
-  console.log("message", message);
   return message.contents.map((con) => ({
     id: con.id,
     metadata: con.metadata,
