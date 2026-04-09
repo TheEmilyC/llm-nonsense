@@ -21,6 +21,7 @@ export interface ChatViewParams {
 
 export function ChatView({ character, chat, persona, story }: ChatViewParams) {
   const {
+    deleteMessage,
     editMessage,
     handleSubmit,
     input,
@@ -46,6 +47,7 @@ export function ChatView({ character, chat, persona, story }: ChatViewParams) {
             <ChatMessages
               character={character}
               messages={messages}
+              onDelete={deleteMessage}
               onEdit={editMessage}
               persona={persona}
               status={status}

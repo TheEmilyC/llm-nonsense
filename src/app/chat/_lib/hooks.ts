@@ -9,6 +9,7 @@ import { useDebouncedCallback } from "use-debounce";
 import {
   createChatFromStoryAction,
   deleteChatAction,
+  deleteMessageAction,
   updateMessageContentAction,
 } from "@/app/chat/_lib/actions";
 import {
@@ -37,6 +38,7 @@ export function useChatMessages(
   );
   const [input, setInput] = useState("");
   const { updateMessageContent } = useUpdateMessageContent();
+  const { deleteMessage: deleteMessageMutation } = useDeleteMessage();
 
   // Map from UIMessage id (group id) to active content id for DB persistence
   const contentIdMapRef = useRef(
@@ -113,6 +115,11 @@ export function useChatMessages(
     regenerate();
   };
 
+  const deleteMessage = (messageId: string) => {
+    setMessages(messages.filter((m) => m.id !== messageId));
+    deleteMessageMutation({ messageId });
+  };
+
   const editMessage = (messageId: string, newText: string) => {
     setMessages(
       messages.map((m) =>
@@ -136,6 +143,7 @@ export function useChatMessages(
   };
 
   return {
+    deleteMessage,
     editMessage,
     handleSubmit,
     input,
@@ -176,6 +184,15 @@ export function useDeleteChat() {
   });
 
   return { deleteChat, isPending };
+}
+
+export function useDeleteMessage() {
+  const { isPending, mutateAsync: deleteMessage } = useMutation({
+    mutationFn: async ({ messageId }: { messageId: string }) =>
+      unwrapAction(await deleteMessageAction(messageId)),
+  });
+
+  return { deleteMessage, isPending };
 }
 
 export function useUpdateMessageContent() {
