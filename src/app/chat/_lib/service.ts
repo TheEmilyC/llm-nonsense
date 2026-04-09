@@ -78,7 +78,7 @@ export async function constructChatResponse(
     providerOptions: {
       anthropic: {
         effort: "max",
-        thinking: { type: "adaptive" },
+        thinking: { type: "enabled" },
       } satisfies AnthropicLanguageModelOptions,
     },
     stopWhen: stepCountIs(maxSteps),
