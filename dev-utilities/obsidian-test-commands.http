@@ -1,0 +1,37 @@
+GET https://127.0.0.1:27124/
+
+### Read file
+
+GET https://127.0.0.1:27124/vault/llmn.json HTTP/1.1
+Authorization: Bearer 0f2cc23d50e0562396e91d603d7a417abfd70fd7fe87b9062bc83f213f4c2120
+
+### Dataview query
+
+POST https://127.0.0.1:27124/search/
+Authorization: Bearer 0f2cc23d50e0562396e91d603d7a417abfd70fd7fe87b9062bc83f213f4c2120
+Content-Type: application/vnd.olrapi.dataview.dql+txt
+
+TABLE title, tags, keys, summary, constant, position FROM #lorebook and !#lorebook-never and !"system/Templates"
+
+
+### Write file test
+
+PUT https://127.0.0.1:27124/vault/llmn.json
+Content-Type: text/plain
+Authorization: Bearer 0f2cc23d50e0562396e91d603d7a417abfd70fd7fe87b9062bc83f213f4c2120
+
+{
+    "name": "test"
+}
+
+### Empy file
+
+GET https://127.0.0.1:27124/vault/lorebook/empty-test.md
+Authorization: Bearer 0f2cc23d50e0562396e91d603d7a417abfd70fd7fe87b9062bc83f213f4c2120
+Accept: application/vnd.olrapi.note+json
+
+### 
+
+GET https://127.0.0.1:27124/vault/lorebook/overview.md
+Authorization: Bearer 0f2cc23d50e0562396e91d603d7a417abfd70fd7fe87b9062bc83f213f4c2120
+Accept: application/vnd.olrapi.note+json

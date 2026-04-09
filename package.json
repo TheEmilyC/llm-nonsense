@@ -42,6 +42,7 @@
     "react-dom": "19.2.4",
     "react-hook-form": "^7.72.0",
     "react-markdown": "^10.1.0",
+    "rehype-raw": "^7.0.0",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "shadcn": "^4.1.0",
@@ -60,6 +61,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@tailwindcss/typography": "^0.5.19",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
     "@types/png-chunk-text": "^1.0.3",
