@@ -88,7 +88,7 @@ interface ChatSwipeParams {
 
 export function ChatContainer({ children }: ChatHistoryContainerParams) {
   return (
-    <div className=" rounded-xl border border-white/20 shadow-xl overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0 rounded-xl border border-white/20 shadow-xl overflow-hidden">
       {children}
     </div>
   );
@@ -96,7 +96,7 @@ export function ChatContainer({ children }: ChatHistoryContainerParams) {
 
 export function ChatHistory({ children }: ChatHistoryProps) {
   return (
-    <ChatContainerRoot>
+    <ChatContainerRoot className="flex-1 min-h-0">
       <ChatContainerContent className="reading-surface">
         {children}
         <ChatContainerScrollAnchor />
