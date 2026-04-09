@@ -121,16 +121,17 @@ export function useChatMessages(
   };
 
   const editMessage = (messageId: string, newText: string) => {
+    const updateParts = (parts: UIMessage["parts"]) =>
+      parts.map((p) => (p.type === "text" ? { ...p, text: newText } : p));
+
     setMessages(
       messages.map((m) =>
-        m.id === messageId
-          ? {
-              ...m,
-              parts: m.parts.map((p) =>
-                p.type === "text" ? { ...p, text: newText } : p,
-              ),
-            }
-          : m,
+        m.id === messageId ? { ...m, parts: updateParts(m.parts) } : m,
+      ),
+    );
+    setMessageSwipes((prev) =>
+      prev.map((s) =>
+        s.id === messageId ? { ...s, parts: updateParts(s.parts) } : s,
       ),
     );
     const contentId = contentIdMapRef.current.get(messageId);

@@ -172,21 +172,21 @@ export function ChatMessage({
   persona,
 }: ChatMessageProps) {
   const isUser = message.role === "user";
-  const [isEditing, setIsEditing] = useState(false);
+  const [editingPartIndex, setEditingPartIndex] = useState<null | number>(null);
   const [editText, setEditText] = useState("");
 
-  const startEdit = (currentText: string) => {
+  const startEdit = (currentText: string, partIndex: number) => {
     setEditText(currentText);
-    setIsEditing(true);
+    setEditingPartIndex(partIndex);
   };
 
   const saveEdit = () => {
     onEdit?.(editText);
-    setIsEditing(false);
+    setEditingPartIndex(null);
   };
 
   const cancelEdit = () => {
-    setIsEditing(false);
+    setEditingPartIndex(null);
   };
 
   return (
@@ -241,7 +241,7 @@ export function ChatMessage({
               );
             }
             if (part.type === "text") {
-              if (isEditing) {
+              if (editingPartIndex === partIndex) {
                 return (
                   <div className="flex flex-col gap-2" key={partIndex}>
                     <Textarea
@@ -289,7 +289,7 @@ export function ChatMessage({
                     <MessageAction tooltip="Edit">
                       <button
                         className="p-1 hover:text-foreground transition-colors"
-                        onClick={() => startEdit(part.text)}
+                        onClick={() => startEdit(part.text, partIndex)}
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
