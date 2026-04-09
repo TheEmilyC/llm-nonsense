@@ -195,9 +195,7 @@ export function PromptForm({
                       />
                     )}
                   />
-                  <span className="text-sm font-medium">
-                    {watched?.name}
-                  </span>
+                  <span className="text-sm font-medium">{watched?.name}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-muted-foreground">
@@ -236,7 +234,7 @@ export function PromptForm({
         onOpenChange={(open) => !open && setEditingIndex(null)}
         open={editingIndex !== null}
       >
-        <DialogContent>
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Fragment</DialogTitle>
           </DialogHeader>
