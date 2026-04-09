@@ -133,6 +133,9 @@ export function ChatInput({
               disabled={!input.trim() && !isLoading}
               onClick={isLoading ? onStop : onSubmit}
               size="sm"
+              /* disabled state causing hydration errors because of useChats
+              initializtion on server vs client */
+              suppressHydrationWarning
             >
               {isLoading ? (
                 <Square className="h-4 w-4" />

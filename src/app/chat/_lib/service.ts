@@ -25,6 +25,7 @@ import { convertFilesToPrompt } from "@/lib/lorebook-scanning";
 
 interface BuildPromptFromChatParams {
   chat: ChatSessionDto;
+  regenerate?: boolean;
 }
 
 interface ConstructChatResponseParams {
@@ -61,6 +62,7 @@ export async function constructChatResponse(
 
   const prompt = await buildPromptFromChat({
     chat,
+    regenerate,
   });
   if (debug) console.debug("prompt", prompt);
 
@@ -74,7 +76,7 @@ export async function constructChatResponse(
       if (debug)
         console.debug("raw llm response", JSON.stringify(response, null, 2));
     },
-    prompt: prompt,
+    prompt,
     providerOptions: {
       anthropic: {
         effort: "max",
@@ -134,7 +136,10 @@ export async function constructChatResponse(
   });
 }
 
-async function buildPromptFromChat({ chat }: BuildPromptFromChatParams) {
+async function buildPromptFromChat({
+  chat,
+  regenerate,
+}: BuildPromptFromChatParams) {
   const character = await getCharacterByIdOrFail(chat.character.id);
   const lorebook = chat.lorebookId
     ? await getLorebookById(chat.lorebookId)
@@ -162,8 +167,12 @@ async function buildPromptFromChat({ chat }: BuildPromptFromChatParams) {
     worldName: world?.name,
   });
 
-  const lastMessage = messageDtoToAiMessage(chat.messages[0]);
-  const chatHistory = chat.messages.slice(1);
+  const lastMessage = messageDtoToAiMessage(
+    regenerate ? chat.messages[1] : chat.messages[0],
+  );
+  const chatHistory = regenerate
+    ? chat.messages.slice(2)
+    : chat.messages.slice(1);
 
   promptBuilder.addToPrompt(PromptInjectTag.lastMessage, lastMessage.content);
   promptBuilder.addToPrompt(
