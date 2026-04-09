@@ -29,7 +29,8 @@ export function ChatView({ character, chat, persona, story }: ChatViewParams) {
     status,
     swipe,
   } = useChatMessages(chat.id, chat.messages);
-  const lastMessage = messages[messages.length - 1];
+  const lastMessage =
+    messages.length > 0 ? messages[messages.length - 1] : null;
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -38,7 +39,7 @@ export function ChatView({ character, chat, persona, story }: ChatViewParams) {
         backLinkLabel={story.name}
         pageTitle={chat.name}
       />
-      <div className="mx-auto max-w-6xl p-6">
+      <div className="w-full mx-auto max-w-6xl p-6 flex-1 flex flex-col min-h-0">
         <ChatContainer>
           <ChatHistory>
             <ChatMessages
@@ -51,9 +52,9 @@ export function ChatView({ character, chat, persona, story }: ChatViewParams) {
             {status === "submitted" && (
               <ChatMessageThinking character={character} />
             )}
-            {lastMessage.role === "assistant" && status !== "streaming" && (
-              <ChatSwipe swipe={swipe} />
-            )}
+            {lastMessage &&
+              lastMessage.role === "assistant" &&
+              status !== "streaming" && <ChatSwipe swipe={swipe} />}
           </ChatHistory>
           <ChatInput
             input={input}

@@ -24,12 +24,16 @@ export function useChatMessages(
 ) {
   const [isSwipeGenerate, setIsSwipeGenerate] = useState(false);
   const [messageSwipes, setMessageSwipes] = useState<UIMessage[]>(
-    getMessageSwipes(initialMessages[initialMessages.length - 1]),
+    initialMessages.length > 0
+      ? getMessageSwipes(initialMessages[initialMessages.length - 1])
+      : [],
   );
   const [swipeIndex, _setSwipeIndex] = useState(
-    initialMessages[initialMessages.length - 1].contents.findIndex(
-      (con) => con.isActive,
-    ),
+    initialMessages.length > 0
+      ? initialMessages[initialMessages.length - 1].contents.findIndex(
+          (con) => con.isActive,
+        )
+      : 0,
   );
   const [input, setInput] = useState("");
   const { updateMessageContent } = useUpdateMessageContent();
@@ -190,6 +194,7 @@ export function useUpdateMessageContent() {
 }
 
 function getMessageSwipes(message: ChatMessageDto): UIMessage[] {
+  console.log("message", message);
   return message.contents.map((con) => ({
     id: con.id,
     metadata: con.metadata,
