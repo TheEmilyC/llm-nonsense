@@ -54,6 +54,7 @@ interface ChatInputParams {
   input: string;
   isLoading: boolean;
   onInputChange: (value: string) => void;
+  onStop: () => void;
   onSubmit: () => void;
 }
 
@@ -112,6 +113,7 @@ export function ChatInput({
   input,
   isLoading,
   onInputChange,
+  onStop,
   onSubmit,
 }: ChatInputParams) {
   return (
@@ -129,7 +131,7 @@ export function ChatInput({
             <Button
               className="h-8 w-8 rounded-full"
               disabled={!input.trim() && !isLoading}
-              onClick={onSubmit}
+              onClick={isLoading ? onStop : onSubmit}
               size="sm"
             >
               {isLoading ? (

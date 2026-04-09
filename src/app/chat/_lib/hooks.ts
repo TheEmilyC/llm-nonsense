@@ -49,7 +49,7 @@ export function useChatMessages(
     ),
   );
 
-  const { messages, regenerate, sendMessage, setMessages, status } = useChat({
+  const { messages, regenerate, sendMessage, setMessages, status, stop } = useChat({
     messages: initialMessages.map((msg) => messageDtoToUIMessage(msg)),
     onFinish: ({ message }) => {
       if (isSwipeGenerate) {
@@ -141,6 +141,7 @@ export function useChatMessages(
     messages,
     setInput,
     status,
+    stop,
     swipe: {
       length: messageSwipes.length,
       nextSwipe,

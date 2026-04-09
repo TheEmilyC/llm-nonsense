@@ -27,6 +27,7 @@ export function ChatView({ character, chat, persona, story }: ChatViewParams) {
     messages,
     setInput,
     status,
+    stop,
     swipe,
   } = useChatMessages(chat.id, chat.messages);
   const lastMessage =
@@ -60,6 +61,7 @@ export function ChatView({ character, chat, persona, story }: ChatViewParams) {
             input={input}
             isLoading={status !== "ready"}
             onInputChange={setInput}
+            onStop={stop}
             onSubmit={handleSubmit}
           />
         </ChatContainer>
