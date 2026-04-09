@@ -25,6 +25,11 @@ const basePromptSchema = z.object({
   createdAt: z.date(),
   id: dbIdValidator,
   maxTokens: z.number(),
+  maxOutputTokens: z.number().int().positive(),
+  maxSteps: z.number().int().positive(),
+  temperature: z.number().min(0).max(1),
+  topK: z.number().int().positive(),
+  topP: z.number().min(0).max(1),
   modifiedAt: z.date(),
   name: z.string().min(1, "Name is required"),
 });
@@ -71,11 +76,20 @@ export const promptFragmentUpdateSchema = z.discriminatedUnion("type", [
   chatHistoryFragmentSchema.extend({ id: dbIdValidator.optional() }),
 ]);
 
+const promptSettingsFields = {
+  maxOutputTokens: true,
+  maxSteps: true,
+  maxTokens: true,
+  temperature: true,
+  topK: true,
+  topP: true,
+} as const;
+
 export const promptDtoSchema = basePromptSchema
   .pick({
     id: true,
-    maxTokens: true,
     name: true,
+    ...promptSettingsFields,
   })
   .extend({
     promptFragments: promptFragmentDtoSchema.array(),
@@ -85,6 +99,7 @@ export type PromptDto = z.infer<typeof promptDtoSchema>;
 export const createPromptParamsSchema = basePromptSchema
   .pick({
     name: true,
+    ...promptSettingsFields,
   })
   .extend({
     promptFragments: promptFragmentCreateSchema.array(),
@@ -97,6 +112,7 @@ export const updatePromptParamsSchema = basePromptSchema
     update: z.object({
       name: z.string().optional(),
       promptFragments: promptFragmentUpdateSchema.array(),
+      ...basePromptSchema.pick(promptSettingsFields).partial().shape,
     }),
   });
 export type UpdatePromptParams = z.infer<typeof updatePromptParamsSchema>;
@@ -123,8 +139,8 @@ export type PromptFragmentFormValues = z.infer<typeof promptFragmentFormSchema>;
 
 export const promptFormSchema = basePromptSchema
   .pick({
-    maxTokens: true,
     name: true,
+    ...promptSettingsFields,
   })
   .extend({
     promptFragments: promptFragmentFormSchema.array(),

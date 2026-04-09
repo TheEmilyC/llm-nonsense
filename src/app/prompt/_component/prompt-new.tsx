@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button";
 const FORM_ID = "form-new-prompt";
 
 const DEFAULT_PROMPT: PromptFormValues = {
+  maxOutputTokens: 9000,
+  maxSteps: 20,
   maxTokens: 80000,
   name: "",
   promptFragments: [
@@ -138,6 +140,9 @@ const DEFAULT_PROMPT: PromptFormValues = {
       type: PromptFragmentType.inject,
     },
   ],
+  temperature: 0.9,
+  topK: 64,
+  topP: 0.95,
 };
 
 export function PromptNew() {
