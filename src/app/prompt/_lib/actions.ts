@@ -26,12 +26,27 @@ export async function createPromptAction(
     console.error(parseResult.error);
     return { error: "Malformed prompt data", success: false };
   }
-  const { name, promptFragments: rawFragments } = parseResult.data;
+  const {
+    maxOutputTokens,
+    maxSteps,
+    maxTokens,
+    name,
+    promptFragments: rawFragments,
+    temperature,
+    topK,
+    topP,
+  } = parseResult.data;
   const newPrompt: CreatePromptParams = {
-    name: name,
+    maxOutputTokens,
+    maxSteps,
+    maxTokens,
+    name,
     promptFragments: promptFragmentCreateSchema
       .array()
       .parse(rawFragments.map((frag, idx) => ({ ...frag, order: idx }))),
+    temperature,
+    topK,
+    topP,
   };
   try {
     const prompt = await createPrompt(newPrompt);
@@ -73,15 +88,30 @@ export async function updatePromptAction(
     console.error(parseResult.error);
     return { error: "Malformed prompt data", success: false };
   }
-  const { name, promptFragments: rawFragments } = parseResult.data;
+  const {
+    maxOutputTokens,
+    maxSteps,
+    maxTokens,
+    name,
+    promptFragments: rawFragments,
+    temperature,
+    topK,
+    topP,
+  } = parseResult.data;
 
   const updateData: UpdatePromptParams = {
     id,
     update: {
+      maxOutputTokens,
+      maxSteps,
+      maxTokens,
       name,
       promptFragments: promptFragmentUpdateSchema
         .array()
         .parse(rawFragments.map((frag, idx) => ({ ...frag, order: idx }))),
+      temperature,
+      topK,
+      topP,
     },
   };
   try {

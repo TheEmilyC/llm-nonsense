@@ -69,9 +69,14 @@ export function PromptForm({
 
   const form = useForm<PromptFormValues>({
     defaultValues: defaultValues || {
+      maxOutputTokens: 9000,
+      maxSteps: 20,
       maxTokens: 80000,
       name: "",
       promptFragments: [],
+      temperature: 0.9,
+      topK: 64,
+      topP: 0.95,
     },
     mode: "onTouched",
     resolver: zodResolver(promptFormSchema),
@@ -101,8 +106,38 @@ export function PromptForm({
         <FieldInput control={form.control} label="Name" name="name" />
         <FieldInput
           control={form.control}
-          label="Max Tokens"
+          label="Max Context Tokens"
           name="maxTokens"
+          type="number"
+        />
+        <FieldInput
+          control={form.control}
+          label="Max Output Tokens"
+          name="maxOutputTokens"
+          type="number"
+        />
+        <FieldInput
+          control={form.control}
+          label="Max Steps"
+          name="maxSteps"
+          type="number"
+        />
+        <FieldInput
+          control={form.control}
+          label="Temperature"
+          name="temperature"
+          type="number"
+        />
+        <FieldInput
+          control={form.control}
+          label="Top K"
+          name="topK"
+          type="number"
+        />
+        <FieldInput
+          control={form.control}
+          label="Top P"
+          name="topP"
           type="number"
         />
       </FieldGroup>

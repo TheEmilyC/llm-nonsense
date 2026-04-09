@@ -15,12 +15,24 @@ import { Prompt, PromptFragment } from "@/generated/client";
 import { prisma } from "@/lib/prisma";
 
 export async function createPrompt({
+  maxOutputTokens,
+  maxSteps,
+  maxTokens,
   name,
   promptFragments,
+  temperature,
+  topK,
+  topP,
 }: CreatePromptParams): Promise<PromptDto> {
   const prompt = await prisma.prompt.create({
     data: {
+      maxOutputTokens,
+      maxSteps,
+      maxTokens,
       name,
+      temperature,
+      topK,
+      topP,
       promptFragments: promptFragments
         ? {
             createMany: {
@@ -81,7 +93,13 @@ export async function updatePrompt({
 }: UpdatePromptParams): Promise<PromptDto> {
   const result = await prisma.prompt.update({
     data: {
+      maxOutputTokens: update.maxOutputTokens,
+      maxSteps: update.maxSteps,
+      maxTokens: update.maxTokens,
       name: update.name,
+      temperature: update.temperature,
+      topK: update.topK,
+      topP: update.topP,
       promptFragments: update.promptFragments
         ? {
             deleteMany: {

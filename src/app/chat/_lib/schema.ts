@@ -111,6 +111,11 @@ export const chatSessionDtoSchema = baseChatSchema
     prompt: z.object({
       id: dbIdValidator,
       maxTokens: z.number(),
+      maxOutputTokens: z.number().int().positive(),
+      maxSteps: z.number().int().positive(),
+      temperature: z.number(),
+      topK: z.number().int().positive(),
+      topP: z.number(),
       promptFragments: promptFragmentDtoSchema.array(),
     }),
     story: z.object({

@@ -64,8 +64,11 @@ export async function constructChatResponse(
   });
   if (debug) console.debug("prompt", prompt);
 
+  const { maxOutputTokens, maxSteps, temperature, topK, topP } = chat.prompt;
+
   // --send and stream result--
   return streamText({
+    maxOutputTokens,
     model: models.chat,
     onFinish: ({ response }) => {
       if (debug)
@@ -78,7 +81,8 @@ export async function constructChatResponse(
         thinking: { type: "adaptive" },
       } satisfies AnthropicLanguageModelOptions,
     },
-    stopWhen: stepCountIs(20),
+    stopWhen: stepCountIs(maxSteps),
+    temperature,
     tools: {
       ...(lorebook?.status === LorebookStatus.Ready && {
         getLorebookEntries: tool({
@@ -104,6 +108,8 @@ export async function constructChatResponse(
         }),
       }),
     },
+    topK,
+    topP,
   }).toUIMessageStreamResponse({
     generateMessageId: createIdGenerator({
       prefix: "msg",
