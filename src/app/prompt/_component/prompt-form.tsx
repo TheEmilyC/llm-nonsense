@@ -169,15 +169,16 @@ export function PromptForm({
           onOrderChange={handleOrderChange}
           renderItem={(field) => {
             const index = fields.findIndex((f) => f._rhfId === field._rhfId);
+            const watched = watchedFragments[index];
             const Icon =
-              field.type === PromptFragmentType.chatHistory
+              watched?.type === PromptFragmentType.chatHistory
                 ? ROLE_ICONS["history"]
-                : ROLE_ICONS[field.role];
+                : ROLE_ICONS[watched?.role ?? "system"];
             return (
               <div
                 className={cn(
                   " flex items-center justify-between gap-2",
-                  !watchedFragments[index]?.enabled && "opacity-50",
+                  !watched?.enabled && "opacity-50",
                 )}
               >
                 <div className="flex items-center gap-2">
@@ -195,7 +196,7 @@ export function PromptForm({
                     )}
                   />
                   <span className="text-sm font-medium">
-                    {watchedFragments[index]?.name}
+                    {watched?.name}
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
