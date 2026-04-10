@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTransition } from "react";
 
 import {
   createCharacterAction,
@@ -9,108 +9,89 @@ import {
   updateCharacterAction,
 } from "@/app/character/_lib/actions";
 import {
-  CHARACTER_CACHE_KEY,
   CharacterFormValues,
   ImportFromPngForm,
 } from "@/app/character/_lib/schema";
-import { unwrapAction } from "@/lib/action-utils";
+import { ActionError, ActionResponse } from "@/lib/action-utils";
 
 export interface UpdateCharacterMutationParams {
-  characterId: string;
   data: CharacterFormValues;
+  id: string;
 }
 
-export function useCreateCharacter() {
-  const queryClient = useQueryClient();
+export function useCreateCharacter(onError?: (error: ActionError) => void) {
+  const [isPending, startTransition] = useTransition();
 
-  const {
-    error,
-    isPending,
-    mutateAsync: createCharacter,
-  } = useMutation({
-    mutationFn: async (data: CharacterFormValues) =>
-      unwrapAction(await createCharacterAction(data)),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [CHARACTER_CACHE_KEY, "list"],
+  function createCharacter(data: CharacterFormValues): Promise<ActionResponse> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const result = await createCharacterAction(data);
+        if (!result.success) onError?.(result.error);
+        resolve(result);
       });
-    },
-  });
+    });
+  }
 
-  return {
-    createCharacter,
-    error: error ? (error as Error).message : null,
-    isPending,
-  };
+  return { createCharacter, isPending };
 }
 
-export function useDeleteCharacter() {
-  const queryClient = useQueryClient();
+export function useDeleteCharacter(onError?: (error: ActionError) => void) {
+  const [isPending, startTransition] = useTransition();
 
-  const {
-    error,
-    isPending,
-    mutateAsync: deleteCharacter,
-  } = useMutation({
-    mutationFn: async ({ characterId }: { characterId: string }) =>
-      unwrapAction(await deleteCharacterAction(characterId)),
-    onSuccess: (data, { characterId }) => {
-      queryClient.invalidateQueries({
-        queryKey: [CHARACTER_CACHE_KEY, "list"],
+  function deleteCharacter(id: string): Promise<ActionResponse> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const result = await deleteCharacterAction(id);
+        if (!result.success) onError?.(result.error);
+        resolve(result);
       });
-      queryClient.setQueryData([CHARACTER_CACHE_KEY, characterId], data);
-    },
-  });
+    });
+  }
 
   return {
     deleteCharacter,
-    error: error ? (error as Error).message : null,
     isPending,
   };
 }
 
-export function useImportCharacterFromPNG() {
-  const queryClient = useQueryClient();
+export function useImportCharacterFromPNG(
+  onError?: (error: ActionError) => void,
+) {
+  const [isPending, startTransition] = useTransition();
 
-  const {
-    error,
-    isPending,
-    mutateAsync: importCharacter,
-  } = useMutation({
-    mutationFn: async (data: ImportFromPngForm) =>
-      unwrapAction(await importCharacterFromPNGAction(data)),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [CHARACTER_CACHE_KEY] });
-    },
-  });
+  function importCharacter(data: ImportFromPngForm): Promise<ActionResponse> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const result = await importCharacterFromPNGAction(data);
+        if (!result.success) onError?.(result.error);
+        resolve(result);
+      });
+    });
+  }
 
   return {
-    error: error ? (error as Error).message : null,
     importCharacter,
     isPending,
   };
 }
 
-export function useUpdateCharacter() {
-  const queryClient = useQueryClient();
+export function useUpdateCharacter(onError?: (error: ActionError) => void) {
+  const [isPending, startTransition] = useTransition();
 
-  const {
-    error,
-    isPending,
-    mutateAsync: updateCharacter,
-  } = useMutation({
-    mutationFn: async ({ characterId, data }: UpdateCharacterMutationParams) =>
-      unwrapAction(await updateCharacterAction(characterId, data)),
-    onSuccess: (data, { characterId }) => {
-      queryClient.invalidateQueries({
-        queryKey: [CHARACTER_CACHE_KEY, "list"],
+  function updateCharacter({
+    data,
+    id,
+  }: UpdateCharacterMutationParams): Promise<ActionResponse> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const result = await updateCharacterAction(id, data);
+        if (!result.success) onError?.(result.error);
+        resolve(result);
       });
-      queryClient.setQueryData([CHARACTER_CACHE_KEY, characterId], data);
-    },
-  });
+    });
+  }
 
   return {
-    error: error ? (error as Error).message : null,
     isPending,
     updateCharacter,
   };

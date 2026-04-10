@@ -1,7 +1,6 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
 import { useImportCharacterFromPNG } from "@/app/character/_lib/hooks";
@@ -31,7 +30,6 @@ interface CharacterListParams {
 }
 
 export function CharacterList({ characters }: CharacterListParams) {
-  const router = useRouter();
   const { importCharacter, isPending } = useImportCharacterFromPNG();
 
   const form = useForm<ImportFromPngForm>({
@@ -39,8 +37,7 @@ export function CharacterList({ characters }: CharacterListParams) {
   });
 
   async function onSubmitHandler(data: ImportFromPngForm) {
-    const { id } = await importCharacter(data);
-    router.push(`/character/${id}`);
+    await importCharacter(data);
   }
 
   return (

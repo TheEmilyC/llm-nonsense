@@ -4,7 +4,6 @@ import z from "zod";
 
 import { CharacterEdit } from "@/app/character/_components/character-edit";
 import { getCharacterById } from "@/app/character/_lib/data";
-import { toCharacterDto } from "@/app/character/_lib/schema";
 import { dbIdValidator } from "@/lib/validators";
 
 interface CharacterPageParams {
@@ -25,8 +24,7 @@ export default function CharacterPage({ params }: CharacterPageParams) {
 
 async function CharacterPageContent({ params }: CharacterPageParams) {
   const { id } = characterEditPageParamsSchema.parse(await params);
-  const characterRecord = await getCharacterById(id);
-  if (!characterRecord) notFound();
-  const character = toCharacterDto(characterRecord);
+  const character = await getCharacterById(id);
+  if (!character) notFound();
   return <CharacterEdit character={character} />;
 }

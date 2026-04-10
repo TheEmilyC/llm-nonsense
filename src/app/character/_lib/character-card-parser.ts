@@ -3,9 +3,11 @@ import fs from "fs/promises";
 import PNGtext from "png-chunk-text";
 import extract from "png-chunks-extract";
 
-export { characterCardSchema } from "@/lib/character-card-schema";
-export type { CharacterCard } from "@/lib/character-card-schema";
-import { type CharacterCard, characterCardSchema } from "@/lib/character-card-schema";
+import {
+  CharacterCard,
+  characterCardSchema,
+} from "@/app/character/_lib/schema";
+import { AppError } from "@/lib/error";
 
 interface EncodeCharacterCardParam {
   cardPath: string;
@@ -31,7 +33,7 @@ export async function encodeCharacterCard({
       await fs.writeFile(cardPath, encodedImageBuffer);
       return;
   }
-  throw new Error("unsupported format");
+  throw new AppError("unsupported format", "INTERNAL_ERROR");
 }
 
 export function getCacheKey(inputFile: string) {
@@ -56,7 +58,7 @@ export async function parseCharacterCard(
       const rawCharacter = readCharacterFromBuffer(buffer);
       return characterCardSchema.parse(JSON.parse(rawCharacter));
   }
-  throw Error("unsupported format");
+  throw new AppError("unsupported format", "INTERNAL_ERROR");
 }
 
 /**
@@ -71,8 +73,7 @@ export function readCharacterFromBuffer(image: Buffer): string {
     .map((chunk) => PNGtext.decode(chunk.data));
 
   if (textChunks.length === 0) {
-    console.error("PNG metadata does not contain any text chunks");
-    throw new Error("No PNG metadata");
+    throw new AppError("No PNG metadata", "INTERNAL_ERROR");
   }
 
   const ccv3Index = textChunks.findIndex(
@@ -89,8 +90,7 @@ export function readCharacterFromBuffer(image: Buffer): string {
     return Buffer.from(textChunks[charaIndex].text, "base64").toString("utf-8");
   }
 
-  console.error("PNG metadta does not contain any character info");
-  throw new Error("No PNG metadata");
+  throw new AppError("No PNG metadata", "INTERNAL_ERROR");
 }
 
 export function writeCharacterToBuffer(image: Buffer, characterData: string) {
