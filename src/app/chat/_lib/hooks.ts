@@ -1,9 +1,8 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useMutation } from "@tanstack/react-query";
 import { DefaultChatTransport, UIMessage } from "ai";
-import { useRef, useState } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useDebouncedCallback } from "use-debounce";
 
 import {
@@ -17,7 +16,7 @@ import {
   messageDtoToUIMessage,
   UpdateContentActionParams,
 } from "@/app/chat/_lib/schema";
-import { unwrapAction } from "@/lib/action-utils";
+import { ActionError, ActionResponse } from "@/lib/action-utils";
 
 export function useChatMessages(
   chatId: string,
@@ -117,7 +116,7 @@ export function useChatMessages(
 
   const deleteMessage = (messageId: string) => {
     setMessages(messages.filter((m) => m.id !== messageId));
-    deleteMessageMutation({ messageId });
+    deleteMessageMutation(messageId);
   };
 
   const editMessage = (messageId: string, newText: string) => {
@@ -161,53 +160,73 @@ export function useChatMessages(
   };
 }
 
-export function useCreateChatFromStory() {
-  const {
-    error,
-    isPending,
-    mutateAsync: createChatFromStory,
-  } = useMutation({
-    mutationFn: async ({ storyId }: { storyId: string }) =>
-      unwrapAction(await createChatFromStoryAction(storyId)),
-  });
+export function useCreateChatFromStory(onError?: (error: ActionError) => void) {
+  const [isPending, startTransition] = useTransition();
+
+  function createChatFromStory(storyId: string): Promise<ActionResponse> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const res = await createChatFromStoryAction(storyId);
+        if (!res.success) onError?.(res.error);
+        resolve(res);
+      });
+    });
+  }
 
   return {
     createChatFromStory,
-    error: error ? (error as Error).message : null,
     isPending,
   };
 }
 
-export function useDeleteChat() {
-  const { isPending, mutateAsync: deleteChat } = useMutation({
-    mutationFn: async ({ chatId }: { chatId: string }) =>
-      unwrapAction(await deleteChatAction(chatId)),
-  });
+export function useDeleteChat(onError?: (error: ActionError) => void) {
+  const [isPending, startTransition] = useTransition();
+
+  function deleteChat(chatId: string): Promise<ActionResponse> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const res = await deleteChatAction(chatId);
+        if (!res.success) onError?.(res.error);
+        resolve(res);
+      });
+    });
+  }
 
   return { deleteChat, isPending };
 }
 
-export function useDeleteMessage() {
-  const { isPending, mutateAsync: deleteMessage } = useMutation({
-    mutationFn: async ({ messageId }: { messageId: string }) =>
-      unwrapAction(await deleteMessageAction(messageId)),
-  });
+export function useDeleteMessage(onError?: (error: ActionError) => void) {
+  const [isPending, startTransition] = useTransition();
+
+  function deleteMessage(messageId: string): Promise<ActionResponse> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const res = await deleteMessageAction(messageId);
+        if (!res.success) onError?.(res.error);
+        resolve(res);
+      });
+    });
+  }
 
   return { deleteMessage, isPending };
 }
 
-export function useUpdateMessageContent() {
-  const {
-    error,
-    isPending,
-    mutateAsync: updateMessageContent,
-  } = useMutation({
-    mutationFn: async (params: UpdateContentActionParams) =>
-      unwrapAction(await updateMessageContentAction(params)),
-  });
+export function useUpdateMessageContent(
+  onError?: (error: ActionError) => void,
+) {
+  const [isPending, startTransition] = useTransition();
+
+  function updateMessageContent(params: UpdateContentActionParams) {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const res = await updateMessageContentAction(params);
+        if (!res.success) onError?.(res.error);
+        resolve(res);
+      });
+    });
+  }
 
   return {
-    error: error ? (error as Error).message : null,
     isPending,
     updateMessageContent,
   };

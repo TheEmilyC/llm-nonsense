@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import z from "zod";
 
@@ -26,6 +27,8 @@ export default function ChatPage({ params }: Props) {
 async function ChatPageContent({ params }: Props) {
   const { id } = chatPageParamsSchema.parse(await params);
   const chatSession = await getChatSession({ id });
+  if (!chatSession) notFound();
+
   const characterProfile: ChatProfile = {
     avatarSrc: buildCharacterImageUrl({
       id: chatSession.character.id,

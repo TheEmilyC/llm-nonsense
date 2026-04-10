@@ -1,61 +1,61 @@
 "use server";
 
 import { createIdGenerator } from "ai";
+import { redirect } from "next/navigation";
 
-import { getCharacterByIdOrFail } from "@/app/character/_lib/data";
+import { getCharacterById } from "@/app/character/_lib/data";
 import {
   createChat,
   createChatMessageContent,
   deleteChat,
   deleteChatMessage,
+  getChatById,
   updateMessageContent,
 } from "@/app/chat/_lib/data";
 import {
-  MessageContentDto,
+  ChatDto,
   UpdateContentActionParams,
   updateContentActionParamsSchema,
 } from "@/app/chat/_lib/schema";
 import { getPersonaByIdOrFail } from "@/app/persona/_lib/data";
 import { hydratePrompt } from "@/app/prompt/_lib/prompt-builder";
 import { getStoryById } from "@/app/story/_lib/data";
-import { getWorldByIdOrFail } from "@/app/world/_lib/data";
-import { ActionResponse } from "@/lib/action-utils";
-import { HttpStatus } from "@/lib/http";
+import { ActionResponse, toActionResponseError } from "@/lib/action-utils";
+import { NotFoundError } from "@/lib/error";
+import { logger, parseError } from "@/lib/logger";
 import { dbIdValidator } from "@/lib/validators";
 
 export async function createChatFromStoryAction(
   storyId: string,
-): Promise<ActionResponse<{ id: string }>> {
+): Promise<ActionResponse> {
   const idParseResult = dbIdValidator.safeParse(storyId);
   if (!idParseResult.success) {
-    console.error(idParseResult.error);
-    return { error: "Malformed chat data", success: false };
+    toActionResponseError(idParseResult.error);
   }
 
   let story;
   try {
     story = await getStoryById(storyId);
   } catch (err) {
-    console.error(err);
+    logger.error("Error fetching story", { id: storyId, ...parseError(err) });
+    toActionResponseError(err);
   }
-  if (!story)
-    return { error: "not found", status: HttpStatus.NOT_FOUND, success: false };
+  if (!story) return toActionResponseError(new NotFoundError("Story", storyId));
 
   let chat;
   try {
-    const [character, persona, world, newChat] = await Promise.all([
-      getCharacterByIdOrFail(story.characterId),
+    const [character, persona, newChat] = await Promise.all([
+      getCharacterById(story.characterId),
       getPersonaByIdOrFail(story.personaId),
-      story.worldId ? getWorldByIdOrFail(story.worldId) : null,
       createChat({
         newChat: { name: new Date().toLocaleString(), storyId },
       }),
     ]);
 
     // preload character first message
-    if (character.card.first_mes.length > 0) {
-      const message = hydratePrompt(character.card.first_mes, {
-        char: character.card.name,
+    if (character && character.first_mes.length > 0) {
+      const message = hydratePrompt(character.first_mes, {
+        char: character.name,
         user: persona.name,
       });
       const idGenerator = createIdGenerator({
@@ -80,62 +80,76 @@ export async function createChatFromStoryAction(
     }
     chat = newChat;
   } catch (err) {
-    console.error(err);
-    return { error: "Failed to create chat", success: false };
+    logger.error("Failed to create chat from story", {
+      storyId,
+      ...parseError(err),
+    });
+    return toActionResponseError(err);
   }
-  return { data: { id: chat.id }, success: true };
+  logger.info("Chat created from story", { chatId: chat.id, storyId });
+  redirect(`/chat/${chat.id}`);
 }
 
-export async function deleteChatAction(
-  chatId: string,
-): Promise<ActionResponse<void>> {
-  const parseResult = dbIdValidator.safeParse(chatId);
+export async function deleteChatAction(id: string): Promise<ActionResponse> {
+  const parseResult = dbIdValidator.safeParse(id);
   if (!parseResult.success) {
-    return { error: "Malformed chat id", success: false };
+    return toActionResponseError(parseResult.error);
   }
+
+  let chat: ChatDto | null;
   try {
-    await deleteChat(chatId);
-    return { data: undefined, success: true };
+    chat = await getChatById(id);
+    if (!chat) return toActionResponseError(new NotFoundError("Chat", id));
+    await deleteChat(id);
   } catch (err) {
-    console.error(err);
-    return { error: "Failed to delete chat", success: false };
+    logger.error("Failed to delete chat", { id, ...parseError(err) });
+    return toActionResponseError(err);
   }
+  logger.info("Chat deleted", { id });
+
+  redirect(`/story/${chat.storyId}`);
 }
 
 export async function deleteMessageAction(
   messageId: string,
-): Promise<ActionResponse<void>> {
+): Promise<ActionResponse> {
   const parseResult = dbIdValidator.safeParse(messageId);
   if (!parseResult.success) {
-    return { error: "Malformed message id", success: false };
+    return toActionResponseError(parseResult.error);
   }
   try {
     await deleteChatMessage(messageId);
-    return { data: undefined, success: true };
   } catch (err) {
-    console.error(err);
-    return { error: "Failed to delete message", success: false };
+    logger.error("Failed to delete message", { messageId, ...parseError(err) });
+    return toActionResponseError(err);
   }
+  logger.info("Message deleted", { id: messageId });
+
+  return { success: true };
 }
 
 export async function updateMessageContentAction(
   params: UpdateContentActionParams,
-): Promise<ActionResponse<MessageContentDto>> {
+): Promise<ActionResponse> {
   const parseResult = updateContentActionParamsSchema.safeParse(params);
   if (!parseResult.success) {
-    console.error(parseResult.error);
-    return { error: "Malfored chat data", success: false };
+    return toActionResponseError(parseResult.error);
   }
   const { id, update } = parseResult.data;
 
   try {
-    const messageContent = await updateMessageContent({
+    await updateMessageContent({
       id,
       update,
     });
-    return { data: messageContent, success: true };
   } catch (err) {
-    console.error(err);
-    return { error: "Failed to update chat", success: false };
+    logger.error("Failed to update message content", {
+      id,
+      update,
+      ...parseError(err),
+    });
   }
+  logger.info("Message content update", { id });
+
+  return { success: true };
 }

@@ -3,7 +3,7 @@
 import { createIdGenerator, stepCountIs, streamText, tool } from "ai";
 import z from "zod";
 
-import { getCharacterByIdOrFail } from "@/app/character/_lib/data";
+import { getCharacterById } from "@/app/character/_lib/data";
 import { createChatMessageContent, getChatSession } from "@/app/chat/_lib/data";
 import {
   ChatSessionDto,
@@ -20,6 +20,7 @@ import { PromptBuilder } from "@/app/prompt/_lib/prompt-builder";
 import { PromptFragmentType, PromptInjectTag } from "@/app/prompt/_lib/schema";
 import { getWorldById } from "@/app/world/_lib/data";
 import { models } from "@/lib/ai/registry";
+import { NotFoundError } from "@/lib/error";
 import { convertFilesToPrompt } from "@/lib/lorebook-scanning";
 
 interface BuildPromptFromChatParams {
@@ -37,10 +38,11 @@ interface ConstructChatResponseParams {
   regenerate?: boolean;
 }
 
-export async function constructChatResponse(
-  { chatId, message, regenerate }: ConstructChatResponseParams,
-  { debug = false } = {},
-) {
+export async function constructChatResponse({
+  chatId,
+  message,
+  regenerate,
+}: ConstructChatResponseParams) {
   // the user message will already exist in the DB during regenerate
   if (!regenerate)
     await createChatMessageContent({
@@ -54,7 +56,7 @@ export async function constructChatResponse(
     });
 
   const chat = await getChatSession({ id: chatId });
-  if (!chat) throw new Error("Chat does not exist");
+  if (!chat) throw new NotFoundError("Chat", chatId);
   const lorebook = chat.lorebookId
     ? await getLorebookById(chat.lorebookId)
     : undefined;
@@ -63,7 +65,6 @@ export async function constructChatResponse(
     chat,
     regenerate,
   });
-  if (debug) console.debug("prompt", prompt);
 
   const { maxOutputTokens, maxSteps, temperature, topK, topP } = chat.prompt;
 
@@ -71,10 +72,6 @@ export async function constructChatResponse(
   return streamText({
     maxOutputTokens,
     model: models.chat,
-    onFinish: ({ response }) => {
-      if (debug)
-        console.debug("raw llm response", JSON.stringify(response, null, 2));
-    },
     prompt,
     providerOptions: {
       openrouter: {
@@ -89,10 +86,6 @@ export async function constructChatResponse(
           description:
             "Retrive lore and character information from the lorebook",
           execute: async ({ entries }) => {
-            if (debug)
-              console.debug(
-                `getLorebookEntries tool call, requesting: ${entries}`,
-              );
             const files = await getLorebookEntryList({
               files: entries,
               lorebookId: lorebook.id,
@@ -138,7 +131,8 @@ async function buildPromptFromChat({
   chat,
   regenerate,
 }: BuildPromptFromChatParams) {
-  const character = await getCharacterByIdOrFail(chat.character.id);
+  const character = await getCharacterById(chat.character.id);
+  if (!character) throw new NotFoundError("Character", chat.character.id);
   const lorebook = chat.lorebookId
     ? await getLorebookById(chat.lorebookId)
     : null;
@@ -147,7 +141,7 @@ async function buildPromptFromChat({
   const world = chat.world ? await getWorldById(chat.world.id) : null;
 
   const promptBuilder = new PromptBuilder({
-    characterName: character.card.name,
+    characterName: character.name,
     maxTokens: chat.prompt.maxTokens,
     personaName: persona.name,
     promptSkeleton: chat.prompt.promptFragments.map((frag) =>
@@ -175,15 +169,15 @@ async function buildPromptFromChat({
   promptBuilder.addToPrompt(PromptInjectTag.lastMessage, lastMessage.content);
   promptBuilder.addToPrompt(
     PromptInjectTag.characterDescription,
-    character.card.description,
+    character.description,
   );
   promptBuilder.addToPrompt(
     PromptInjectTag.characterPersonality,
-    character.card.personality,
+    character.personality,
   );
   promptBuilder.addToPrompt(
     PromptInjectTag.characterScenario,
-    character.card.scenario,
+    character.scenario,
   );
 
   promptBuilder.addToPrompt(

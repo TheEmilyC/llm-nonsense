@@ -4,6 +4,8 @@ import { cacheTag, revalidateTag } from "next/cache";
 
 import {
   CHAT_CACHE_KEY,
+  ChatDto,
+  chatDtoSchema,
   ChatListDto,
   chatListDtoSchema,
   ChatSessionDto,
@@ -12,6 +14,7 @@ import {
   messageContentDtoSchema,
 } from "@/app/chat/_lib/schema";
 import { Chat, ChatMessage, MessageContent } from "@/generated/client";
+import { NotFoundError } from "@/lib/error";
 import { prisma } from "@/lib/prisma";
 
 export interface CreateChatMessageContentParams {
@@ -24,6 +27,13 @@ export interface CreateChatMessageContentParams {
 
 export interface CreateChatMessageParams {
   newMessage: Pick<ChatMessage, "chatId">;
+}
+
+export interface CreateChatParams {
+  newChat: {
+    name: string;
+    storyId: string;
+  };
 }
 
 export interface GetChatSessionParams {
@@ -42,14 +52,9 @@ export interface UpdateMessageContentParams {
   >;
 }
 
-interface CreateChatParams {
-  newChat: {
-    name: string;
-    storyId: string;
-  };
-}
-
-export async function createChat({ newChat }: CreateChatParams) {
+export async function createChat({
+  newChat,
+}: CreateChatParams): Promise<ChatListDto> {
   const chat = await prisma.chat.create({
     data: {
       name: newChat.name,
@@ -58,18 +63,17 @@ export async function createChat({ newChat }: CreateChatParams) {
   });
 
   revalidateTag(CHAT_CACHE_KEY, "max");
-  return chat;
+  return chatListDtoSchema.parse(chat);
 }
 
 export async function createChatMessage({
   newMessage,
-}: CreateChatMessageParams) {
-  const message = await prisma.chatMessage.create({
+}: CreateChatMessageParams): Promise<void> {
+  await prisma.chatMessage.create({
     data: {
       chatId: newMessage.chatId,
     },
   });
-  return message;
 }
 
 export async function createChatMessageContent({
@@ -83,7 +87,7 @@ export async function createChatMessageContent({
       const existingMsg = await tx.chatMessage.findUnique({
         where: { id: messageId },
       });
-      if (!existingMsg) throw new Error(`Message does not exist`);
+      if (!existingMsg) throw new NotFoundError("ChatMessage", messageId);
       contentMsgId = existingMsg.id;
       if (messageContent.isActive) {
         // only one message may be active at a time
@@ -112,32 +116,39 @@ export async function createChatMessageContent({
   return messageContentToDto(result);
 }
 
-export async function deleteChat(id: string) {
-  const result = await prisma.chat.delete({ where: { id } });
+export async function deleteChat(id: string): Promise<void> {
+  await prisma.chat.delete({ where: { id } });
   revalidateTag(CHAT_CACHE_KEY, "max");
   revalidateTag(`${CHAT_CACHE_KEY}-${id}`, "max");
-  return result;
 }
 
-export async function deleteChatMessage(id: string) {
+export async function deleteChatMessage(id: string): Promise<void> {
   const message = await prisma.chatMessage.findUnique({
     select: { chatId: true },
     where: { id },
   });
-  const result = await prisma.chatMessage.delete({ where: { id } });
+  await prisma.chatMessage.delete({ where: { id } });
   if (message) revalidateTag(`${CHAT_CACHE_KEY}-${message.chatId}`, "max");
-  return result;
+}
+
+export async function getChatById(id: string): Promise<ChatDto | null> {
+  "use cache";
+  cacheTag(`${CHAT_CACHE_KEY}-${id}`);
+
+  const chat = await prisma.chat.findUnique({ where: { id } });
+  if (!chat) return null;
+  return chatDtoSchema.parse(chat);
 }
 
 export async function getChatSession({
   id,
   skip = 0,
   take = 50,
-}: GetChatSessionParams): Promise<ChatSessionDto> {
+}: GetChatSessionParams): Promise<ChatSessionDto | null> {
   "use cache";
-  cacheTag(CHAT_CACHE_KEY, `${CHAT_CACHE_KEY}-${id}`);
+  cacheTag(`${CHAT_CACHE_KEY}-${id}`);
 
-  const chat = await prisma.chat.findUniqueOrThrow({
+  const chat = await prisma.chat.findUnique({
     include: {
       messages: {
         include: { contents: { where: { isActive: true } } },
@@ -163,6 +174,7 @@ export async function getChatSession({
     },
     where: { id },
   });
+  if (!chat) return null;
 
   if (chat.messages.length > 0) {
     // fetch all content for last message
