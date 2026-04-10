@@ -1,6 +1,5 @@
 "use server";
 
-import { AnthropicLanguageModelOptions } from "@ai-sdk/anthropic";
 import { createIdGenerator, stepCountIs, streamText, tool } from "ai";
 import z from "zod";
 
@@ -78,10 +77,9 @@ export async function constructChatResponse(
     },
     prompt,
     providerOptions: {
-      anthropic: {
-        effort: "max",
-        thinking: { type: "adaptive" },
-      } satisfies AnthropicLanguageModelOptions,
+      openrouter: {
+        reasoning: { effort: "high" },
+      },
     },
     stopWhen: stepCountIs(maxSteps),
     temperature,
