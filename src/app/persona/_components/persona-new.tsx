@@ -1,5 +1,8 @@
 "use client";
 
+import { UseFormSetError } from "react-hook-form";
+import { toast } from "sonner";
+
 import { PersonaForm } from "@/app/persona/_components/persona-form";
 import { useCreatePersona } from "@/app/persona/_lib/hooks";
 import { PersonaFormValues } from "@/app/persona/_lib/schema";
@@ -12,8 +15,23 @@ const FORM_ID = "form-new-persona";
 export function PersonaNew() {
   const { createPersona, isPending } = useCreatePersona();
 
-  async function onSubmitHandler(data: PersonaFormValues) {
-    await createPersona(data);
+  async function onSubmitHandler(
+    data: PersonaFormValues,
+    setError: UseFormSetError<PersonaFormValues>,
+  ) {
+    const result = await createPersona(data);
+    if (!result.success && result.error.details) {
+      for (const [field, messages] of Object.entries(result.error.details)) {
+        setError(field as keyof PersonaFormValues, {
+          message: messages.join("\n"),
+          type: "server",
+        });
+      }
+      return;
+    }
+    if (!result.success) {
+      toast.error(result.error.message);
+    }
   }
 
   return (
