@@ -1,6 +1,6 @@
 "use server";
 
-import { cacheTag, revalidateTag } from "next/cache";
+import { cacheTag, updateTag } from "next/cache";
 
 import {
   CHAT_CACHE_KEY,
@@ -58,7 +58,7 @@ export async function createChat({
     },
   });
 
-  revalidateTag(CHAT_CACHE_KEY, "max");
+  updateTag(CHAT_CACHE_KEY);
   return toChatDto(chat);
 }
 
@@ -109,14 +109,14 @@ export async function createChatMessageContent({
     });
   });
 
-  revalidateTag(`${CHAT_CACHE_KEY}-${chatId}`, "max");
+  updateTag(`${CHAT_CACHE_KEY}-${chatId}`);
   return toMessageContentDto(result);
 }
 
 export async function deleteChat(id: string) {
   await prisma.chat.delete({ where: { id } });
-  revalidateTag(CHAT_CACHE_KEY, "max");
-  revalidateTag(`${CHAT_CACHE_KEY}-${id}`, "max");
+  updateTag(CHAT_CACHE_KEY);
+  updateTag(`${CHAT_CACHE_KEY}-${id}`);
 }
 
 export async function deleteChatMessage(id: string) {
@@ -125,7 +125,7 @@ export async function deleteChatMessage(id: string) {
     where: { id },
   });
   await prisma.chatMessage.delete({ where: { id } });
-  if (message) revalidateTag(`${CHAT_CACHE_KEY}-${message.chatId}`, "max");
+  if (message) updateTag(`${CHAT_CACHE_KEY}-${message.chatId}`);
 }
 
 export async function getChatById(id: string): Promise<ChatDto | null> {
@@ -251,7 +251,7 @@ export async function updateMessageContent({
     select: { chatId: true },
     where: { id: result.messageId },
   });
-  if (message) revalidateTag(`${CHAT_CACHE_KEY}-${message.chatId}`, "max");
+  if (message) updateTag(`${CHAT_CACHE_KEY}-${message.chatId}`);
 
   return toMessageContentDto(result);
 }

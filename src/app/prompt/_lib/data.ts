@@ -1,6 +1,6 @@
 "use server";
 
-import { cacheTag, revalidateTag } from "next/cache";
+import { cacheTag, updateTag } from "next/cache";
 
 import {
   CreatePromptParams,
@@ -43,14 +43,14 @@ export async function createPrompt({
     include: { promptFragments: { orderBy: { order: "asc" } } },
   });
   const promptDto = toPromptDto(prompt);
-  revalidateTag(PROMPT_CACHE_KEY, "max");
+  updateTag(PROMPT_CACHE_KEY);
   return promptDto;
 }
 
 export async function deletePrompt(id: string): Promise<void> {
   await prisma.prompt.delete({ where: { id } });
-  revalidateTag(PROMPT_CACHE_KEY, "max");
-  revalidateTag(`${PROMPT_CACHE_KEY}-${id}`, "max");
+  updateTag(PROMPT_CACHE_KEY);
+  updateTag(`${PROMPT_CACHE_KEY}-${id}`);
 }
 
 export async function getPromptById(id: string): Promise<null | PromptDto> {
@@ -119,8 +119,8 @@ export async function updatePrompt({
     include: { promptFragments: { orderBy: { order: "asc" } } },
     where: { id },
   });
-  revalidateTag(PROMPT_CACHE_KEY, "max");
-  revalidateTag(`${PROMPT_CACHE_KEY}-${id}`, "max");
+  updateTag(PROMPT_CACHE_KEY);
+  updateTag(`${PROMPT_CACHE_KEY}-${id}`);
   return toPromptDto(result);
 }
 
