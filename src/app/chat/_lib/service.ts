@@ -6,8 +6,8 @@ import z from "zod";
 import { getCharacterById } from "@/app/character/_lib/data";
 import { createChatMessageContent, getChatSession } from "@/app/chat/_lib/data";
 import {
+  ChatMessageWithContentDto,
   ChatSessionDto,
-  messageDtoToAiMessage,
   MessagePart,
 } from "@/app/chat/_lib/schema";
 import {
@@ -15,7 +15,7 @@ import {
   getLorebookEntryList,
 } from "@/app/lorebook/_lib/data";
 import { LorebookStatus } from "@/app/lorebook/_lib/schema";
-import { getPersonaByIdOrFail } from "@/app/persona/_lib/data";
+import { getPersonaById } from "@/app/persona/_lib/data";
 import { PromptBuilder } from "@/app/prompt/_lib/prompt-builder";
 import { PromptFragmentType, PromptInjectTag } from "@/app/prompt/_lib/schema";
 import { getWorldById } from "@/app/world/_lib/data";
@@ -137,13 +137,13 @@ async function buildPromptFromChat({
     ? await getLorebookById(chat.lorebookId)
     : null;
   // TODO: return as part of chatSessionDTO
-  const persona = await getPersonaByIdOrFail(chat.persona.id);
+  const persona = await getPersonaById(chat.persona.id);
   const world = chat.world ? await getWorldById(chat.world.id) : null;
 
   const promptBuilder = new PromptBuilder({
     characterName: character.name,
     maxTokens: chat.prompt.maxTokens,
-    personaName: persona.name,
+    personaName: persona?.name ?? "",
     promptSkeleton: chat.prompt.promptFragments.map((frag) =>
       frag.type === PromptFragmentType.chatHistory
         ? { type: PromptFragmentType.chatHistory }
@@ -180,10 +180,12 @@ async function buildPromptFromChat({
     character.scenario,
   );
 
-  promptBuilder.addToPrompt(
-    PromptInjectTag.personaDescription,
-    persona.description,
-  );
+  if (persona) {
+    promptBuilder.addToPrompt(
+      PromptInjectTag.personaDescription,
+      persona.description,
+    );
+  }
   if (world) {
     promptBuilder.addToPrompt(
       PromptInjectTag.worldDescription,
@@ -200,4 +202,23 @@ async function buildPromptFromChat({
   promptBuilder.injectChatHistory(modelMessages);
 
   return promptBuilder.build();
+}
+
+function messageDtoToAiMessage(
+  chatMessage: Omit<ChatMessageWithContentDto, "chatId">,
+) {
+  const activeContent =
+    chatMessage.contents.find((msg) => msg.isActive) ?? chatMessage.contents[0];
+  if (!activeContent)
+    throw new Error(`No content for message ${chatMessage.id}`);
+
+  const content = activeContent.parts
+    .filter((part) => part.type === "text")
+    .map((part) => part.text)
+    .join("\n");
+
+  return {
+    content,
+    role: activeContent.role,
+  };
 }

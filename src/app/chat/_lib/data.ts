@@ -7,11 +7,10 @@ import {
   ChatDto,
   chatDtoSchema,
   ChatListDto,
-  chatListDtoSchema,
+  ChatMessageDto,
   ChatSessionDto,
   chatSessionDtoSchema,
   MessageContentDto,
-  messageContentDtoSchema,
 } from "@/app/chat/_lib/schema";
 import { Chat, ChatMessage, MessageContent } from "@/generated/client";
 import { NotFoundError } from "@/lib/error";
@@ -51,7 +50,7 @@ export interface UpdateMessageContentParams {
 
 export async function createChat({
   newChat,
-}: CreateChatParams): Promise<ChatListDto> {
+}: CreateChatParams): Promise<ChatDto> {
   const chat = await prisma.chat.create({
     data: {
       name: newChat.name,
@@ -60,17 +59,18 @@ export async function createChat({
   });
 
   revalidateTag(CHAT_CACHE_KEY, "max");
-  return chatListDtoSchema.parse(chat);
+  return toChatDto(chat);
 }
 
 export async function createChatMessage({
   newMessage,
-}: CreateChatMessageParams): Promise<void> {
-  await prisma.chatMessage.create({
+}: CreateChatMessageParams): Promise<ChatMessageDto> {
+  const chatMessage = await prisma.chatMessage.create({
     data: {
       chatId: newMessage.chatId,
     },
   });
+  return toChatMessageDto(chatMessage);
 }
 
 export async function createChatMessageContent({
@@ -110,16 +110,16 @@ export async function createChatMessageContent({
   });
 
   revalidateTag(`${CHAT_CACHE_KEY}-${chatId}`, "max");
-  return messageContentToDto(result);
+  return toMessageContentDto(result);
 }
 
-export async function deleteChat(id: string): Promise<void> {
+export async function deleteChat(id: string) {
   await prisma.chat.delete({ where: { id } });
   revalidateTag(CHAT_CACHE_KEY, "max");
   revalidateTag(`${CHAT_CACHE_KEY}-${id}`, "max");
 }
 
-export async function deleteChatMessage(id: string): Promise<void> {
+export async function deleteChatMessage(id: string) {
   const message = await prisma.chatMessage.findUnique({
     select: { chatId: true },
     where: { id },
@@ -182,6 +182,7 @@ export async function getChatSession({
     lastMessage.contents = fullContents;
   }
 
+  // Prompt fragment parsing gets complicated, letting zod handle it
   return chatSessionDtoSchema.parse({
     character: chat.story.character,
     id: chat.id,
@@ -213,11 +214,10 @@ export async function getChatsForStory(
 
   const result = await prisma.chat.findMany({
     orderBy: { createdAt: "desc" },
-    select: { id: true, name: true },
     where: { storyId },
   });
 
-  return chatListToDto(result);
+  return toChatListDto(result);
 }
 
 export async function updateMessageContent({
@@ -253,16 +253,35 @@ export async function updateMessageContent({
   });
   if (message) revalidateTag(`${CHAT_CACHE_KEY}-${message.chatId}`, "max");
 
-  return messageContentToDto(result);
+  return toMessageContentDto(result);
 }
 
-function chatListToDto(chatList: Partial<Chat>[]): ChatListDto[] {
-  return chatListDtoSchema.array().parse(chatList);
+function toChatDto(chat: Chat): ChatDto {
+  return {
+    createdAt: chat.createdAt,
+    id: chat.id,
+    modifiedAt: chat.modifiedAt,
+    name: chat.name,
+    storyId: chat.storyId,
+  };
 }
 
-function messageContentToDto(content: MessageContent): MessageContentDto {
-  return messageContentDtoSchema.parse({
-    ...content,
-    metadata: content.metadata ?? undefined,
-  });
+function toChatListDto(chatList: Chat[]): ChatListDto[] {
+  return chatList.map(({ id, name }) => ({ id, name }));
+}
+
+function toChatMessageDto(message: ChatMessage): ChatMessageDto {
+  return {
+    chatId: message.chatId,
+    id: message.id,
+  };
+}
+
+function toMessageContentDto(content: MessageContent): MessageContentDto {
+  return {
+    id: content.id,
+    isActive: content.isActive,
+    parts: content.parts,
+    role: content.role,
+  };
 }

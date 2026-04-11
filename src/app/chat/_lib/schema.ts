@@ -1,4 +1,4 @@
-import { UIDataTypes, UIMessage, UIMessagePart, UITools } from "ai";
+import { UIDataTypes, UIMessagePart, UITools } from "ai";
 import z from "zod";
 
 import { messageRoleSchema } from "@/app/_shared/schema";
@@ -9,6 +9,7 @@ export const CHAT_CACHE_KEY = "chat";
 
 // -- Base
 
+// trying to replicate these types DRY is a headache
 export const messagePartSchema = z.custom<MessagePart>();
 export type MessagePart = UIMessagePart<UIDataTypes, UITools>;
 
@@ -99,12 +100,18 @@ export const messageContentDtoSchema = baseMessageContentSchema.pick({
 });
 export type MessageContentDto = z.infer<typeof messageContentDtoSchema>;
 
-export const chatMessageDtoSchema = baseChatMessageSchema
-  .pick({
-    id: true,
-  })
-  .extend({ contents: messageContentDtoSchema.array() });
+export const chatMessageDtoSchema = baseChatMessageSchema.pick({
+  chatId: true,
+  id: true,
+});
 export type ChatMessageDto = z.infer<typeof chatMessageDtoSchema>;
+
+export const chatMessageWithContentDtoSchema = chatMessageDtoSchema.extend({
+  contents: messageContentDtoSchema.array(),
+});
+export type ChatMessageWithContentDto = z.infer<
+  typeof chatMessageWithContentDtoSchema
+>;
 
 export const chatSessionDtoSchema = baseChatSchema
   .pick({
@@ -118,7 +125,7 @@ export const chatSessionDtoSchema = baseChatSchema
       pngHash: z.string().min(1),
     }),
     lorebookId: dbIdValidator.optional(),
-    messages: chatMessageDtoSchema.array(),
+    messages: chatMessageWithContentDtoSchema.omit({ chatId: true }).array(),
     persona: z.object({
       id: dbIdValidator,
       imageHash: z.string().min(1),
@@ -141,36 +148,3 @@ export const chatSessionDtoSchema = baseChatSchema
     world: z.object({ id: dbIdValidator }).optional(),
   });
 export type ChatSessionDto = z.infer<typeof chatSessionDtoSchema>;
-
-// -- Mappers
-
-export function messageDtoToAiMessage(chatMessage: ChatMessageDto) {
-  const activeContent =
-    chatMessage.contents.find((msg) => msg.isActive) ?? chatMessage.contents[0];
-  if (!activeContent)
-    throw new Error(`No content for message ${chatMessage.id}`);
-
-  const content = activeContent.parts
-    .filter((part) => part.type === "text")
-    .map((part) => part.text)
-    .join("\n");
-
-  return {
-    content,
-    role: activeContent.role,
-  };
-}
-
-export function messageDtoToUIMessage(chatMessage: ChatMessageDto): UIMessage {
-  const activeContent =
-    chatMessage.contents.find((msg) => msg.isActive) ?? chatMessage.contents[0];
-  if (!activeContent)
-    throw new Error(`No content for message ${chatMessage.id}`);
-
-  return {
-    id: chatMessage.id,
-    metadata: activeContent.metadata,
-    parts: activeContent.parts,
-    role: activeContent.role,
-  };
-}

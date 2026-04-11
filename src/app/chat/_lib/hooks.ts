@@ -12,15 +12,14 @@ import {
   updateMessageContentAction,
 } from "@/app/chat/_lib/actions";
 import {
-  ChatMessageDto,
-  messageDtoToUIMessage,
+  ChatMessageWithContentDto,
   UpdateContentActionParams,
 } from "@/app/chat/_lib/schema";
 import { ActionError, ActionResponse } from "@/lib/action-utils";
 
 export function useChatMessages(
   chatId: string,
-  initialMessages: ChatMessageDto[],
+  initialMessages: ChatMessageWithContentDto[],
 ) {
   const [isSwipeGenerate, setIsSwipeGenerate] = useState(false);
   const [messageSwipes, setMessageSwipes] = useState<UIMessage[]>(
@@ -232,11 +231,27 @@ export function useUpdateMessageContent(
   };
 }
 
-function getMessageSwipes(message: ChatMessageDto): UIMessage[] {
+function getMessageSwipes(message: ChatMessageWithContentDto): UIMessage[] {
   return message.contents.map((con) => ({
     id: con.id,
     metadata: con.metadata,
     parts: con.parts,
     role: con.role,
   }));
+}
+
+function messageDtoToUIMessage(
+  chatMessage: ChatMessageWithContentDto,
+): UIMessage {
+  const activeContent =
+    chatMessage.contents.find((msg) => msg.isActive) ?? chatMessage.contents[0];
+  if (!activeContent)
+    throw new Error(`No content for message ${chatMessage.id}`);
+
+  return {
+    id: chatMessage.id,
+    metadata: activeContent.metadata,
+    parts: activeContent.parts,
+    role: activeContent.role,
+  };
 }
