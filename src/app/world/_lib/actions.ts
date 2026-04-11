@@ -1,24 +1,24 @@
 "use server";
 
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 
 import { createWorld, deleteWorld, updateWorld } from "@/app/world/_lib/data";
 import {
-  toWorldDto,
-  WorldDto,
+  UpdateWorldActionParams,
+  updateWorldActionParamsSchema,
   worldFormSchema,
   WorldFormValues,
 } from "@/app/world/_lib/schema";
-import { ActionResponse } from "@/lib/action-utils";
+import { ActionResponse, toActionResponseError } from "@/lib/action-utils";
+import { logger, parseError } from "@/lib/logger";
 import { dbIdValidator } from "@/lib/validators";
 
 export async function createWorldAction(
   data: WorldFormValues,
-): Promise<ActionResponse<{ id: string }>> {
+): Promise<ActionResponse> {
   const formParseResult = worldFormSchema.safeParse(data);
   if (!formParseResult.success) {
-    console.error(formParseResult.error);
-    return { error: "Malformed world data", success: false };
+    return toActionResponseError(formParseResult.error);
   }
   const { image, ...world } = formParseResult.data;
 
@@ -26,51 +26,45 @@ export async function createWorldAction(
   try {
     newWorld = await createWorld({ image, world });
   } catch (err) {
-    console.error(err);
-    return { error: "World create failed", success: false };
+    logger.error("Failed to create world", { world, ...parseError(err) });
+    return toActionResponseError(err);
   }
-  return { data: { id: newWorld.id }, success: true };
+  logger.info("World created", { id: newWorld.id });
+  redirect(`/world/${newWorld.id}`);
 }
 
 export async function deleteWorldAction(
   worldId: string,
-): Promise<ActionResponse<null>> {
+): Promise<ActionResponse> {
   const idParseResult = dbIdValidator.safeParse(worldId);
   if (!idParseResult.success) {
-    notFound();
+    return toActionResponseError(idParseResult.error);
   }
   const id = idParseResult.data;
+
   try {
     await deleteWorld(id);
   } catch (err) {
-    console.error(err);
-    return { error: "failed to delete world", success: false };
+    logger.error("Failed to delete world", { id, ...parseError(err) });
+    return toActionResponseError(err);
   }
-  return { data: null, success: true };
+  logger.info("World deleted", { id });
+  redirect("/world");
 }
 
 export async function updateWorldAction(
-  worldId: string,
-  data: WorldFormValues,
-): Promise<ActionResponse<WorldDto>> {
-  const formParseResult = worldFormSchema.safeParse(data);
-  if (!formParseResult.success) {
-    console.error(formParseResult.error);
-    return { error: "Malformed world data", success: false };
-  }
-  const idParseResult = dbIdValidator.safeParse(worldId);
-  if (!idParseResult.success) {
-    console.error(idParseResult.error);
-    return { error: "Malformed world data", success: false };
-  }
-  const id = idParseResult.data;
-  const { image, ...update } = formParseResult.data;
+  params: UpdateWorldActionParams,
+): Promise<ActionResponse> {
+  const parseResult = updateWorldActionParamsSchema.safeParse(params);
+  if (!parseResult.success) return toActionResponseError(parseResult.error);
+  const { id, update } = parseResult.data;
 
   try {
-    const updated = await updateWorld({ id, image, update });
-    return { data: toWorldDto(updated), success: true };
+    await updateWorld({ id, update });
   } catch (err) {
-    console.error(err);
-    return { error: "World update failed", success: false };
+    logger.error("Failed to update world", { id, update, ...parseError(err) });
+    return toActionResponseError(err);
   }
+  logger.info("World updated", { id });
+  return { success: true };
 }

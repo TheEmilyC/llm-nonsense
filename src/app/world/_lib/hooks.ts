@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTransition } from "react";
 
 import {
   createWorldAction,
@@ -8,79 +8,70 @@ import {
   updateWorldAction,
 } from "@/app/world/_lib/actions";
 import {
-  WORLD_CACHE_KEY,
+  UpdateWorldActionParams,
   WorldFormValues,
 } from "@/app/world/_lib/schema";
-import { unwrapAction } from "@/lib/action-utils";
+import { ActionError, ActionResponse } from "@/lib/action-utils";
 
 export interface UpdateWorldMutationParams {
   data: WorldFormValues;
   worldId: string;
 }
 
-export function useCreateWorld() {
-  const queryClient = useQueryClient();
+export function useCreateWorld(onError?: (error: ActionError) => void) {
+  const [isPending, startTransition] = useTransition();
 
-  const {
-    error,
-    isPending,
-    mutateAsync: createWorld,
-  } = useMutation({
-    mutationFn: async (data: WorldFormValues) =>
-      unwrapAction(await createWorldAction(data)),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [WORLD_CACHE_KEY, "list"] });
-    },
-  });
+  function createWorld(data: WorldFormValues): Promise<ActionResponse> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const res = await createWorldAction(data);
+        if (!res.success) onError?.(res.error);
+        resolve(res);
+      });
+    });
+  }
 
   return {
     createWorld,
-    error: error ? (error as Error).message : null,
     isPending,
   };
 }
 
-export function useDeleteWorld() {
-  const queryClient = useQueryClient();
+export function useDeleteWorld(onError?: (error: ActionError) => void) {
+  const [isPending, startTransition] = useTransition();
 
-  const {
-    error,
-    isPending,
-    mutateAsync: deleteWorld,
-  } = useMutation({
-    mutationFn: async ({ worldId }: { worldId: string }) =>
-      unwrapAction(await deleteWorldAction(worldId)),
-    onSuccess: (_, { worldId }) => {
-      queryClient.invalidateQueries({ queryKey: [WORLD_CACHE_KEY, "list"] });
-      queryClient.removeQueries({ queryKey: [WORLD_CACHE_KEY, worldId] });
-    },
-  });
+  function deleteWorld(id: string): Promise<ActionResponse> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const res = await deleteWorldAction(id);
+        if (!res.success) onError?.(res.error);
+        resolve(res);
+      });
+    });
+  }
 
   return {
     deleteWorld,
-    error: error ? (error as Error).message : null,
     isPending,
   };
 }
 
-export function useUpdateWorld() {
-  const queryClient = useQueryClient();
+export function useUpdateWorld(onError?: (error: ActionError) => void) {
+  const [isPending, startTransition] = useTransition();
 
-  const {
-    error,
-    isPending,
-    mutateAsync: updateWorld,
-  } = useMutation({
-    mutationFn: async ({ data, worldId }: UpdateWorldMutationParams) =>
-      unwrapAction(await updateWorldAction(worldId, data)),
-    onSuccess: (updated, { worldId }) => {
-      queryClient.invalidateQueries({ queryKey: [WORLD_CACHE_KEY, "list"] });
-      queryClient.setQueryData([WORLD_CACHE_KEY, worldId], updated);
-    },
-  });
+  function updateWorld(
+    params: UpdateWorldActionParams,
+  ): Promise<ActionResponse> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const res = await updateWorldAction(params);
+        if (!res.success) onError?.(res.error);
+        resolve(res);
+      });
+    });
+  }
 
   return {
-    error: error ? (error as Error).message : null,
     isPending,
     updateWorld,
   };

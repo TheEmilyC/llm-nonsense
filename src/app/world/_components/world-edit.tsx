@@ -1,10 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { UseFormSetError } from "react-hook-form";
+import { toast } from "sonner";
 
 import { WorldForm } from "@/app/world/_components/world-form";
 import { useDeleteWorld, useUpdateWorld } from "@/app/world/_lib/hooks";
 import { WorldDto, WorldFormValues } from "@/app/world/_lib/schema";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
@@ -16,20 +18,33 @@ interface WorldEditParams {
 }
 
 export function WorldEdit({ world }: WorldEditParams) {
-  const router = useRouter();
   const { deleteWorld, isPending: isDeletePending } = useDeleteWorld();
   const { isPending: isUpdatePending, updateWorld } = useUpdateWorld();
 
   const isPending = isDeletePending || isUpdatePending;
 
   async function deleteHandler() {
-    if (!confirm(`Delete "${world?.name}"? This cannot be undone.`)) return;
-    await deleteWorld({ worldId: world.id });
-    router.push(`/world`);
+    const result = await deleteWorld(world.id);
+    if (!result.success) toast.error(result.error.message);
   }
 
-  async function onSubmitHandler(data: WorldFormValues) {
-    await updateWorld({ data, worldId: world.id });
+  async function onSubmitHandler(
+    update: WorldFormValues,
+    setError: UseFormSetError<WorldFormValues>,
+  ) {
+    const result = await updateWorld({ id: world.id, update });
+    if (!result.success && result.error.details) {
+      for (const [field, messages] of Object.entries(result.error.details)) {
+        setError(field as keyof WorldFormValues, {
+          message: messages.join("\n"),
+          type: "server",
+        });
+      }
+      return;
+    }
+    if (!result.success) {
+      toast.error(result.error.message);
+    }
   }
 
   return (
@@ -39,15 +54,21 @@ export function WorldEdit({ world }: WorldEditParams) {
         backLinkLabel="Worlds"
         pageTitle={world.name}
       >
-        <Button
-          disabled={isPending}
-          onClick={deleteHandler}
-          size="sm"
-          type="button"
-          variant="destructive"
+        <ConfirmDialog
+          description={`Delete ${world.name}? This can not be undone`}
+          onConfirm={deleteHandler}
+          title="Delete World?"
+          type="delete"
         >
-          {isDeletePending ? "Deleting..." : "Delete"}
-        </Button>
+          <Button
+            disabled={isPending}
+            size="sm"
+            type="button"
+            variant="destructive"
+          >
+            {isDeletePending ? "Deleting..." : "Delete"}
+          </Button>
+        </ConfirmDialog>
         <Button disabled={isPending} form={FORM_ID} size="sm" type="submit">
           {isUpdatePending ? "Saving..." : "Save"}
         </Button>
