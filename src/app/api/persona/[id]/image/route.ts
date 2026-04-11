@@ -1,16 +1,19 @@
 import fs from "fs/promises";
 import { NextResponse } from "next/server";
 
-import { getPersonaById } from "@/app/persona/_lib/data";
+import { getPersonaImageFile } from "@/app/persona/_lib/data";
 import { HttpStatus } from "@/lib/http";
+import { dbIdValidator } from "@/lib/validators";
 
 interface Params {
   params: Promise<{ id: string }>;
 }
 
 export async function GET(_req: Request, { params }: Params) {
-  const { id } = await params;
-  const persona = await getPersonaById(id);
+  const { id: idRaw } = await params;
+  const id = dbIdValidator.parse(idRaw);
+
+  const persona = await getPersonaImageFile(id);
   if (!persona) {
     return new NextResponse("Image not found", {
       status: HttpStatus.NOT_FOUND,

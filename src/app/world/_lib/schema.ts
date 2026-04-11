@@ -65,3 +65,9 @@ export const worldDtoSchema = baseWorldSchema
     imageUrl: z.string().min(1),
   });
 export type WorldDto = z.infer<typeof worldDtoSchema>;
+
+export const worldImageFileDtoSchema = baseWorldSchema.pick({
+  id: true,
+  image: true,
+});
+export type WorldImageFileDto = z.infer<typeof worldImageFileDtoSchema>;

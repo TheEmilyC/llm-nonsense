@@ -7,6 +7,7 @@ import path, { join } from "path";
 import {
   WORLD_CACHE_KEY,
   WorldDto,
+  WorldImageFileDto,
   WorldListDto,
 } from "@/app/world/_lib/schema";
 import { World } from "@/generated/client";
@@ -81,6 +82,14 @@ export async function getWorldById(id: string): Promise<null | WorldDto> {
   const worldEntity = await getWorldEntityById(id);
   if (!worldEntity) return null;
   return toWorldDto(worldEntity);
+}
+
+export async function getWorldImageFile(
+  id: string,
+): Promise<null | WorldImageFileDto> {
+  const result = await getWorldEntityById(id);
+  if (!result) return null;
+  return toWorldImageFileDto(result);
 }
 
 export async function getWorldList(): Promise<WorldListDto[]> {
@@ -169,6 +178,12 @@ function toWorldDto({ description, id, imageHash, name }: World): WorldDto {
     imageUrl: buildWorldImageUrl({ id, imageHash }),
     name: name,
   };
+}
+
+function toWorldImageFileDto(
+  persona: Pick<World, "id" | "image">,
+): WorldImageFileDto {
+  return { id: persona.id, image: persona.image };
 }
 
 function toWorldListDto(worlds: Pick<World, "id" | "imageHash" | "name">[]) {

@@ -8,7 +8,6 @@ import {
   PERSONA_CACHE_KEY,
   PersonaDto,
   PersonaImageFileDto,
-  personaImageFileDtoSchema,
   PersonaListDto,
 } from "@/app/persona/_lib/schema";
 import { Persona } from "@/generated/client";
@@ -95,7 +94,7 @@ export async function getPersonaImageFile(
 ): Promise<null | PersonaImageFileDto> {
   const result = await getPersonaEntityById(id);
   if (!result) return null;
-  return personaImageFileDtoSchema.parse(result);
+  return toPersonaImageFileDto(result);
 }
 
 export async function getPersonaList(): Promise<PersonaListDto[]> {
@@ -186,6 +185,12 @@ function toPersonaDto(persona: Persona): PersonaDto {
     modifiedAt: persona.modifiedAt,
     name: persona.name,
   };
+}
+
+function toPersonaImageFileDto(
+  persona: Pick<Persona, "id" | "image">,
+): PersonaImageFileDto {
+  return { id: persona.id, image: persona.image };
 }
 
 function toPersonaListDto(personas: Persona[]): PersonaListDto[] {
