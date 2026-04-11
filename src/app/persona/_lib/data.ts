@@ -134,7 +134,7 @@ export async function updatePersona({
   return personaDto;
 }
 
-function getPersonaEntityById(id: string): Promise<null | Persona> {
+async function getPersonaEntityById(id: string): Promise<null | Persona> {
   "use cache";
   cacheTag(`${PERSONA_CACHE_KEY}-${id}`);
   return prisma.persona.findUnique({ where: { id } });
