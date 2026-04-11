@@ -1,29 +1,21 @@
 # LLM Nonsense
 
+> **Work in progress.** Expect rough edges, missing features, and breaking changes.
+
 A local-first AI character chat app built with Next.js. Create characters, define personas, craft stories, and chat with AI using configurable LLM backends.
 
-## Features
+## Obsidian Lorebooks
 
-- **Characters** — Create and manage AI characters. Supports importing character cards from PNG files (V2 spec).
-- **Personas** — Define user personas that shape how the AI responds to you.
-- **Stories** — Set up story contexts that characters chat within.
-- **Chat** — Streaming chat interface powered by the AI SDK with markdown and code block rendering.
-
-## Obsidian Lorebooks - Writing Lorebook Notes
-
-Tag any Obsidian note with `#lorebook` (configurable) and add a `keys` field in the YAML frontmatter:
+Tag any Obsidian note with `#lorebook` to make it available as a lorebook entry. The AI can retrieve entries during chat via tool calls — entries are fetched on demand rather than injected by keyword matching.
 
 ```markdown
 ---
+title: Eris
 tags:
   - lorebook
-keys:
-  - Eris
-  - goddess of discord
-priority: 10
+summary: Goddess of discord and strife; carries the golden apple.
+constant: false
 ---
-
-# Eris
 
 Eris is the goddess of discord and strife. She carries a golden apple
 inscribed "To the Fairest" which she uses to sow chaos among mortals
@@ -32,50 +24,49 @@ and gods alike.
 
 ### Frontmatter Fields
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `tags` | array | (required) | Must include your lorebook tag (default: `lorebook`) |
-| `keys` | array | `[]` | Keywords that trigger this entry when found in chat |
-| `priority` | number | `100` | Sort order (lower = injected first) |
-| `constant` | boolean | `false` | Always inject regardless of keywords |
-| `enabled` | boolean | `true` | Set to `false` to skip this note |
-| `scanDepth` | number | (global) | Override the global scan depth for this entry |
-| `excludeRecursion` | boolean | `false` | Don't scan this entry's content during recursive matching |
-| `requires` | array | `[]` | Entry titles that must ALL be matched for this entry to activate |
-| `excludes` | array | `[]` | Entry titles that, if ANY are matched, block this entry |
-| `position` | string | (global) | Injection position override: `before`, `after`, or `in_chat` |
-| `depth` | number | (global) | Injection depth override (for `in_chat` position) |
-| `role` | string | (global) | Message role override: `system`, `user`, or `assistant` |
-| `cooldown` | number | (none) | After triggering, skip this entry for N generations |
-| `warmup` | number | (none) | Require keyword to appear N times before triggering (must be >1) |
+| Field      | Type    | Default    | Description                                            |
+| ---------- | ------- | ---------- | ------------------------------------------------------ |
+| `title`    | string  | (filename) | Display name for the entry                             |
+| `tags`     | array   | (required) | Must include your lorebook tag (default: `#lorebook`)  |
+| `summary`  | string  | `""`       | Short description shown to the AI when listing entries |
+| `constant` | boolean | `false`    | Always include this entry in every request             |
 
 ### Special Tags
 
-- **`#lorebook`** -- Marks a note as a lorebook entry (configurable in settings)
-- **`#lorebook-always`** -- Forces the note to always be injected, like `constant: true`
-- **`#lorebook-never`** -- Prevents the note from ever being injected, even if keywords match
+- **`#lorebook`** — Marks a note as a lorebook entry (configurable via `LOREBOOK_TAG`)
+- **`#lorebook-always`** — Forces the note to always be included, like `constant: true`
+- **`#lorebook-never`** — Prevents the note from ever being included
 
 ## Tech Stack
 
 - [Next.js 16](https://nextjs.org) — App router, API routes
-- [AI SDK](https://sdk.vercel.ai) — Streaming LLM integration (DeepSeek, OpenRouter)
-- [Drizzle ORM](https://orm.drizzle.team) + SQLite (`better-sqlite3`) — Local database
-- [shadcn/ui](https://ui.shadcn.com) + [prompt-kit](https://prompt-kit.com) — UI components
-- [TanStack Query](https://tanstack.com/query) — Data fetching and caching
+- [AI SDK](https://sdk.vercel.ai) — Streaming LLM integration
+- [Prisma](https://www.prisma.io) + SQLite (`better-sqlite3`) — Local database
+- [shadcn/ui](https://ui.shadcn.com) + [Radix UI](https://www.radix-ui.com) — UI components
+- [Tailwind CSS v4](https://tailwindcss.com) — Styling
 - [React Hook Form](https://react-hook-form.com) + [Zod](https://zod.dev) — Forms and validation
 
-## Getting Started
+## Setup
+
+Copy `.env.example` to `.env` and fill in your values:
 
 ```bash
-pnpm install
+cp .env.example .env
 ```
 
-Copy `.env.example` to `.env.local` and set your API keys.
+At minimum you'll need an API key for at least one LLM provider (`OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, or `ANTHROPIC_API_KEY`). The Obsidian fields are optional.
+
+On first download and after each update run:
 
 ```bash
-pnpm db-generate
-pnpm db-migrate
-pnpm dev
+docker compose up --build
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+It will take some time to build then start. The container starts on the host network so it can see the obsidian API server without changing the binding address.
+in the future start with:
+
+```bash
+docker compose up
+```
+
+Open [http://localhost:3010](http://localhost:3010).
