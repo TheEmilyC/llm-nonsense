@@ -8,7 +8,6 @@ import {
   PromptDto,
   promptDtoSchema,
   PromptListItemDto,
-  promptListItemDtoSchema,
   UpdatePromptParams,
 } from "@/app/prompt/_lib/schema";
 import { Prompt, PromptFragment } from "@/generated/client";
@@ -30,9 +29,6 @@ export async function createPrompt({
       maxSteps,
       maxTokens,
       name,
-      temperature,
-      topK,
-      topP,
       promptFragments: promptFragments
         ? {
             createMany: {
@@ -40,10 +36,13 @@ export async function createPrompt({
             },
           }
         : undefined,
+      temperature,
+      topK,
+      topP,
     },
     include: { promptFragments: { orderBy: { order: "asc" } } },
   });
-  const promptDto = toDto(prompt);
+  const promptDto = toPromptDto(prompt);
   revalidateTag(PROMPT_CACHE_KEY, "max");
   return promptDto;
 }
@@ -64,7 +63,7 @@ export async function getPromptById(id: string): Promise<null | PromptDto> {
   });
   if (!prompt) return null;
 
-  const promptDto = toDto(prompt);
+  const promptDto = toPromptDto(prompt);
   return promptDto;
 }
 
@@ -82,7 +81,7 @@ export async function getPromptList(): Promise<PromptListItemDto[]> {
     select: { createdAt: true, id: true, name: true },
   });
 
-  const listDto = toListDto(promptList);
+  const listDto = toPromptListDto(promptList);
 
   return listDto;
 }
@@ -97,9 +96,6 @@ export async function updatePrompt({
       maxSteps: update.maxSteps,
       maxTokens: update.maxTokens,
       name: update.name,
-      temperature: update.temperature,
-      topK: update.topK,
-      topP: update.topP,
       promptFragments: update.promptFragments
         ? {
             deleteMany: {
@@ -116,23 +112,26 @@ export async function updatePrompt({
             })),
           }
         : undefined,
+      temperature: update.temperature,
+      topK: update.topK,
+      topP: update.topP,
     },
     include: { promptFragments: { orderBy: { order: "asc" } } },
     where: { id },
   });
   revalidateTag(PROMPT_CACHE_KEY, "max");
   revalidateTag(`${PROMPT_CACHE_KEY}-${id}`, "max");
-  return toDto(result);
+  return toPromptDto(result);
 }
 
-function toDto(
+function toPromptDto(
   prompt: Prompt & { promptFragments: PromptFragment[] },
 ): PromptDto {
   return promptDtoSchema.parse(prompt);
 }
 
-function toListDto(
+function toPromptListDto(
   list: Pick<Prompt, "createdAt" | "id" | "name">[],
 ): PromptListItemDto[] {
-  return promptListItemDtoSchema.array().parse(list);
+  return list.map(({ createdAt, id, name }) => ({ createdAt, id, name }));
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { UseFormSetError } from "react-hook-form";
+import { toast } from "sonner";
 
 import { PromptForm } from "@/app/prompt/_component/prompt-form";
 import { useCreatePrompt } from "@/app/prompt/_lib/hooks";
@@ -146,12 +147,25 @@ const DEFAULT_PROMPT: PromptFormValues = {
 };
 
 export function PromptNew() {
-  const router = useRouter();
   const { createPrompt, isPending } = useCreatePrompt();
 
-  async function onSubmitHandler(data: PromptFormValues) {
-    const { id } = await createPrompt(data);
-    router.push(`/prompt/${id}`);
+  async function onSubmitHandler(
+    data: PromptFormValues,
+    setError: UseFormSetError<PromptFormValues>,
+  ) {
+    const result = await createPrompt(data);
+    if (!result.success && result.error.details) {
+      for (const [field, messages] of Object.entries(result.error.details)) {
+        setError(field as keyof PromptFormValues, {
+          message: messages.join("\n"),
+          type: "server",
+        });
+      }
+      return;
+    }
+    if (!result.success) {
+      toast.error(result.error.message);
+    }
   }
 
   return (

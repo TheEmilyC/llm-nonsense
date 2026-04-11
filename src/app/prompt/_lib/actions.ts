@@ -1,6 +1,6 @@
 "use server";
 
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 
 import {
   createPrompt,
@@ -9,22 +9,25 @@ import {
 } from "@/app/prompt/_lib/data";
 import {
   CreatePromptParams,
+  PromptDto,
   promptFormSchema,
   PromptFormValues,
   promptFragmentCreateSchema,
   promptFragmentUpdateSchema,
+  UpdatePromptActionParams,
+  updatePromptActionParamsSchema,
   UpdatePromptParams,
 } from "@/app/prompt/_lib/schema";
-import { ActionResponse } from "@/lib/action-utils";
+import { ActionResponse, toActionResponseError } from "@/lib/action-utils";
+import { logger, parseError } from "@/lib/logger";
 import { dbIdValidator } from "@/lib/validators";
 
 export async function createPromptAction(
   data: PromptFormValues,
-): Promise<ActionResponse<{ id: string }>> {
+): Promise<ActionResponse> {
   const parseResult = promptFormSchema.safeParse(data);
   if (!parseResult.success) {
-    console.error(parseResult.error);
-    return { error: "Malformed prompt data", success: false };
+    return toActionResponseError(parseResult.error);
   }
   const {
     maxOutputTokens,
@@ -48,55 +51,52 @@ export async function createPromptAction(
     topK,
     topP,
   };
+  let prompt: PromptDto;
   try {
-    const prompt = await createPrompt(newPrompt);
-    return { data: { id: prompt.id }, success: true };
+    prompt = await createPrompt(newPrompt);
   } catch (err) {
-    console.error(err);
-    return { error: "Prompt create failed", success: false };
+    logger.error("Failed to create prompt", { data, ...parseError(err) });
+    return toActionResponseError(err);
   }
+  logger.info("Prompt created", { id: prompt.id });
+  redirect(`/prompt/${prompt.id}`);
 }
 
 export async function deletePromptAction(
   promptId: string,
-): Promise<ActionResponse<null>> {
+): Promise<ActionResponse> {
   const idParseResult = dbIdValidator.safeParse(promptId);
   if (!idParseResult.success) {
-    notFound();
+    return toActionResponseError(idParseResult.error);
   }
+  const id = idParseResult.data;
   try {
-    await deletePrompt(idParseResult.data);
+    await deletePrompt(id);
   } catch (err) {
-    console.error(err);
-    return { error: "Failed to delete prompt", success: false };
+    logger.error("Failed to delete prompt", { id, ...parseError(err) });
+    return toActionResponseError(err);
   }
-  return { data: null, success: true };
+  logger.info("Prompt deleted", { id });
+  redirect("/prompt");
 }
 
 export async function updatePromptAction(
-  promptId: string,
-  data: PromptFormValues,
-): Promise<ActionResponse<{ id: string }>> {
-  const idParseResult = dbIdValidator.safeParse(promptId);
-  if (!idParseResult.success) {
-    console.error(idParseResult.error);
-    return { error: "Malformed prompt id", success: false };
-  }
-  const id = idParseResult.data;
-  const parseResult = promptFormSchema.safeParse(data);
-  if (!parseResult.success) {
-    console.error(parseResult.error);
-    return { error: "Malformed prompt data", success: false };
-  }
+  params: UpdatePromptActionParams,
+): Promise<ActionResponse> {
+  const parseResult = updatePromptActionParamsSchema.safeParse(params);
+  if (!parseResult.success) return toActionResponseError(parseResult.error);
   const {
-    maxOutputTokens,
-    maxSteps,
-    maxTokens,
-    name,
-    promptFragments: rawFragments,
-    temperature,
-    topK,
-    topP,
+    id,
+    update: {
+      maxOutputTokens,
+      maxSteps,
+      maxTokens,
+      name,
+      promptFragments: rawFragments,
+      temperature,
+      topK,
+      topP,
+    },
   } = parseResult.data;
 
   const updateData: UpdatePromptParams = {
@@ -114,11 +114,16 @@ export async function updatePromptAction(
       topP,
     },
   };
+
   try {
-    const updated = await updatePrompt(updateData);
-    return { data: { id: updated.id }, success: true };
+    await updatePrompt(updateData);
   } catch (err) {
-    console.error(err);
-    return { error: "Prompt update failed", success: false };
+    logger.error("Failed to update prompt", {
+      data: parseResult.data,
+      ...parseError(err),
+    });
+    return toActionResponseError(err);
   }
+  logger.info("Prompt updated", { id });
+  return { success: true };
 }
