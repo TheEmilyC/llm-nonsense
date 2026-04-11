@@ -125,7 +125,7 @@ export const chatSessionDtoSchema = baseChatSchema
       pngHash: z.string().min(1),
     }),
     lorebookId: dbIdValidator.optional(),
-    messages: chatMessageWithContentDtoSchema.omit({ chatId: true }).array(),
+    messages: chatMessageWithContentDtoSchema.array(),
     persona: z.object({
       id: dbIdValidator,
       imageHash: z.string().min(1),

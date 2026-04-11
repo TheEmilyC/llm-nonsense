@@ -188,6 +188,7 @@ export async function getChatSession({
     id: chat.id,
     lorebookId: chat.story.lorebookId ?? undefined,
     messages: chat.messages.map((msg) => ({
+      chatId: msg.chatId,
       contents: msg.contents.map((con) => ({
         id: con.id,
         isActive: con.isActive,
