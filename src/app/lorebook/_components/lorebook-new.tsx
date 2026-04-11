@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { UseFormSetError } from "react-hook-form";
+import { toast } from "sonner";
 
 import { LorebookForm } from "@/app/lorebook/_components/lorebook-form";
 import { useCreateLorebook } from "@/app/lorebook/_lib/hooks";
@@ -12,12 +13,25 @@ import { Button } from "@/components/ui/button";
 const FORM_ID = "form-new-lorebook";
 
 export function LorebookNew() {
-  const router = useRouter();
   const { createLorebook, isPending } = useCreateLorebook();
 
-  async function onSubmitHandler(data: LorebookFormValues) {
-    const { id } = await createLorebook(data);
-    router.push(`/lorebook/${id}`);
+  async function onSubmitHandler(
+    data: LorebookFormValues,
+    setError: UseFormSetError<LorebookFormValues>,
+  ) {
+    const result = await createLorebook(data);
+    if (!result.success && result.error.details) {
+      for (const [field, messages] of Object.entries(result.error.details)) {
+        setError(field as keyof LorebookFormValues, {
+          message: messages.join("\n"),
+          type: "server",
+        });
+      }
+      return;
+    }
+    if (!result.success) {
+      toast.error(result.error.message);
+    }
   }
 
   return (

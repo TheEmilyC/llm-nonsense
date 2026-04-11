@@ -12,22 +12,22 @@ export function buildCharacterImageUrl({
 
 export function buildPersonaImageUrl({
   id,
-  imgHash,
+  imageHash,
 }: {
   id: string;
-  imgHash: string;
+  imageHash: string;
 }): string {
-  return `/api/persona/${id}/image?v=${imgHash}`;
+  return `/api/persona/${id}/image?v=${imageHash}`;
 }
 
 export function buildWorldImageUrl({
   id,
-  imgHash,
+  imageHash,
 }: {
   id: string;
-  imgHash: string;
+  imageHash: string;
 }): string {
-  return `/api/world/${id}/image?v=${imgHash}`;
+  return `/api/world/${id}/image?v=${imageHash}`;
 }
 
 export function createImageHash(imageBuffer: Buffer) {

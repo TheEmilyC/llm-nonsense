@@ -107,7 +107,7 @@ model World {
 model Lorebook {
   id         String   @id @default(cuid())
   name       String
-  apiKey     String
+  apiKey     String // Server is never available outside localhost, api key is a throw away
   port       Int
   stories    Story[]
   createdAt  DateTime @default(now())
@@ -118,11 +118,11 @@ model Prompt {
   id              String           @id @default(cuid())
   name            String
   maxTokens       Int              @default(80000)
-  maxOutputTokens Int     @default(9000)
-  maxSteps        Int     @default(20)
-  temperature     Float   @default(0.9)
-  topK            Int     @default(64)
-  topP            Float   @default(0.95)
+  maxOutputTokens Int              @default(9000)
+  maxSteps        Int              @default(20)
+  temperature     Float            @default(0.9)
+  topK            Int              @default(64)
+  topP            Float            @default(0.95)
   promptFragments PromptFragment[]
   createdAt       DateTime         @default(now())
   modifiedAt      DateTime         @default(now()) @updatedAt

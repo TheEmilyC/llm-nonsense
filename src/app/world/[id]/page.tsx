@@ -4,7 +4,6 @@ import z from "zod";
 
 import { WorldEdit } from "@/app/world/_components/world-edit";
 import { getWorldById } from "@/app/world/_lib/data";
-import { toWorldDto } from "@/app/world/_lib/schema";
 import { dbIdValidator } from "@/lib/validators";
 
 interface WorldPageParams {
@@ -28,5 +27,5 @@ async function WorldEditPageContent({ params }: WorldPageParams) {
   const world = await getWorldById(id);
   if (!world) notFound();
 
-  return <WorldEdit world={toWorldDto(world)} />;
+  return <WorldEdit world={world} />;
 }

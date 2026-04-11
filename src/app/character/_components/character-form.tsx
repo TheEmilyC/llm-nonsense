@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, UseFormSetError } from "react-hook-form";
 
 import {
   characterFormSchema,
@@ -17,7 +17,10 @@ interface CharacterFormProps {
   defaultValues?: CharacterFormValues;
   formId: string;
   imageSrc?: string;
-  onSubmit: (data: CharacterFormValues) => void;
+  onSubmit: (
+    data: CharacterFormValues,
+    setError: UseFormSetError<CharacterFormValues>,
+  ) => void;
 }
 
 export function CharacterForm({
@@ -42,7 +45,7 @@ export function CharacterForm({
   });
 
   return (
-    <form id={formId} onSubmit={form.handleSubmit(onSubmit)}>
+    <form id={formId} onSubmit={form.handleSubmit((data) => onSubmit(data, form.setError))}>
       <FieldGroup>
         <div className="grid grid-cols-3 gap-4">
           <div className="col-span-1">

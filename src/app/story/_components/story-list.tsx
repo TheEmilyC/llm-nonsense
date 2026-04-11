@@ -1,11 +1,12 @@
 "use client";
 import Link from "next/link";
 
+import { StoryListItemDto } from "@/app/story/_lib/schema";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
 
 interface StoriesListParams {
-  stories: { id: string; name: string }[];
+  stories: StoryListItemDto[];
 }
 
 export function StoriesList({ stories }: StoriesListParams) {

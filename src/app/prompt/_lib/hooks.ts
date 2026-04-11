@@ -1,83 +1,71 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTransition } from "react";
 
 import {
   createPromptAction,
   deletePromptAction,
   updatePromptAction,
 } from "@/app/prompt/_lib/actions";
-import { PROMPT_CACHE_KEY, PromptFormValues } from "@/app/prompt/_lib/schema";
-import { unwrapAction } from "@/lib/action-utils";
+import {
+  PromptFormValues,
+  UpdatePromptActionParams,
+} from "@/app/prompt/_lib/schema";
+import { ActionError, ActionResponse } from "@/lib/action-utils";
 
-export function useCreatePrompt() {
-  const queryClient = useQueryClient();
+export function useCreatePrompt(onError?: (error: ActionError) => void) {
+  const [isPending, startTransition] = useTransition();
 
-  const {
-    error,
-    isPending,
-    mutateAsync: createPrompt,
-  } = useMutation({
-    mutationFn: async (data: PromptFormValues) =>
-      unwrapAction(await createPromptAction(data)),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [PROMPT_CACHE_KEY, "list"] });
-    },
-  });
-
+  function createPrompt(data: PromptFormValues): Promise<ActionResponse> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const res = await createPromptAction(data);
+        if (!res.success) onError?.(res.error);
+        resolve(res);
+      });
+    });
+  }
   return {
     createPrompt,
-    error: error ? (error as Error).message : null,
     isPending,
   };
 }
 
-export function useDeletePrompt() {
-  const queryClient = useQueryClient();
+export function useDeletePrompt(onError?: (error: ActionError) => void) {
+  const [isPending, startTransition] = useTransition();
 
-  const {
-    error,
-    isPending,
-    mutateAsync: deletePrompt,
-  } = useMutation({
-    mutationFn: async ({ promptId }: { promptId: string }) =>
-      unwrapAction(await deletePromptAction(promptId)),
-    onSuccess: (_, { promptId }) => {
-      queryClient.invalidateQueries({ queryKey: [PROMPT_CACHE_KEY, "list"] });
-      queryClient.removeQueries({ queryKey: [PROMPT_CACHE_KEY, promptId] });
-    },
-  });
+  function deletePrompt(id: string): Promise<ActionResponse> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const res = await deletePromptAction(id);
+        if (!res.success) onError?.(res.error);
+        resolve(res);
+      });
+    });
+  }
 
   return {
     deletePrompt,
-    error: error ? (error as Error).message : null,
     isPending,
   };
 }
 
-export function useUpdatePrompt() {
-  const queryClient = useQueryClient();
+export function useUpdatePrompt(onError?: (error: ActionError) => void) {
+  const [isPending, startTransition] = useTransition();
 
-  const {
-    error,
-    isPending,
-    mutateAsync: updatePrompt,
-  } = useMutation({
-    mutationFn: async ({
-      data,
-      promptId,
-    }: {
-      data: PromptFormValues;
-      promptId: string;
-    }) => unwrapAction(await updatePromptAction(promptId, data)),
-    onSuccess: (_, { promptId }) => {
-      queryClient.invalidateQueries({ queryKey: [PROMPT_CACHE_KEY, "list"] });
-      queryClient.invalidateQueries({ queryKey: [PROMPT_CACHE_KEY, promptId] });
-    },
-  });
+  function updatePrompt(
+    params: UpdatePromptActionParams,
+  ): Promise<ActionResponse> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const res = await updatePromptAction(params);
+        if (!res.success) onError?.(res.error);
+        resolve(res);
+      });
+    });
+  }
 
   return {
-    error: error ? (error as Error).message : null,
     isPending,
     updatePrompt,
   };

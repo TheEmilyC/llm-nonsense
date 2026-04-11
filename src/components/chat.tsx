@@ -16,22 +16,13 @@ import Image from "next/image";
 import { ReactNode, useState } from "react";
 
 import { ChatProfile } from "@/app/chat/_lib/schema";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import {
   ChatContainerContent,
   ChatContainerRoot,
   ChatContainerScrollAnchor,
 } from "@/components/ui/chat-container";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import {
   Message,
   MessageAction,
@@ -295,35 +286,16 @@ export function ChatMessage({
                       </button>
                     </MessageAction>
                     <MessageAction tooltip="Delete">
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <button className="p-1 hover:text-destructive transition-colors">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </DialogTrigger>
-                        <DialogContent showCloseButton={false}>
-                          <DialogHeader>
-                            <DialogTitle>Delete message?</DialogTitle>
-                            <DialogDescription>
-                              This will permanently delete this message and all its swipes.
-                            </DialogDescription>
-                          </DialogHeader>
-                          <DialogFooter>
-                            <DialogClose asChild>
-                              <Button size="sm" variant="outline">Cancel</Button>
-                            </DialogClose>
-                            <DialogClose asChild>
-                              <Button
-                                onClick={onDelete}
-                                size="sm"
-                                variant="destructive"
-                              >
-                                Delete
-                              </Button>
-                            </DialogClose>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
+                      <ConfirmDialog
+                        description="This will permanently delete this message and all its swipes."
+                        onConfirm={onDelete}
+                        title="Delete message?"
+                        type="delete"
+                      >
+                        <button className="p-1 hover:text-destructive transition-colors">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </ConfirmDialog>
                     </MessageAction>
                   </MessageActions>
                 </div>

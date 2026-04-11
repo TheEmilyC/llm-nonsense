@@ -5,6 +5,8 @@ import { dbIdValidator } from "@/lib/validators";
 
 export const PROMPT_CACHE_KEY = "prompt";
 
+// -- Base
+
 export enum PromptFragmentType {
   chatHistory = "chatHistory",
   content = "content",
@@ -24,14 +26,14 @@ export enum PromptInjectTag {
 const basePromptSchema = z.object({
   createdAt: z.date(),
   id: dbIdValidator,
-  maxTokens: z.number(),
   maxOutputTokens: z.number().int().positive(),
   maxSteps: z.number().int().positive(),
+  maxTokens: z.number(),
+  modifiedAt: z.date(),
+  name: z.string().min(1, "Name is required"),
   temperature: z.number().min(0).max(1),
   topK: z.number().int().positive(),
   topP: z.number().min(0).max(1),
-  modifiedAt: z.date(),
-  name: z.string().min(1, "Name is required"),
 });
 
 const baseFragmentSchema = z.object({
@@ -40,6 +42,17 @@ const baseFragmentSchema = z.object({
   name: z.string().min(1, "Name is required"),
   order: z.number(),
 });
+
+const promptSettingsFields = {
+  maxOutputTokens: true,
+  maxSteps: true,
+  maxTokens: true,
+  temperature: true,
+  topK: true,
+  topP: true,
+} as const;
+
+// -- Schema
 
 const contentFragmentSchema = baseFragmentSchema.extend({
   content: z.string().min(1),
@@ -57,13 +70,6 @@ const chatHistoryFragmentSchema = baseFragmentSchema.extend({
   type: z.literal(PromptFragmentType.chatHistory),
 });
 
-export const promptFragmentDtoSchema = z.discriminatedUnion("type", [
-  contentFragmentSchema,
-  injectFragmentSchema,
-  chatHistoryFragmentSchema,
-]);
-export type PromptFragmentDto = z.infer<typeof promptFragmentDtoSchema>;
-
 export const promptFragmentCreateSchema = z.discriminatedUnion("type", [
   contentFragmentSchema.omit({ id: true }),
   injectFragmentSchema.omit({ id: true }),
@@ -75,26 +81,6 @@ export const promptFragmentUpdateSchema = z.discriminatedUnion("type", [
   injectFragmentSchema.extend({ id: dbIdValidator.optional() }),
   chatHistoryFragmentSchema.extend({ id: dbIdValidator.optional() }),
 ]);
-
-const promptSettingsFields = {
-  maxOutputTokens: true,
-  maxSteps: true,
-  maxTokens: true,
-  temperature: true,
-  topK: true,
-  topP: true,
-} as const;
-
-export const promptDtoSchema = basePromptSchema
-  .pick({
-    id: true,
-    name: true,
-    ...promptSettingsFields,
-  })
-  .extend({
-    promptFragments: promptFragmentDtoSchema.array(),
-  });
-export type PromptDto = z.infer<typeof promptDtoSchema>;
 
 export const createPromptParamsSchema = basePromptSchema
   .pick({
@@ -116,13 +102,6 @@ export const updatePromptParamsSchema = basePromptSchema
     }),
   });
 export type UpdatePromptParams = z.infer<typeof updatePromptParamsSchema>;
-
-export const promptListItemDtoSchema = basePromptSchema.pick({
-  createdAt: true,
-  id: true,
-  name: true,
-});
-export type PromptListItemDto = z.infer<typeof promptListItemDtoSchema>;
 
 export const promptFragmentFormSchema = z.discriminatedUnion("type", [
   contentFragmentSchema
@@ -146,3 +125,41 @@ export const promptFormSchema = basePromptSchema
     promptFragments: promptFragmentFormSchema.array(),
   });
 export type PromptFormValues = z.infer<typeof promptFormSchema>;
+
+export const updatePromptActionParamsSchema = basePromptSchema
+  .pick({
+    id: true,
+  })
+  .extend({
+    update: promptFormSchema,
+  });
+export type UpdatePromptActionParams = z.infer<
+  typeof updatePromptActionParamsSchema
+>;
+
+// -- DTOs
+
+export const promptFragmentDtoSchema = z.discriminatedUnion("type", [
+  contentFragmentSchema,
+  injectFragmentSchema,
+  chatHistoryFragmentSchema,
+]);
+export type PromptFragmentDto = z.infer<typeof promptFragmentDtoSchema>;
+
+export const promptDtoSchema = basePromptSchema
+  .pick({
+    id: true,
+    name: true,
+    ...promptSettingsFields,
+  })
+  .extend({
+    promptFragments: promptFragmentDtoSchema.array(),
+  });
+export type PromptDto = z.infer<typeof promptDtoSchema>;
+
+export const promptListItemDtoSchema = basePromptSchema.pick({
+  createdAt: true,
+  id: true,
+  name: true,
+});
+export type PromptListItemDto = z.infer<typeof promptListItemDtoSchema>;

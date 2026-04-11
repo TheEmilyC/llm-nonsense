@@ -1,16 +1,19 @@
 import fs from "fs/promises";
 import { NextResponse } from "next/server";
 
-import { getWorldById } from "@/app/world/_lib/data";
+import { getWorldImageFile } from "@/app/world/_lib/data";
 import { HttpStatus } from "@/lib/http";
+import { dbIdValidator } from "@/lib/validators";
 
 interface Params {
   params: Promise<{ id: string }>;
 }
 
 export async function GET(_req: Request, { params }: Params) {
-  const { id } = await params;
-  const world = await getWorldById(id);
+  const { id: idRaw } = await params;
+  const id = dbIdValidator.parse(idRaw);
+
+  const world = await getWorldImageFile(id);
   if (!world) {
     return new NextResponse("Image not found", {
       status: HttpStatus.NOT_FOUND,

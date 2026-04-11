@@ -1,123 +1,131 @@
 "use server";
 
-import { revalidateTag } from "next/cache";
-import { notFound } from "next/navigation";
+import { updateTag } from "next/cache";
+import { redirect } from "next/navigation";
 
 import {
   createLorebookEntity,
   deleteLorebookEntity,
-  getLorebookById,
+  getLorebookStatusDto,
   testLorebookConnection,
   updateLorebookEntity,
 } from "@/app/lorebook/_lib/data";
 import {
-  LorebookDto,
+  GetLorebookActionParams,
+  getLorebookActionParamsSchema,
   LorebookEntityDto,
   lorebookFormSchema,
   LorebookFormValues,
-  toLorebookDto,
-  toLorebookEntityDto,
+  LorebookStatusDto,
+  ObsidianApiConnection,
+  obsidianApiConnectionSchema,
+  UpdateLorebookActionParams,
+  updateLorebookActionParamsSchema,
 } from "@/app/lorebook/_lib/schema";
-import { ActionResponse } from "@/lib/action-utils";
+import { ActionResponse, toActionResponseError } from "@/lib/action-utils";
 import { LOREBOOK_TAG } from "@/lib/env-variables";
+import { NotFoundError } from "@/lib/error";
+import { logger, parseError } from "@/lib/logger";
 import { dbIdValidator } from "@/lib/validators";
-
-interface TestConnectionActionParams {
-  api: {
-    apiKey: string;
-    port: number;
-  };
-}
 
 export async function createLorebookAction(
   data: LorebookFormValues,
-): Promise<ActionResponse<{ id: string }>> {
+): Promise<ActionResponse> {
   const parseResult = lorebookFormSchema.safeParse(data);
-  if (!parseResult.success) {
-    console.error(parseResult.error);
-    return { error: "Malformed lorebook data", success: false };
-  }
+  if (!parseResult.success) return toActionResponseError(parseResult.error);
+
   const newLorebook = parseResult.data;
+  let lorebook: LorebookEntityDto;
   try {
-    const entity = await createLorebookEntity({ newLorebook });
-    return { data: { id: entity.id }, success: true };
+    lorebook = await createLorebookEntity({ newLorebook });
   } catch (err) {
-    console.error(err);
-    return { error: "Lorebook create failed", success: false };
+    logger.error("Failed to create lorebook", parseError(err));
+    return toActionResponseError(err);
   }
+  logger.info("Lorebook created", { id: lorebook.id });
+  redirect(`/lorebook/${lorebook.id}`);
 }
 
 export async function deleteLorebookAction(
   lorebookId: string,
-): Promise<ActionResponse<null>> {
+): Promise<ActionResponse> {
   const idResult = dbIdValidator.safeParse(lorebookId);
-  if (!idResult.success) notFound();
+  if (!idResult.success) return toActionResponseError(idResult.error);
+
   try {
     await deleteLorebookEntity(idResult.data);
-    return { data: null, success: true };
   } catch (err) {
-    console.error(err);
-    return { error: "Lorebook delete failed", success: false };
+    logger.error("Failed to delete lorebook", {
+      id: lorebookId,
+      ...parseError(err),
+    });
+    return toActionResponseError(err);
   }
+
+  redirect("/lorebook");
 }
 
 export async function getLorebookAction(
-  lorebookId: string,
-  isRetry?: boolean,
-): Promise<ActionResponse<LorebookDto>> {
-  const idParseResult = dbIdValidator.safeParse(lorebookId);
-  if (!idParseResult.success) {
-    return { error: "Malformed lorebook data", success: false };
-  }
-  const id = idParseResult.data;
+  params: GetLorebookActionParams,
+): Promise<ActionResponse<LorebookStatusDto>> {
+  const parseResult = getLorebookActionParamsSchema.safeParse(params);
+  if (!parseResult.success) return toActionResponseError(parseResult.error);
+  const { id, isRetry } = parseResult.data;
 
-  if (isRetry) revalidateTag(LOREBOOK_TAG, "max");
+  if (isRetry) updateTag(LOREBOOK_TAG);
+  let lorebook: LorebookStatusDto | null;
   try {
-    const lorebook = await getLorebookById(id);
-    return { data: toLorebookDto(lorebook), success: true };
+    lorebook = await getLorebookStatusDto(id);
+    if (!lorebook)
+      return toActionResponseError(new NotFoundError("Lorebook", id));
   } catch (err) {
-    console.error(err);
-    return { error: "Failed to fetch lorebook", success: false };
+    logger.error("Failed to fetch lorebook", { id, ...parseError(err) });
+    return toActionResponseError(err);
   }
+
+  return { data: lorebook, success: true };
 }
 
-export async function testConnectionAction({
-  api,
-}: TestConnectionActionParams): Promise<ActionResponse<null>> {
+export async function testConnectionAction(
+  apiRaw: ObsidianApiConnection,
+): Promise<ActionResponse> {
+  const parseResult = obsidianApiConnectionSchema.safeParse(apiRaw);
+  if (!parseResult.success) return toActionResponseError(parseResult.error);
+  const api = parseResult.data;
+
   try {
     const result = await testLorebookConnection(api);
     if (result) {
-      return { data: null, success: true };
-    } else {
-      // shouldn't happen
-      return { error: "Unknown error", success: false };
+      return { success: true };
     }
   } catch (err) {
-    console.error(err);
-    return { error: (err as Error).message, success: false };
+    return toActionResponseError(err);
   }
+
+  // Shouldn't reach this, either the test works or throws
+  return {
+    error: { code: "INTERNAL_ERROR", message: "An error occured" },
+    success: false,
+  };
 }
 
 export async function updateLorebookAction(
-  lorebookId: string,
-  data: LorebookFormValues,
-): Promise<ActionResponse<LorebookEntityDto>> {
-  const idResult = dbIdValidator.safeParse(lorebookId);
-  if (!idResult.success)
-    return { error: "Invalid lorebook ID", success: false };
-  const id = idResult.data;
+  params: UpdateLorebookActionParams,
+): Promise<ActionResponse> {
+  const parseResult = updateLorebookActionParamsSchema.safeParse(params);
+  if (!parseResult.success) return toActionResponseError(parseResult.error);
+  const { id, update } = parseResult.data;
 
-  const parseResult = lorebookFormSchema.safeParse(data);
-  if (!parseResult.success) {
-    console.error(parseResult.error);
-    return { error: "Malformed lorebook data", success: false };
-  }
-  const update = parseResult.data;
   try {
-    const entity = await updateLorebookEntity({ id, update });
-    return { data: toLorebookEntityDto(entity), success: true };
+    await updateLorebookEntity({ id, update });
   } catch (err) {
-    console.error(err);
-    return { error: "Lorebook update failed", success: false };
+    logger.error("Failed to update lorebook", {
+      id,
+      update,
+      ...parseError(err),
+    });
+    logger.info("Persona updated", { id });
+    return toActionResponseError(err);
   }
+  return { success: true };
 }

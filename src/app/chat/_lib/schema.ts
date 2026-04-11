@@ -1,4 +1,4 @@
-import { UIDataTypes, UIMessage, UIMessagePart, UITools } from "ai";
+import { UIDataTypes, UIMessagePart, UITools } from "ai";
 import z from "zod";
 
 import { messageRoleSchema } from "@/app/_shared/schema";
@@ -7,6 +7,9 @@ import { dbIdValidator } from "@/lib/validators";
 
 export const CHAT_CACHE_KEY = "chat";
 
+// -- Base
+
+// trying to replicate these types DRY is a headache
 export const messagePartSchema = z.custom<MessagePart>();
 export type MessagePart = UIMessagePart<UIDataTypes, UITools>;
 
@@ -43,6 +46,51 @@ const baseMessageContentSchema = z.object({
   role: messageRoleSchema,
 });
 
+// -- Schemas
+
+export const updateContentActionParamsSchema = z.object({
+  id: z.string().min(1),
+  update: baseMessageContentSchema
+    .pick({
+      isActive: true,
+      metadata: true,
+      parts: true,
+      role: true,
+    })
+    .partial(),
+});
+export type UpdateContentActionParams = z.infer<
+  typeof updateContentActionParamsSchema
+>;
+
+export const chatPostRequestBodySchema = z.object({
+  content: z.object({
+    id: z.string(),
+    parts: z.array(messagePartSchema),
+    role: z.enum(["user", "system", "assistant"]),
+  }),
+  id: z.string(),
+  trigger: z.enum(["submit-message", "regenerate-message"]),
+});
+export type ChatPostRequestBody = z.infer<typeof chatPostRequestBodySchema>;
+
+// -- DTOs
+
+export const chatListDtoSchema = baseChatSchema.pick({
+  id: true,
+  name: true,
+});
+export type ChatListDto = z.infer<typeof chatListDtoSchema>;
+
+export const chatDtoSchema = baseChatSchema.pick({
+  createdAt: true,
+  id: true,
+  modifiedAt: true,
+  name: true,
+  storyId: true,
+});
+export type ChatDto = z.infer<typeof chatDtoSchema>;
+
 export const messageContentDtoSchema = baseMessageContentSchema.pick({
   id: true,
   isActive: true,
@@ -52,43 +100,18 @@ export const messageContentDtoSchema = baseMessageContentSchema.pick({
 });
 export type MessageContentDto = z.infer<typeof messageContentDtoSchema>;
 
-export const chatMessageDtoSchema = baseChatMessageSchema
-  .pick({
-    id: true,
-  })
-  .extend({ contents: messageContentDtoSchema.array() });
+export const chatMessageDtoSchema = baseChatMessageSchema.pick({
+  chatId: true,
+  id: true,
+});
 export type ChatMessageDto = z.infer<typeof chatMessageDtoSchema>;
 
-export function messageDtoToAiMessage(chatMessage: ChatMessageDto) {
-  const activeContent =
-    chatMessage.contents.find((msg) => msg.isActive) ?? chatMessage.contents[0];
-  if (!activeContent)
-    throw new Error(`No content for message ${chatMessage.id}`);
-
-  const content = activeContent.parts
-    .filter((part) => part.type === "text")
-    .map((part) => part.text)
-    .join("\n");
-
-  return {
-    content,
-    role: activeContent.role,
-  };
-}
-
-export function messageDtoToUIMessage(chatMessage: ChatMessageDto): UIMessage {
-  const activeContent =
-    chatMessage.contents.find((msg) => msg.isActive) ?? chatMessage.contents[0];
-  if (!activeContent)
-    throw new Error(`No content for message ${chatMessage.id}`);
-
-  return {
-    id: chatMessage.id,
-    metadata: activeContent.metadata,
-    parts: activeContent.parts,
-    role: activeContent.role,
-  };
-}
+export const chatMessageWithContentDtoSchema = chatMessageDtoSchema.extend({
+  contents: messageContentDtoSchema.array(),
+});
+export type ChatMessageWithContentDto = z.infer<
+  typeof chatMessageWithContentDtoSchema
+>;
 
 export const chatSessionDtoSchema = baseChatSchema
   .pick({
@@ -102,7 +125,7 @@ export const chatSessionDtoSchema = baseChatSchema
       pngHash: z.string().min(1),
     }),
     lorebookId: dbIdValidator.optional(),
-    messages: chatMessageDtoSchema.array(),
+    messages: chatMessageWithContentDtoSchema.array(),
     persona: z.object({
       id: dbIdValidator,
       imageHash: z.string().min(1),
@@ -110,13 +133,13 @@ export const chatSessionDtoSchema = baseChatSchema
     }),
     prompt: z.object({
       id: dbIdValidator,
-      maxTokens: z.number(),
       maxOutputTokens: z.number().int().positive(),
       maxSteps: z.number().int().positive(),
+      maxTokens: z.number(),
+      promptFragments: promptFragmentDtoSchema.array(),
       temperature: z.number(),
       topK: z.number().int().positive(),
       topP: z.number(),
-      promptFragments: promptFragmentDtoSchema.array(),
     }),
     story: z.object({
       id: dbIdValidator,
@@ -125,24 +148,3 @@ export const chatSessionDtoSchema = baseChatSchema
     world: z.object({ id: dbIdValidator }).optional(),
   });
 export type ChatSessionDto = z.infer<typeof chatSessionDtoSchema>;
-
-export const updateContentActionParamsSchema = z.object({
-  id: z.string().min(1),
-  update: messageContentDtoSchema
-    .pick({
-      isActive: true,
-      metadata: true,
-      parts: true,
-      role: true,
-    })
-    .partial(),
-});
-export type UpdateContentActionParams = z.infer<
-  typeof updateContentActionParamsSchema
->;
-
-export const chatListDtoSchema = baseChatSchema.pick({
-  id: true,
-  name: true,
-});
-export type ChatListDto = z.infer<typeof chatListDtoSchema>;

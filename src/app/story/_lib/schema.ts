@@ -4,6 +4,8 @@ import { dbIdValidator } from "@/lib/validators";
 
 export const STORY_CACHE_KEY = "story";
 
+// -- Base
+
 const baseStorySchema = z.object({
   characterId: dbIdValidator,
   createdAt: z.date(),
@@ -16,47 +18,7 @@ const baseStorySchema = z.object({
   worldId: dbIdValidator.optional(),
 });
 
-export const storyDtoSchema = baseStorySchema.pick({
-  characterId: true,
-  id: true,
-  lorebookId: true,
-  name: true,
-  personaId: true,
-  promptId: true,
-  worldId: true,
-});
-export type StoryDto = z.infer<typeof storyDtoSchema>;
-
-export const createStoryParamsSchema = baseStorySchema.pick({
-  characterId: true,
-  lorebookId: true,
-  name: true,
-  personaId: true,
-  promptId: true,
-  worldId: true,
-});
-export type CreateStoryParams = z.infer<typeof createStoryParamsSchema>;
-
-export const updateStoryParamsSchema = z.object({
-  id: dbIdValidator,
-  update: baseStorySchema
-    .pick({
-      characterId: true,
-      lorebookId: true,
-      name: true,
-      personaId: true,
-      promptId: true,
-      worldId: true,
-    })
-    .partial(),
-});
-export type UpdateStoryParams = z.infer<typeof updateStoryParamsSchema>;
-
-export const storyListItemDtoSchema = baseStorySchema.pick({
-  id: true,
-  name: true,
-});
-export type StoryListItemDto = z.infer<typeof storyListItemDtoSchema>;
+// -- Schemas
 
 const formBaseSchema = baseStorySchema.pick({
   characterId: true,
@@ -77,3 +39,29 @@ export const storyFormSchema = z.discriminatedUnion("mode", [
   }),
 ]);
 export type StoryFormValues = z.infer<typeof storyFormSchema>;
+
+export const updateStoryActionParamsSchema = baseStorySchema
+  .pick({ id: true })
+  .extend({ update: storyFormSchema });
+export type UpdateStoryActionParams = z.infer<
+  typeof updateStoryActionParamsSchema
+>;
+
+// -- DTOs
+
+export const storyDtoSchema = baseStorySchema.pick({
+  characterId: true,
+  id: true,
+  lorebookId: true,
+  name: true,
+  personaId: true,
+  promptId: true,
+  worldId: true,
+});
+export type StoryDto = z.infer<typeof storyDtoSchema>;
+
+export const storyListItemDtoSchema = baseStorySchema.pick({
+  id: true,
+  name: true,
+});
+export type StoryListItemDto = z.infer<typeof storyListItemDtoSchema>;

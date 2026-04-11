@@ -1,11 +1,11 @@
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 
 import { useImportCharacterFromPNG } from "@/app/character/_lib/hooks";
 import {
+  CharacterListDto,
   ImportFromPngForm,
   importFromPngFormSchema,
 } from "@/app/character/_lib/schema";
@@ -24,14 +24,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { buildCharacterImageUrl } from "@/lib/image";
 
 interface CharacterListParams {
-  characters: { id: string; name: string; pngHash: string }[];
+  characters: CharacterListDto[];
 }
 
 export function CharacterList({ characters }: CharacterListParams) {
-  const router = useRouter();
   const { importCharacter, isPending } = useImportCharacterFromPNG();
 
   const form = useForm<ImportFromPngForm>({
@@ -39,8 +37,7 @@ export function CharacterList({ characters }: CharacterListParams) {
   });
 
   async function onSubmitHandler(data: ImportFromPngForm) {
-    const { id } = await importCharacter(data);
-    router.push(`/character/${id}`);
+    await importCharacter(data);
   }
 
   return (
@@ -94,13 +91,7 @@ export function CharacterList({ characters }: CharacterListParams) {
               href={`/character/${character.id}`}
               key={character.id}
             >
-              <CardTile
-                name={character.name}
-                src={buildCharacterImageUrl({
-                  id: character.id,
-                  pngHash: character.pngHash,
-                })}
-              />
+              <CardTile name={character.name} src={character.imageUrl} />
             </Link>
           ))}
         </div>

@@ -1,40 +1,73 @@
 import z from "zod";
 
-import { buildWorldImageUrl } from "@/lib/image";
-
-import { World } from "../../../../generated/client";
+import { dbIdValidator } from "@/lib/validators";
 
 export const WORLD_CACHE_KEY = "world";
+
+// -- Base
+const baseWorldSchema = z.object({
+  createdAt: z.date(),
+  description: z.string(),
+  id: dbIdValidator,
+  image: z.string().min(1, "Image is required"),
+  imageHash: z.string().min(1, "Image Hash is required"),
+  modifiedAt: z.date(),
+  name: z.string().min(1, "Name is required"),
+});
 
 export const worldImageValidator = z
   .instanceof(File)
   .refine((file) => file.type.startsWith("image/"), "Must be an image")
   .refine((file) => file.size <= 15 * 1024 * 1024, "Max file size is 15MB");
 
-export const worldFormSchema = z.object({
-  description: z.string(),
-  image: worldImageValidator.optional(),
-  name: z.string().min(1),
-});
+// -- Schemas
+
+export const worldFormSchema = baseWorldSchema
+  .pick({
+    description: true,
+    name: true,
+  })
+  .extend({
+    image: worldImageValidator.optional(),
+  });
 export type WorldFormValues = z.infer<typeof worldFormSchema>;
 
-export const worldDtoSchema = z.object({
-  createdAt: z.date(),
-  description: z.string(),
-  id: z.string().min(1),
-  imageUrl: z.string().min(1),
-  modifiedAt: z.date(),
-  name: z.string().min(1),
-});
+export const updateWorldActionParamsSchema = baseWorldSchema
+  .pick({
+    id: true,
+  })
+  .extend({
+    update: worldFormSchema,
+  });
+export type UpdateWorldActionParams = z.infer<
+  typeof updateWorldActionParamsSchema
+>;
+
+// -- DTOs
+
+export const worldListDtoSchema = baseWorldSchema
+  .pick({
+    id: true,
+    name: true,
+  })
+  .extend({
+    imageUrl: z.string().min(1),
+  });
+export type WorldListDto = z.infer<typeof worldListDtoSchema>;
+
+export const worldDtoSchema = baseWorldSchema
+  .pick({
+    description: true,
+    id: true,
+    name: true,
+  })
+  .extend({
+    imageUrl: z.string().min(1),
+  });
 export type WorldDto = z.infer<typeof worldDtoSchema>;
 
-export function toWorldDto(world: World): WorldDto {
-  return worldDtoSchema.parse({
-    createdAt: world.createdAt,
-    description: world.description,
-    id: world.id,
-    imageUrl: buildWorldImageUrl({ id: world.id, imgHash: world.imageHash }),
-    modifiedAt: world.modifiedAt,
-    name: world.name,
-  });
-}
+export const worldImageFileDtoSchema = baseWorldSchema.pick({
+  id: true,
+  image: true,
+});
+export type WorldImageFileDto = z.infer<typeof worldImageFileDtoSchema>;

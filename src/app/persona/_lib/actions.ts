@@ -1,6 +1,6 @@
 "use server";
 
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 
 import {
   createPersona,
@@ -11,70 +11,67 @@ import {
   PersonaDto,
   personaFormSchema,
   PersonaFormValues,
-  toPersonaDto,
+  UpdatePersonaActionParams,
+  updatePersonaActionParamsSchema,
 } from "@/app/persona/_lib/schema";
-import { ActionResponse } from "@/lib/action-utils";
+import { ActionResponse, toActionResponseError } from "@/lib/action-utils";
+import { logger, parseError } from "@/lib/logger";
 import { dbIdValidator } from "@/lib/validators";
 
 export async function createPersonaAction(
   data: PersonaFormValues,
-): Promise<ActionResponse<{ id: string }>> {
+): Promise<ActionResponse> {
   const formParseResult = personaFormSchema.safeParse(data);
-  if (!formParseResult.success) {
-    console.error(formParseResult.error);
-    return { error: "Malformed persona data", success: false };
-  }
+  if (!formParseResult.success)
+    return toActionResponseError(formParseResult.data);
+
   const { image, ...persona } = formParseResult.data;
 
-  let newPersona;
+  let newPersona: PersonaDto;
   try {
     newPersona = await createPersona({ image, persona });
   } catch (err) {
-    console.error(err);
-    return { error: "Persona create failed", success: false };
+    logger.error("Failed to create persona", parseError(err));
+    return toActionResponseError(err);
   }
-  return { data: { id: newPersona.id }, success: true };
+  logger.info("New person created", { id: newPersona.id });
+  redirect(`/persona/${newPersona.id}`);
 }
 
 export async function deletePersonaAction(
   personaId: string,
-): Promise<ActionResponse<null>> {
+): Promise<ActionResponse> {
   const idParseResult = dbIdValidator.safeParse(personaId);
-  if (!idParseResult.success) {
-    notFound();
-  }
+  if (!idParseResult.success) return toActionResponseError(idParseResult.error);
+
   const id = idParseResult.data;
   try {
     await deletePersona(id);
   } catch (err) {
-    console.error(err);
-    return { error: "failed to delete persona", success: false };
+    logger.error("Failed to delete persona", { id, ...parseError(err) });
+    return toActionResponseError(err);
   }
-  return { data: null, success: true };
+  logger.info("Persona deleted", { id });
+  redirect("/persona");
 }
 
 export async function updatePersonaAction(
-  personaId: string,
-  data: PersonaFormValues,
-): Promise<ActionResponse<PersonaDto>> {
-  const formParseResult = personaFormSchema.safeParse(data);
-  if (!formParseResult.success) {
-    console.error(formParseResult.error);
-    return { error: "Malformed persona data", success: false };
-  }
-  const idParseResult = dbIdValidator.safeParse(personaId);
-  if (!idParseResult.success) {
-    console.error(idParseResult.error);
-    return { error: "Malformed persona data", success: false };
-  }
-  const id = idParseResult.data;
-  const { image, ...update } = formParseResult.data;
+  params: UpdatePersonaActionParams,
+): Promise<ActionResponse> {
+  const parseResult = updatePersonaActionParamsSchema.safeParse(params);
+  if (!parseResult.success) return toActionResponseError(parseResult.error);
+  const { id, update } = parseResult.data;
 
   try {
-    const updated = await updatePersona({ id, image, update });
-    return { data: toPersonaDto(updated), success: true };
+    await updatePersona({ id, update });
   } catch (err) {
-    console.error(err);
-    return { error: "Persona update failed", success: false };
+    logger.error("Failed to update persona", {
+      id: id,
+      update: update,
+      ...parseError(err),
+    });
+    return toActionResponseError(err);
   }
+  logger.info("Persona updated", { id });
+  return { success: true };
 }

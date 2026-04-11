@@ -4,7 +4,6 @@ import z from "zod";
 
 import { PersonaEdit } from "@/app/persona/_components/persona-edit";
 import { getPersonaById } from "@/app/persona/_lib/data";
-import { toPersonaDto } from "@/app/persona/_lib/schema";
 import { dbIdValidator } from "@/lib/validators";
 
 interface PersonaPageParams {
@@ -28,5 +27,5 @@ async function PersonaEditPageContent({ params }: PersonaPageParams) {
   const persona = await getPersonaById(id);
   if (!persona) notFound();
 
-  return <PersonaEdit persona={toPersonaDto(persona)} />;
+  return <PersonaEdit persona={persona} />;
 }

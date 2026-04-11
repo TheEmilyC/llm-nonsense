@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, UseFormSetError, useWatch } from "react-hook-form";
 
 import { useTestLorebookConnection } from "@/app/lorebook/_lib/hooks";
 import {
@@ -16,7 +16,10 @@ import { FieldGroup } from "@/components/ui/field";
 interface LorebookFormProps {
   defaultValues?: LorebookFormValues;
   formId: string;
-  onSubmit: (data: LorebookFormValues) => void;
+  onSubmit: (
+    data: LorebookFormValues,
+    setError: UseFormSetError<LorebookFormValues>,
+  ) => void;
 }
 
 export function LorebookForm({
@@ -71,7 +74,7 @@ export function LorebookForm({
       });
       return;
     }
-    onSubmit(data);
+    onSubmit(data, form.setError);
   }
 
   return (

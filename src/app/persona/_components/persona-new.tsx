@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { UseFormSetError } from "react-hook-form";
+import { toast } from "sonner";
 
 import { PersonaForm } from "@/app/persona/_components/persona-form";
 import { useCreatePersona } from "@/app/persona/_lib/hooks";
@@ -12,12 +13,25 @@ import { Button } from "@/components/ui/button";
 const FORM_ID = "form-new-persona";
 
 export function PersonaNew() {
-  const router = useRouter();
   const { createPersona, isPending } = useCreatePersona();
 
-  async function onSubmitHandler(data: PersonaFormValues) {
-    const { id } = await createPersona(data);
-    router.push(`/persona/${id}`);
+  async function onSubmitHandler(
+    data: PersonaFormValues,
+    setError: UseFormSetError<PersonaFormValues>,
+  ) {
+    const result = await createPersona(data);
+    if (!result.success && result.error.details) {
+      for (const [field, messages] of Object.entries(result.error.details)) {
+        setError(field as keyof PersonaFormValues, {
+          message: messages.join("\n"),
+          type: "server",
+        });
+      }
+      return;
+    }
+    if (!result.success) {
+      toast.error(result.error.message);
+    }
   }
 
   return (

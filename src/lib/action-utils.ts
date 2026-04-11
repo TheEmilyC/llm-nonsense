@@ -1,25 +1,52 @@
-import { ApiError } from "@/lib/error";
+import { flattenError, ZodError } from "zod";
 
-export type ActionResponse<T> =
-  | { data: T; success: true; }
-  | { error: string; status?: number; success: false; };
+import { AppError, ErrorCode, ValidationError } from "@/lib/error";
 
-export function unwrapAction<T>(result: ActionResponse<T>): T {
-  if (!result.success) {
-    throw new ApiError(result.error, result.status);
+export type ActionError = {
+  code: ErrorCode;
+  details?: Record<string, string[]>;
+  message: string;
+};
+
+export type ActionResponse<T = void> =
+  | { data?: T; success: true }
+  | {
+      error: ActionError;
+      success: false;
+    };
+
+export function toActionResponseError<T>(error: unknown): ActionResponse<T> {
+  if (error instanceof ZodError) {
+    const { fieldErrors } = flattenError(error);
+    return {
+      error: {
+        code: "VALIDATION_ERROR",
+        details: Object.fromEntries(
+          Object.entries(fieldErrors).filter(([, v]) => v !== undefined),
+        ) as Record<string, string[]>,
+        message: "Validation failed",
+      },
+      success: false,
+    };
   }
-  return result.data;
-}
-
-export async function withActionError<T>(
-  fn: () => Promise<ActionResponse<T>>,
-): Promise<ActionResponse<T>> {
-  try {
-    return await fn();
-  } catch (err) {
-    console.error(err);
-    const error =
-      err instanceof Error ? err.message : "An unexpected error occurred";
-    return { error, success: false };
+  if (error instanceof ValidationError) {
+    return {
+      error: {
+        code: error.code,
+        details: error.details,
+        message: error.message,
+      },
+      success: false,
+    };
   }
+  if (error instanceof AppError) {
+    return {
+      error: { code: error.code, message: error.message },
+      success: false,
+    };
+  }
+  return {
+    error: { code: "INTERNAL_ERROR", message: "Something went wrong" },
+    success: false,
+  };
 }

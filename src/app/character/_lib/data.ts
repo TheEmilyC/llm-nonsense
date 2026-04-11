@@ -1,38 +1,37 @@
 "use server";
 
 import fs from "fs/promises";
-import { cacheTag, revalidateTag } from "next/cache";
+import { cacheTag, updateTag } from "next/cache";
 import { join } from "path";
 
 import {
-  CHARACTER_CACHE_KEY,
-  CharacterListItem,
-  CharacterRecord,
-} from "@/app/character/_lib/schema";
-import {
-  CharacterCard,
   encodeCharacterCard,
   parseCharacterCard,
   writeCharacterToBuffer,
-} from "@/lib/character-card-parser";
+} from "@/app/character/_lib/character-card-parser";
+import {
+  CHARACTER_CACHE_KEY,
+  CharacterCard,
+  CharacterDto,
+  CharacterImageFileDto,
+  CharacterListDto,
+  CharacterRecord,
+} from "@/app/character/_lib/schema";
+import { Character } from "@/generated/client";
 import { CHARACTER_CARD_DIRECTORY, DEFAULT_AVATAR_PATH } from "@/lib/constants";
 import { WORKING_DIRECTORY } from "@/lib/env-variables";
-import { createImageHash } from "@/lib/image";
+import { NotFoundError } from "@/lib/error";
+import { buildCharacterImageUrl, createImageHash } from "@/lib/image";
 import { prisma } from "@/lib/prisma";
 
 const CHARACTER_CARD_PATH = join(WORKING_DIRECTORY, CHARACTER_CARD_DIRECTORY);
 
-export interface CreateCharacterParameters {
+export interface CreateCharacterParams {
   characterCard: CharacterCard;
   image: Buffer | File | undefined;
 }
 
-export interface SaveCharacterImageParams {
-  characterCard: CharacterCard;
-  image: Buffer | File | undefined;
-}
-
-export interface UpdateCharacterParameters {
+export interface UpdateCharacterParams {
   id: string;
   update: {
     card?: Partial<CharacterCard>;
@@ -40,10 +39,15 @@ export interface UpdateCharacterParameters {
   };
 }
 
+interface SaveCharacterImageParams {
+  characterCard: CharacterCard;
+  image: Buffer | File | undefined;
+}
+
 export async function createCharacter({
   characterCard,
   image,
-}: CreateCharacterParameters): Promise<CharacterRecord> {
+}: CreateCharacterParams): Promise<CharacterDto> {
   const { fileName, filePath, pngHash } = await saveCharacterImage({
     characterCard,
     image,
@@ -63,55 +67,110 @@ export async function createCharacter({
       throw err;
     });
 
-  revalidateTag(CHARACTER_CACHE_KEY, "max");
-  return { card: characterCard, entity: characterEntity };
+  updateTag(CHARACTER_CACHE_KEY);
+  return toCharacterDto({ card: characterCard, entity: characterEntity });
 }
 
 export async function deleteCharacter(id: string) {
-  const character = await getCharacterById(id);
-  if (!character) {
-    throw new Error("Character does not exist");
-  }
+  const entity = await getCharacterEntityById(id);
+  if (!entity) throw new NotFoundError("Character", id);
   // remove entity
   await prisma.character.delete({ where: { id } });
   // remove image
-  await fs.rm(join(WORKING_DIRECTORY, character.entity.png));
-  revalidateTag(CHARACTER_CACHE_KEY, "max");
-  revalidateTag(`${CHARACTER_CACHE_KEY}-${id}`, "max");
+  await fs.rm(join(WORKING_DIRECTORY, entity.png));
+  updateTag(CHARACTER_CACHE_KEY);
+  updateTag(`${CHARACTER_CACHE_KEY}-${id}`);
 }
 
 export async function getCharacterById(
   id: string,
-): Promise<CharacterRecord | null> {
+): Promise<CharacterDto | null> {
+  const record = await getCharacterRecord(id);
+  if (!record) return null;
+  return toCharacterDto(record);
+}
+
+export async function getCharacterImageFile(
+  id: string,
+): Promise<CharacterImageFileDto | null> {
   "use cache";
   cacheTag(`${CHARACTER_CACHE_KEY}-${id}`);
+  const entity = await getCharacterEntityById(id);
+  if (!entity) return null;
+  return toCharacterImageFileDto(entity);
+}
 
-  const entity = await prisma.character.findUnique({ where: { id } });
+export async function getCharacterList(): Promise<CharacterListDto[]> {
+  "use cache";
+  cacheTag(CHARACTER_CACHE_KEY);
+  const characterList = await prisma.character.findMany();
+  return toCharacterListDto(characterList);
+}
+
+export async function updateCharacter({
+  id,
+  update,
+}: UpdateCharacterParams): Promise<CharacterDto> {
+  const orgRecord = await getCharacterRecord(id);
+  if (!orgRecord) throw new NotFoundError("Character", id);
+  const cardPath = join(WORKING_DIRECTORY, orgRecord.entity.png);
+  const updatedCard: CharacterCard = { ...orgRecord.card, ...update.card };
+
+  let pngHash;
+  if (update.image) {
+    //overwrite image
+    const imageBuffer = Buffer.from(await update.image.arrayBuffer());
+    const encodedImageBuffer = writeCharacterToBuffer(
+      imageBuffer,
+      JSON.stringify(updatedCard),
+    );
+    await fs.writeFile(cardPath, encodedImageBuffer);
+    pngHash = createImageHash(encodedImageBuffer);
+  } else {
+    //overwrite image metadata
+    await encodeCharacterCard({ cardPath, characterCard: updatedCard });
+  }
+
+  // Update DB
+  let characterEntity;
+  if (
+    (update.card && orgRecord.entity.name !== update.card.name) ||
+    update.image
+  ) {
+    characterEntity = await prisma.character.update({
+      data: {
+        name: update.card?.name,
+        pngHash: pngHash,
+      },
+      where: {
+        id,
+      },
+    });
+  } else {
+    characterEntity = orgRecord.entity;
+  }
+
+  updateTag(CHARACTER_CACHE_KEY);
+  updateTag(`${CHARACTER_CACHE_KEY}-${id}`);
+  return toCharacterDto({ card: updatedCard, entity: characterEntity });
+}
+
+async function getCharacterEntityById(id: string): Promise<Character | null> {
+  "use cache";
+  cacheTag(`${CHARACTER_CACHE_KEY}-${id}`);
+  return prisma.character.findUnique({ where: { id } });
+}
+
+async function getCharacterRecord(id: string): Promise<CharacterRecord | null> {
+  "use cache";
+  cacheTag(`${CHARACTER_CACHE_KEY}-${id}`);
+  const entity = await getCharacterEntityById(id);
   if (!entity) return null;
   const card = await parseCharacterCard(join(WORKING_DIRECTORY, entity.png));
   return { card, entity };
 }
 
-export async function getCharacterByIdOrFail(
-  id: string,
-): Promise<CharacterRecord> {
-  const result = await getCharacterById(id);
-  if (!result) throw new Error(`Character ID:${id} does not exist`);
-  return result;
-}
-
-export async function getCharacterList(): Promise<CharacterListItem[]> {
-  "use cache";
-  cacheTag(CHARACTER_CACHE_KEY);
-  const characterList = await prisma.character.findMany();
-  return characterList.map((char) => ({
-    id: char.id,
-    name: char.name,
-    pngHash: char.pngHash,
-  }));
-}
-
-export async function saveCharacterImage({
+async function saveCharacterImage({
   characterCard,
   image,
 }: SaveCharacterImageParams) {
@@ -151,55 +210,37 @@ export async function saveCharacterImage({
   return { fileName, filePath, pngHash };
 }
 
-export async function updateCharacter({
-  id,
-  update,
-}: UpdateCharacterParameters) {
-  const orgCharacter = await getCharacterById(id);
-  if (!orgCharacter) throw new Error("Character does not exist");
-  const cardPath = join(WORKING_DIRECTORY, orgCharacter.entity.png);
-  const updatedCard: CharacterCard = { ...orgCharacter.card, ...update.card };
-
-  let pngHash;
-  if (update.image) {
-    //overwrite image
-    const imageBuffer = Buffer.from(await update.image.arrayBuffer());
-    const encodedImageBuffer = writeCharacterToBuffer(
-      imageBuffer,
-      JSON.stringify(updatedCard),
-    );
-    await fs.writeFile(cardPath, encodedImageBuffer);
-    pngHash = createImageHash(encodedImageBuffer);
-  } else {
-    //overwrite image metadata
-    await encodeCharacterCard({ cardPath, characterCard: updatedCard });
-  }
-
-  // Update DB
-  let characterEntity;
-  if (
-    (update.card && orgCharacter.entity.name !== update.card.name) ||
-    update.image
-  ) {
-    characterEntity = await prisma.character.update({
-      data: {
-        name: update.card?.name,
-        pngHash: pngHash,
-      },
-      where: {
-        id,
-      },
-    });
-  } else {
-    characterEntity = orgCharacter.entity;
-  }
-
-  const updatedCharacter: CharacterRecord = {
-    card: updatedCard,
-    entity: characterEntity,
+function toCharacterDto(character: CharacterRecord): CharacterDto {
+  return {
+    createdAt: character.entity.createdAt,
+    creator_notes: character.card.creator_notes,
+    description: character.card.description,
+    first_mes: character.card.first_mes,
+    id: character.entity.id,
+    imageUrl: buildCharacterImageUrl({
+      id: character.entity.id,
+      pngHash: character.entity.pngHash,
+    }),
+    mes_example: character.card.mes_example,
+    modifiedAt: character.entity.modifiedAt,
+    name: character.card.name,
+    personality: character.card.personality,
+    scenario: character.card.scenario,
+    tags: character.card.tags,
   };
+}
 
-  revalidateTag(CHARACTER_CACHE_KEY, "max");
-  revalidateTag(`${CHARACTER_CACHE_KEY}-${id}`, "max");
-  return updatedCharacter;
+function toCharacterImageFileDto(character: Character): CharacterImageFileDto {
+  return {
+    id: character.id,
+    png: character.png,
+  };
+}
+
+function toCharacterListDto(characters: Character[]): CharacterListDto[] {
+  return characters.map(({ id, name, pngHash }) => ({
+    id,
+    imageUrl: buildCharacterImageUrl({ id, pngHash }),
+    name,
+  }));
 }

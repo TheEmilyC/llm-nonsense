@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Globe, UserCircle, Users } from "lucide-react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, UseFormSetError } from "react-hook-form";
 
 import { storyFormSchema, StoryFormValues } from "@/app/story/_lib/schema";
 import { CardOption, CardSelector } from "@/components/card-selector";
@@ -16,7 +16,10 @@ interface StoryFormParams {
   formId: string;
   isEdit?: boolean;
   lorebooks: { label: string; value: string }[];
-  onSubmit: (data: StoryFormValues) => void;
+  onSubmit: (
+    data: StoryFormValues,
+    setError: UseFormSetError<StoryFormValues>,
+  ) => void;
   personas?: CardOption[];
   prompts: { label: string; value: string }[];
   worlds?: CardOption[];
@@ -43,7 +46,10 @@ export function StoryForm({
   });
 
   return (
-    <form id={formId} onSubmit={form.handleSubmit(onSubmit)}>
+    <form
+      id={formId}
+      onSubmit={form.handleSubmit((data) => onSubmit(data, form.setError))}
+    >
       <div className="grid grid-cols-3 gap-4">
         {/* NAME ROW */}
         <div className="col-span-3">

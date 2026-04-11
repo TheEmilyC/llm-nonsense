@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { UseFormSetError } from "react-hook-form";
+import { toast } from "sonner";
 
 import { LorebookForm } from "@/app/lorebook/_components/lorebook-form";
 import {
@@ -11,6 +12,7 @@ import {
   LorebookEntityDto,
   LorebookFormValues,
 } from "@/app/lorebook/_lib/schema";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
@@ -22,20 +24,35 @@ interface LorebookEditProps {
 }
 
 export function LorebookEdit({ lorebook }: LorebookEditProps) {
-  const router = useRouter();
   const { deleteLorebook, isPending: isDeletePending } = useDeleteLorebook();
   const { isPending: isUpdatePending, updateLorebook } = useUpdateLorebook();
 
   const isPending = isDeletePending || isUpdatePending;
 
   async function deleteHandler() {
-    if (!confirm(`Delete "${lorebook.name}"? This cannot be undone.`)) return;
-    await deleteLorebook({ lorebookId: lorebook.id });
-    router.push("/lorebook");
+    await deleteLorebook(lorebook.id);
   }
 
-  async function onSubmitHandler(data: LorebookFormValues) {
-    await updateLorebook({ data, lorebookId: lorebook.id });
+  async function onSubmitHandler(
+    update: LorebookFormValues,
+    setError: UseFormSetError<LorebookFormValues>,
+  ) {
+    const result = await updateLorebook({
+      id: lorebook.id,
+      update,
+    });
+    if (!result.success && result.error.details) {
+      for (const [field, messages] of Object.entries(result.error.details)) {
+        setError(field as keyof LorebookFormValues, {
+          message: messages.join("\n"),
+          type: "server",
+        });
+      }
+      return;
+    }
+    if (!result.success) {
+      toast.error(result.error.message);
+    }
   }
 
   return (
@@ -45,15 +62,21 @@ export function LorebookEdit({ lorebook }: LorebookEditProps) {
         backLinkLabel="Lorebooks"
         pageTitle={lorebook.name}
       >
-        <Button
-          disabled={isPending}
-          onClick={deleteHandler}
-          size="sm"
-          type="button"
-          variant="destructive"
+        <ConfirmDialog
+          description={`Delete ${lorebook.name}? This can not be undone`}
+          onConfirm={deleteHandler}
+          title="Delete Lorebook?"
+          type="delete"
         >
-          {isDeletePending ? "Deleting..." : "Delete"}
-        </Button>
+          <Button
+            disabled={isPending}
+            size="sm"
+            type="button"
+            variant="destructive"
+          >
+            {isDeletePending ? "Deleting..." : "Delete"}
+          </Button>
+        </ConfirmDialog>
         <Button disabled={isPending} form={FORM_ID} size="sm" type="submit">
           {isUpdatePending ? "Saving..." : "Save"}
         </Button>

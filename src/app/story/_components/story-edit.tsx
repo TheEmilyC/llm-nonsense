@@ -2,14 +2,15 @@
 
 import { Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { UseFormSetError } from "react-hook-form";
+import { toast } from "sonner";
 
 import { useCreateChatFromStory, useDeleteChat } from "@/app/chat/_lib/hooks";
 import { StoryForm } from "@/app/story/_components/story-form";
 import { useDeleteStory, useUpdateStory } from "@/app/story/_lib/hooks";
 import { StoryDto, StoryFormValues } from "@/app/story/_lib/schema";
 import { CardOption } from "@/components/card-selector";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
@@ -35,14 +36,12 @@ export function StoryEdit({
   story,
   worlds,
 }: StoryEditParams) {
-  const router = useRouter();
   const { deleteStory, isPending: isDeletePending } = useDeleteStory();
   const { isPending: isUpdatePending, updateStory } = useUpdateStory();
   const { createChatFromStory: createChat, isPending: isCreateChatPending } =
     useCreateChatFromStory();
 
   const { deleteChat, isPending: isDeleteChatPending } = useDeleteChat();
-  const [chatList, setChatList] = useState(chats);
 
   const isPending =
     isDeletePending ||
@@ -50,25 +49,40 @@ export function StoryEdit({
     isCreateChatPending ||
     isDeleteChatPending;
 
-  async function onDeleteHandler() {
-    if (!confirm(`Delete "${story.name}"? This cannot be undone.`)) return;
-    await deleteStory({ storyId: story.id });
-    router.push(`/story`);
+  async function handleDeleteStory() {
+    const result = await deleteStory(story.id);
+    if (!result.success) toast.error(result.error.message);
   }
 
   async function handleNewChat(): Promise<void> {
-    const { id } = await createChat({ storyId: story.id });
-    router.push(`/chat/${id}`);
+    const result = await createChat(story.id);
+    if (!result.success) {
+      toast.error(result.error.message);
+    }
   }
 
-  async function handleDeleteChat(chatId: string, chatName: string) {
-    if (!confirm(`Delete "${chatName}"? This cannot be undone.`)) return;
-    await deleteChat({ chatId });
-    setChatList((prev) => prev.filter((c) => c.id !== chatId));
+  async function handleDeleteChat(chatId: string) {
+    const result = await deleteChat(chatId);
+    if (!result.success) toast.error(result.error.message);
   }
 
-  async function onSubmitHandler(data: StoryFormValues) {
-    await updateStory({ data, storyId: story.id });
+  async function onSubmitHandler(
+    update: StoryFormValues,
+    setError: UseFormSetError<StoryFormValues>,
+  ) {
+    const result = await updateStory({ id: story.id, update });
+    if (!result.success && result.error.details) {
+      for (const [field, messages] of Object.entries(result.error.details)) {
+        setError(field as keyof StoryFormValues, {
+          message: messages.join("\n"),
+          type: "server",
+        });
+      }
+      return;
+    }
+    if (!result.success) {
+      toast.error(result.error.message);
+    }
   }
 
   return (
@@ -78,15 +92,22 @@ export function StoryEdit({
         backLinkLabel="Stories"
         pageTitle={story.name}
       >
-        <Button
-          disabled={isPending}
-          onClick={onDeleteHandler}
-          size="sm"
-          type="button"
-          variant="destructive"
+        <ConfirmDialog
+          description={`Delete ${story.name}? This can not be undone`}
+          onConfirm={handleDeleteStory}
+          title="Delete Story?"
+          type="delete"
         >
-          {isDeletePending ? "Deleting..." : "Delete"}
-        </Button>
+          <Button
+            disabled={isPending}
+            size="sm"
+            type="button"
+            variant="destructive"
+          >
+            {isDeletePending ? "Deleting..." : "Delete"}
+          </Button>
+        </ConfirmDialog>
+
         <Button disabled={isPending} onClick={handleNewChat} size="sm">
           {isCreateChatPending ? "Starting Chat..." : "New Chat"}
         </Button>
@@ -108,10 +129,10 @@ export function StoryEdit({
         />
         <div className="mt-6 flex flex-col gap-2">
           <h2 className="text-sm font-semibold">Chats</h2>
-          {chatList.length === 0 && (
+          {chats.length === 0 && (
             <p className="text-sm text-muted-foreground">No chats yet.</p>
           )}
-          {chatList.map((chat) => (
+          {chats.map((chat) => (
             <div className="flex items-center gap-2" key={chat.id}>
               <Link
                 className="flex-1 rounded-lg border px-4 py-3 hover:bg-muted transition-colors"
@@ -119,15 +140,21 @@ export function StoryEdit({
               >
                 <p className="text-sm font-medium">{chat.name}</p>
               </Link>
-              <Button
-                className="self-stretch h-auto w-12"
-                disabled={isPending}
-                onClick={() => handleDeleteChat(chat.id, chat.name)}
-                size="icon"
-                variant="destructive"
+              <ConfirmDialog
+                description={`Delete ${chat.name}? This can not be undone`}
+                onConfirm={() => handleDeleteChat(chat.id)}
+                title="Delete Story?"
+                type="delete"
               >
-                <Trash2 className="size-4" />
-              </Button>
+                <Button
+                  className="self-stretch h-auto w-12"
+                  disabled={isPending}
+                  size="icon"
+                  variant="destructive"
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              </ConfirmDialog>
             </div>
           ))}
         </div>

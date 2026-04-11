@@ -3,7 +3,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Bot, Clock, Cpu, Lock, Trash2, User } from "lucide-react";
 import { useState } from "react";
-import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
+import {
+  Controller,
+  useFieldArray,
+  useForm,
+  UseFormSetError,
+  useWatch,
+} from "react-hook-form";
 
 import {
   promptFormSchema,
@@ -57,7 +63,10 @@ const ROLE_ICONS: Record<string, typeof User> = {
 interface PromptFormProps {
   defaultValues?: PromptFormValues;
   formId: string;
-  onSubmit: (data: PromptFormValues) => void;
+  onSubmit: (
+    data: PromptFormValues,
+    setError: UseFormSetError<PromptFormValues>,
+  ) => void;
 }
 
 export function PromptForm({
@@ -101,7 +110,10 @@ export function PromptForm({
   const editingFragment = editingIndex !== null ? fields[editingIndex] : null;
 
   return (
-    <form id={formId} onSubmit={form.handleSubmit(onSubmit)}>
+    <form
+      id={formId}
+      onSubmit={form.handleSubmit((data) => onSubmit(data, form.setError))}
+    >
       <FieldGroup>
         <FieldInput control={form.control} label="Name" name="name" />
         <FieldInput
