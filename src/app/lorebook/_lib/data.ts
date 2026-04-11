@@ -210,21 +210,8 @@ export async function updateLorebookEntity({
   id,
   update,
 }: UpdateLorebookEntityParams): Promise<LorebookEntity> {
-  const orgLorebook = await getLorebookEntityById(id);
-  if (!orgLorebook) throw new NotFoundError("Lorebook", id);
-
-  const entityUpdate: Partial<LorebookEntity> = {};
-  if (update.apiKey !== undefined && update.apiKey !== orgLorebook.apiKey)
-    entityUpdate.apiKey = update.apiKey;
-
-  if (update.name !== undefined && update.name !== orgLorebook.name)
-    entityUpdate.name = update.name;
-
-  if (update.port !== undefined && update.port !== orgLorebook.port)
-    entityUpdate.port = update.port;
-
   const entity = await prisma.lorebook.update({
-    data: entityUpdate,
+    data: { apiKey: update.apiKey, name: update.name, port: update.port },
     where: { id },
   });
 
