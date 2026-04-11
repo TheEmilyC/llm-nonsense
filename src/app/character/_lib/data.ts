@@ -13,11 +13,8 @@ import {
   CHARACTER_CACHE_KEY,
   CharacterCard,
   CharacterDto,
-  characterDtoSchema,
   CharacterImageFileDto,
-  characterImageFileDtoSchema,
   CharacterListDto,
-  characterListDtoSchema,
   CharacterRecord,
 } from "@/app/character/_lib/schema";
 import { Character } from "@/generated/client";
@@ -100,14 +97,14 @@ export async function getCharacterImageFile(
   cacheTag(`${CHARACTER_CACHE_KEY}-${id}`);
   const entity = await getCharacterEntityById(id);
   if (!entity) return null;
-  return characterImageFileDtoSchema.parse(entity);
+  return toCharacterImageFileDto(entity);
 }
 
 export async function getCharacterList(): Promise<CharacterListDto[]> {
   "use cache";
   cacheTag(CHARACTER_CACHE_KEY);
   const characterList = await prisma.character.findMany();
-  return characterListDtoSchema.array().parse(characterList);
+  return toCharacterListDto(characterList);
 }
 
 export async function updateCharacter({
@@ -213,22 +210,37 @@ async function saveCharacterImage({
   return { fileName, filePath, pngHash };
 }
 
-function toCharacterDto(record: CharacterRecord): CharacterDto {
-  return characterDtoSchema.parse({
-    createdAt: record.entity.createdAt,
-    creator_notes: record.card.creator_notes,
-    description: record.card.description,
-    first_mes: record.card.first_mes,
-    id: record.entity.id,
+function toCharacterDto(character: CharacterRecord): CharacterDto {
+  return {
+    createdAt: character.entity.createdAt,
+    creator_notes: character.card.creator_notes,
+    description: character.card.description,
+    first_mes: character.card.first_mes,
+    id: character.entity.id,
     imageUrl: buildCharacterImageUrl({
-      id: record.entity.id,
-      pngHash: record.entity.pngHash,
+      id: character.entity.id,
+      pngHash: character.entity.pngHash,
     }),
-    mes_example: record.card.mes_example,
-    modifiedAt: record.entity.modifiedAt,
-    name: record.card.name,
-    personality: record.card.personality,
-    scenario: record.card.scenario,
-    tags: record.card.tags,
-  });
+    mes_example: character.card.mes_example,
+    modifiedAt: character.entity.modifiedAt,
+    name: character.card.name,
+    personality: character.card.personality,
+    scenario: character.card.scenario,
+    tags: character.card.tags,
+  };
+}
+
+function toCharacterImageFileDto(character: Character): CharacterImageFileDto {
+  return {
+    id: character.id,
+    png: character.png,
+  };
+}
+
+function toCharacterListDto(characters: Character[]): CharacterListDto[] {
+  return characters.map(({ id, name, pngHash }) => ({
+    id,
+    imageUrl: buildCharacterImageUrl({ id, pngHash }),
+    name,
+  }));
 }

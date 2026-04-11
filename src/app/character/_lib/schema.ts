@@ -84,11 +84,14 @@ export type CharacterImageFileDto = z.infer<typeof characterImageFileDtoSchema>;
 
 // -- DTOs
 
-export const characterListDtoSchema = characterEntitySchema.pick({
-  id: true,
-  name: true,
-  pngHash: true,
-});
+export const characterListDtoSchema = characterEntitySchema
+  .pick({
+    id: true,
+    name: true,
+  })
+  .extend({
+    imageUrl: z.string().min(1),
+  });
 export type CharacterListDto = z.infer<typeof characterListDtoSchema>;
 
 export const characterDtoSchema = characterEntitySchema
