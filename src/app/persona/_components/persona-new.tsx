@@ -1,7 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-
 import { PersonaForm } from "@/app/persona/_components/persona-form";
 import { useCreatePersona } from "@/app/persona/_lib/hooks";
 import { PersonaFormValues } from "@/app/persona/_lib/schema";
@@ -12,12 +10,10 @@ import { Button } from "@/components/ui/button";
 const FORM_ID = "form-new-persona";
 
 export function PersonaNew() {
-  const router = useRouter();
   const { createPersona, isPending } = useCreatePersona();
 
   async function onSubmitHandler(data: PersonaFormValues) {
-    const { id } = await createPersona(data);
-    router.push(`/persona/${id}`);
+    await createPersona(data);
   }
 
   return (

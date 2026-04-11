@@ -1,9 +1,12 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, UseFormSetError } from "react-hook-form";
 
-import { personaFormSchema, PersonaFormValues } from "@/app/persona/_lib/schema";
+import {
+  personaFormSchema,
+  PersonaFormValues,
+} from "@/app/persona/_lib/schema";
 import { FieldImageUpload } from "@/components/form-fields/field-image-upload";
 import { FieldInput } from "@/components/form-fields/field-input";
 import { FieldTextareaField } from "@/components/form-fields/field-textarea";
@@ -13,7 +16,10 @@ interface PersonaFormProps {
   defaultValues?: PersonaFormValues;
   formId: string;
   imageSrc?: string;
-  onSubmit: (data: PersonaFormValues) => void;
+  onSubmit: (
+    data: PersonaFormValues,
+    setError: UseFormSetError<PersonaFormValues>,
+  ) => void;
 }
 
 export function PersonaForm({
@@ -32,7 +38,10 @@ export function PersonaForm({
   });
 
   return (
-    <form id={formId} onSubmit={form.handleSubmit(onSubmit)}>
+    <form
+      id={formId}
+      onSubmit={form.handleSubmit((data) => onSubmit(data, form.setError))}
+    >
       <FieldGroup>
         <div className="grid grid-cols-3 gap-4">
           <div className="col-span-1">

@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 
+import { PersonaListDto } from "@/app/persona/_lib/schema";
 import { CardTile } from "@/components/card-tile";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
 
 interface PersonaListParams {
-  personas: { id: string; imageUrl: string; name: string; }[];
+  personas: PersonaListDto[];
 }
 
 export function PersonaList({ personas }: PersonaListParams) {

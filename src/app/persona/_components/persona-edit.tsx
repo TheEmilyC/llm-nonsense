@@ -1,10 +1,12 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { UseFormSetError } from "react-hook-form";
+import { toast } from "sonner";
 
 import { PersonaForm } from "@/app/persona/_components/persona-form";
 import { useDeletePersona, useUpdatePersona } from "@/app/persona/_lib/hooks";
 import { PersonaDto, PersonaFormValues } from "@/app/persona/_lib/schema";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
@@ -16,20 +18,32 @@ interface PersonaEditParams {
 }
 
 export function PersonaEdit({ persona }: PersonaEditParams) {
-  const router = useRouter();
   const { deletePersona, isPending: isDeletePending } = useDeletePersona();
   const { isPending: isUpdatePending, updatePersona } = useUpdatePersona();
 
   const isPending = isDeletePending || isUpdatePending;
 
   async function deleteHandler() {
-    if (!confirm(`Delete "${persona?.name}"? This cannot be undone.`)) return;
-    await deletePersona({ personaId: persona.id });
-    router.push(`/persona`);
+    await deletePersona(persona.id);
   }
 
-  async function onSubmitHandler(data: PersonaFormValues) {
-    await updatePersona({ data, personaId: persona.id });
+  async function onSubmitHandler(
+    data: PersonaFormValues,
+    setError: UseFormSetError<PersonaFormValues>,
+  ) {
+    const result = await updatePersona({ id: persona.id, update: data });
+    if (!result.success && result.error.details) {
+      for (const [field, messages] of Object.entries(result.error.details)) {
+        setError(field as keyof PersonaFormValues, {
+          message: messages.join("\n"),
+          type: "server",
+        });
+      }
+      return;
+    }
+    if (!result.success) {
+      toast.error(result.error.message);
+    }
   }
 
   return (
@@ -39,15 +53,21 @@ export function PersonaEdit({ persona }: PersonaEditParams) {
         backLinkLabel="Persona"
         pageTitle={persona.name}
       >
-        <Button
-          disabled={isPending}
-          onClick={deleteHandler}
-          size="sm"
-          type="button"
-          variant="destructive"
+        <ConfirmDialog
+          description={`Delete ${persona.name}? This can not be undone`}
+          onConfirm={deleteHandler}
+          title="Delete Persona?"
+          type="delete"
         >
-          {isDeletePending ? "Deleting..." : "Delete"}
-        </Button>
+          <Button
+            disabled={isPending}
+            size="sm"
+            type="button"
+            variant="destructive"
+          >
+            {isDeletePending ? "Deleting..." : "Delete"}
+          </Button>
+        </ConfirmDialog>
         <Button disabled={isPending} form={FORM_ID} size="sm" type="submit">
           {isUpdatePending ? "Saving..." : "Save"}
         </Button>
