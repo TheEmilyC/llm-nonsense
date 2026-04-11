@@ -45,10 +45,7 @@ export interface GetChatSessionParams {
 export interface UpdateMessageContentParams {
   id: string;
   update: Partial<
-    Pick<
-      MessageContent,
-      "isActive" | "messageId" | "metadata" | "parts" | "role"
-    >
+    Pick<MessageContent, "isActive" | "metadata" | "parts" | "role">
   >;
 }
 
@@ -229,19 +226,23 @@ export async function updateMessageContent({
 }: UpdateMessageContentParams): Promise<MessageContentDto> {
   const result = await prisma.$transaction(async (tx) => {
     if (update.isActive) {
-      const messageId =
-        update.messageId ??
-        (await tx.messageContent.findUniqueOrThrow({ where: { id } }))
-          .messageId;
+      const message = await tx.messageContent.findUniqueOrThrow({
+        where: { id },
+      });
 
       await tx.messageContent.updateMany({
         data: { isActive: false },
-        where: { messageId, NOT: { id } },
+        where: { messageId: message.messageId, NOT: { id } },
       });
     }
 
     return tx.messageContent.update({
-      data: update,
+      data: {
+        isActive: update.isActive,
+        metadata: update.metadata,
+        parts: update.parts,
+        role: update.role,
+      },
       where: { id },
     });
   });
