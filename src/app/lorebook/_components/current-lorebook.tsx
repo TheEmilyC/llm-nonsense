@@ -3,7 +3,7 @@
 import { RefreshCw } from "lucide-react";
 
 import { useLorebook } from "@/app/lorebook/_lib/hooks";
-import { LorebookDto, LorebookStatus } from "@/app/lorebook/_lib/schema";
+import { LorebookStatus, LorebookStatusDto } from "@/app/lorebook/_lib/schema";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/tooltip";
 
 interface CurrentLorebookProps {
-  initialLorebook?: LorebookDto;
+  initialLorebook?: LorebookStatusDto;
   lorebookId: string;
 }
 

@@ -1,4 +1,8 @@
-export type ErrorCode = "INTERNAL_ERROR" | "NOT_FOUND" | "VALIDATION_ERROR";
+export type ErrorCode =
+  | "INTERNAL_ERROR"
+  | "NOT_FOUND"
+  | "OBSIDIAN_ERROR"
+  | "VALIDATION_ERROR";
 
 export class AppError extends Error {
   constructor(
@@ -20,6 +24,13 @@ export class NotFoundError extends AppError {
       404,
     );
     Object.setPrototypeOf(this, NotFoundError.prototype);
+  }
+}
+
+export class ObsidianError extends AppError {
+  constructor(message: string, statusCode?: number) {
+    super(message, "OBSIDIAN_ERROR", statusCode);
+    Object.setPrototypeOf(this, ObsidianError.prototype);
   }
 }
 

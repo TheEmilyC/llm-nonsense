@@ -4,7 +4,6 @@ import z from "zod";
 
 import { LorebookEdit } from "@/app/lorebook/_components/lorebook-edit";
 import { getLorebookEntityById } from "@/app/lorebook/_lib/data";
-import { toLorebookEntityDto } from "@/app/lorebook/_lib/schema";
 import { dbIdValidator } from "@/lib/validators";
 
 interface LorebookEditPageParams {
@@ -28,5 +27,5 @@ async function LorebookEditPageContent({ params }: LorebookEditPageParams) {
   const lorebook = await getLorebookEntityById(id);
   if (!lorebook) notFound();
 
-  return <LorebookEdit lorebook={toLorebookEntityDto(lorebook)} />;
+  return <LorebookEdit lorebook={lorebook} />;
 }

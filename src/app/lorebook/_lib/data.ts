@@ -1,4 +1,6 @@
-import { cacheLife, cacheTag, revalidateTag } from "next/cache";
+"use server";
+
+import { cacheTag, updateTag } from "next/cache";
 import path from "path";
 
 import {
@@ -6,19 +8,24 @@ import {
   getObsidianIndexResposneSchema,
   Lorebook,
   LOREBOOK_CACHE_KEY,
+  LorebookEntityDto,
+  lorebookEntityDtoSchema,
   LorebookStatus,
+  LorebookStatusDto,
+  lorebookStatusDtoSchema,
   ObsidianApiConnection,
   obsidianFileResponseSchema,
 } from "@/app/lorebook/_lib/schema";
+import { Lorebook as LorebookEntity } from "@/generated/client";
 import {
   LOREBOOK_NEVER_TAG,
   LOREBOOK_TAG,
   OBSIDIAN_URL,
 } from "@/lib/env-variables";
+import { NotFoundError, ObsidianError } from "@/lib/error";
 import { HttpStatus } from "@/lib/http";
+import { logger, parseError } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
-
-import { Lorebook as LorebookEntity } from "../../../../generated/client";
 
 export interface CreateLorebookEntityParams {
   newLorebook: Pick<LorebookEntity, "apiKey" | "name" | "port">;
@@ -41,7 +48,7 @@ interface GetLorebookEntryParams {
 
 export async function createLorebookEntity({
   newLorebook,
-}: CreateLorebookEntityParams): Promise<LorebookEntity> {
+}: CreateLorebookEntityParams): Promise<LorebookEntityDto> {
   const entity = await prisma.lorebook.create({
     data: {
       apiKey: newLorebook.apiKey,
@@ -49,26 +56,24 @@ export async function createLorebookEntity({
       port: newLorebook.port,
     },
   });
-  revalidateTag(LOREBOOK_CACHE_KEY, "max");
-  return entity;
+  const lorebook = lorebookEntityDtoSchema.parse(entity);
+
+  updateTag(LOREBOOK_CACHE_KEY);
+  return lorebook;
 }
 
-export async function deleteLorebookEntity(id: string): Promise<void> {
+export async function deleteLorebookEntity(id: string) {
   await prisma.lorebook.delete({ where: { id } });
-  revalidateTag(LOREBOOK_CACHE_KEY, "max");
+  updateTag(LOREBOOK_CACHE_KEY);
 }
 
-export async function getLorebookById(
-  id: string,
-  { debug = false } = {},
-): Promise<Lorebook> {
+export async function getLorebookById(id: string): Promise<Lorebook | null> {
   "use cache";
   cacheTag(LOREBOOK_CACHE_KEY);
-  cacheLife("hours");
 
   // Get lorebook entity
   const entity = await getLorebookEntityById(id);
-  if (!entity) throw new Error("Lorebook does not exist");
+  if (!entity) return null;
 
   // Get file index
   let index: GetLorebookIndexResposne;
@@ -82,9 +87,12 @@ export async function getLorebookById(
       method: "POST",
     });
     if (!indexResponse.ok) {
-      console.error(
-        `Lorebook index request failed. Status:${indexResponse.status} Status Text: ${indexResponse.statusText}`,
-      );
+      logger.error("fetch lorebook file index request failed", {
+        lorebookId: id,
+        status: indexResponse.status,
+        statusText: indexResponse.statusText,
+      });
+
       return { status: LorebookStatus.ServerUnavailable };
     }
     if (indexResponse.status === HttpStatus.UNAUTHORIZED) {
@@ -92,7 +100,10 @@ export async function getLorebookById(
     }
     index = getObsidianIndexResposneSchema.parse(await indexResponse.json());
   } catch (err) {
-    console.error(err);
+    logger.error("Failed to get lorebook file index", {
+      id,
+      ...parseError(err),
+    });
     return { status: LorebookStatus.ServerUnavailable };
   }
 
@@ -116,16 +127,18 @@ export async function getLorebookById(
     name: entity.name,
     status: LorebookStatus.Ready,
   };
-  if (debug) {
-    console.debug("Lorebook Index", JSON.stringify(lorebook, null, 2));
-  }
+
   return lorebook;
 }
 
-export async function getLorebookEntityById(id: string) {
+export async function getLorebookEntityById(
+  id: string,
+): Promise<LorebookEntityDto | null> {
   "use cache";
   cacheTag(LOREBOOK_CACHE_KEY);
-  return prisma.lorebook.findUnique({ where: { id } });
+  const result = await prisma.lorebook.findUnique({ where: { id } });
+  if (!result) return null;
+  return lorebookEntityDtoSchema.parse(result);
 }
 
 export async function getLorebookEntityList(): Promise<LorebookEntity[]> {
@@ -140,11 +153,10 @@ export async function getLorebookEntry({
   lorebookId,
 }: GetLorebookEntryParams) {
   "use cache";
-  cacheLife("hours");
   cacheTag(LOREBOOK_CACHE_KEY);
 
   const lorebookEntity = await getLorebookEntityById(lorebookId);
-  if (!lorebookEntity) throw new Error("Lorebook does not exist");
+  if (!lorebookEntity) throw new NotFoundError("Lorebook", lorebookId);
 
   const response = await fetch(
     `${OBSIDIAN_URL}:${lorebookEntity.port}/vault/${fileName}`,
@@ -158,9 +170,7 @@ export async function getLorebookEntry({
 
   const file = obsidianFileResponseSchema.parse(await response.json());
   if ("errorCode" in file) {
-    throw new Error(
-      `Lorebook file request failed. Status${response.status} StatusText: ${response.statusText}`,
-    );
+    throw new ObsidianError(response.statusText, response.status);
   }
 
   return file;
@@ -175,6 +185,14 @@ export async function getLorebookEntryList({
   );
 }
 
+export async function getLorebookStatusDto(
+  id: string,
+): Promise<LorebookStatusDto | null> {
+  const lorebook = await getLorebookById(id);
+  if (!lorebook) return null;
+  return lorebookStatusDtoSchema.parse(lorebook);
+}
+
 export async function testLorebookConnection(api: ObsidianApiConnection) {
   const response = await fetch(`${OBSIDIAN_URL}:${api.port}/vault/`, {
     headers: {
@@ -182,9 +200,7 @@ export async function testLorebookConnection(api: ObsidianApiConnection) {
     },
   });
   if (!response.ok || response.status === 401) {
-    throw new Error(
-      `Lorebook connection failed. Status: ${response.status} StatusText: ${response.statusText}`,
-    );
+    throw new ObsidianError(response.statusText, response.status);
   }
 
   return true;
@@ -195,7 +211,7 @@ export async function updateLorebookEntity({
   update,
 }: UpdateLorebookEntityParams): Promise<LorebookEntity> {
   const orgLorebook = await getLorebookEntityById(id);
-  if (!orgLorebook) throw new Error("Lorebook does not exist");
+  if (!orgLorebook) throw new NotFoundError("Lorebook", id);
 
   const entityUpdate: Partial<LorebookEntity> = {};
   if (update.apiKey !== undefined && update.apiKey !== orgLorebook.apiKey)
@@ -212,6 +228,6 @@ export async function updateLorebookEntity({
     where: { id },
   });
 
-  revalidateTag(LOREBOOK_CACHE_KEY, "max");
+  updateTag(LOREBOOK_CACHE_KEY);
   return entity;
 }
