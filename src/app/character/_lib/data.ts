@@ -16,8 +16,8 @@ import {
   characterDtoSchema,
   CharacterImageFileDto,
   characterImageFileDtoSchema,
-  CharacterListItem,
-  characterListItemSchema,
+  CharacterListDto,
+  characterListDtoSchema,
   CharacterRecord,
 } from "@/app/character/_lib/schema";
 import { Character } from "@/generated/client";
@@ -103,11 +103,11 @@ export async function getCharacterImageFile(
   return characterImageFileDtoSchema.parse(entity);
 }
 
-export async function getCharacterList(): Promise<CharacterListItem[]> {
+export async function getCharacterList(): Promise<CharacterListDto[]> {
   "use cache";
   cacheTag(CHARACTER_CACHE_KEY);
   const characterList = await prisma.character.findMany();
-  return characterListItemSchema.array().parse(characterList);
+  return characterListDtoSchema.array().parse(characterList);
 }
 
 export async function updateCharacter({
@@ -161,7 +161,7 @@ export async function updateCharacter({
 async function getCharacterEntityById(id: string): Promise<Character | null> {
   "use cache";
   cacheTag(`${CHARACTER_CACHE_KEY}-${id}`);
-  return await prisma.character.findUnique({ where: { id } });
+  return prisma.character.findUnique({ where: { id } });
 }
 
 async function getCharacterRecord(id: string): Promise<CharacterRecord | null> {

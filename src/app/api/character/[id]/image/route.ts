@@ -2,7 +2,6 @@ import fs from "fs/promises";
 import { NextResponse } from "next/server";
 
 import { getCharacterImageFile } from "@/app/character/_lib/data";
-import { ValidationError } from "@/lib/error";
 import { HttpStatus } from "@/lib/http";
 import { logger, parseError } from "@/lib/logger";
 import { dbIdValidator } from "@/lib/validators";
@@ -14,14 +13,7 @@ interface Params {
 export async function GET(_req: Request, { params }: Params) {
   // -- Validation
   const { id: idRaw } = await params;
-  const parseResult = dbIdValidator.safeParse(idRaw);
-  if (!parseResult.success) {
-    throw new ValidationError("Id validation failed", {
-      id: [idRaw],
-      route: ["/api/character/[id]/image"],
-    });
-  }
-  const id = parseResult.data;
+  const id = dbIdValidator.parse(idRaw);
 
   try {
     // -- Fetch

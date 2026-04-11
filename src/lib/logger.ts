@@ -29,6 +29,8 @@ function formatMessage(level: string, message: string, context?: LogContext) {
 }
 
 export const logger = {
+  debug: (message: string, context?: LogContext) =>
+    console.debug(formatMessage("debug", message, context)),
   error: (message: string, context?: LogContext) =>
     console.error(formatMessage("error", message, context)),
   info: (message: string, context?: LogContext) =>

@@ -7,6 +7,8 @@ import {
 
 export const CHARACTER_CACHE_KEY = "character";
 
+// -- Base
+
 // V3 character card community standard
 export const characterCardSchema = z.looseObject({
   avatar: z.string(),
@@ -28,13 +30,6 @@ export const characterCardSchema = z.looseObject({
 });
 export type CharacterCard = z.infer<typeof characterCardSchema>;
 
-export const characterListItemSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().min(1),
-  pngHash: z.string().min(1),
-});
-export type CharacterListItem = z.infer<typeof characterListItemSchema>;
-
 export const characterEntitySchema = z.object({
   createdAt: z.date(),
   id: z.string().min(1),
@@ -50,29 +45,6 @@ export const characterRecordSchema = z.object({
 });
 export type CharacterRecord = z.infer<typeof characterRecordSchema>;
 
-export const characterDtoSchema = characterEntitySchema
-  .pick({
-    createdAt: true,
-    id: true,
-    modifiedAt: true,
-  })
-  .extend(
-    characterCardSchema.pick({
-      creator_notes: true,
-      description: true,
-      first_mes: true,
-      mes_example: true,
-      name: true,
-      personality: true,
-      scenario: true,
-      tags: true,
-    }).shape,
-  )
-  .extend({
-    imageUrl: z.string().min(1),
-  });
-export type CharacterDto = z.infer<typeof characterDtoSchema>;
-
 const characterImageValidator = z
   .instanceof(File)
   .refine((file) => file.type === "image/png", "Only PNGs are supported.")
@@ -80,6 +52,8 @@ const characterImageValidator = z
     (file) => file.size <= MAX_CHARACTER_IMAGE_SIZE,
     `Max file size is ${MAX_CHARACTER_IMAGE_SIZE_MB}MB`,
   );
+
+// -- Schemas
 
 export const importFromPngFormSchema = z.object({
   png: characterImageValidator,
@@ -107,3 +81,35 @@ export const characterImageFileDtoSchema = characterEntitySchema.pick({
   png: true,
 });
 export type CharacterImageFileDto = z.infer<typeof characterImageFileDtoSchema>;
+
+// -- DTOs
+
+export const characterListDtoSchema = characterEntitySchema.pick({
+  id: true,
+  name: true,
+  pngHash: true,
+});
+export type CharacterListDto = z.infer<typeof characterListDtoSchema>;
+
+export const characterDtoSchema = characterEntitySchema
+  .pick({
+    createdAt: true,
+    id: true,
+    modifiedAt: true,
+  })
+  .extend(
+    characterCardSchema.pick({
+      creator_notes: true,
+      description: true,
+      first_mes: true,
+      mes_example: true,
+      name: true,
+      personality: true,
+      scenario: true,
+      tags: true,
+    }).shape,
+  )
+  .extend({
+    imageUrl: z.string().min(1),
+  });
+export type CharacterDto = z.infer<typeof characterDtoSchema>;

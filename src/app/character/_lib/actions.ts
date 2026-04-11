@@ -44,7 +44,7 @@ export async function createCharacterAction(
   try {
     character = await createCharacter({ characterCard, image });
   } catch (err) {
-    logger.error("Error creating character", parseError(err));
+    logger.error("Failed creating character", parseError(err));
     return toActionResponseError(err);
   }
   logger.info("Character created", {
@@ -65,7 +65,7 @@ export async function deleteCharacterAction(
   try {
     await deleteCharacter(id);
   } catch (err) {
-    logger.error("Error deleting character", parseError(err));
+    logger.error("Failed deleting character", { id, ...parseError(err) });
     return toActionResponseError(err);
   }
   logger.info("Character deleted", {
@@ -97,7 +97,7 @@ export async function importCharacterFromPNGAction(
       image: imageBuffer,
     });
   } catch (err) {
-    logger.error("Error creating character", parseError(err));
+    logger.error("Failed to create character", parseError(err));
     return toActionResponseError(err);
   }
   logger.info("Character imported", { id: character.id });
@@ -123,7 +123,10 @@ export async function updateCharacterAction(
   try {
     await updateCharacter({ id, update: { card, image } });
   } catch (err) {
-    logger.error(`Error updating character ID:${id}`, parseError(err));
+    logger.error(`Failed to update character`, {
+      id,
+      ...parseError(err),
+    });
     return toActionResponseError(err);
   }
   logger.info(`Character updated`, { id });

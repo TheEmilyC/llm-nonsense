@@ -25,9 +25,9 @@ export function useCreateCharacter(onError?: (error: ActionError) => void) {
   function createCharacter(data: CharacterFormValues): Promise<ActionResponse> {
     return new Promise((resolve) => {
       startTransition(async () => {
-        const result = await createCharacterAction(data);
-        if (!result.success) onError?.(result.error);
-        resolve(result);
+        const res = await createCharacterAction(data);
+        if (!res.success) onError?.(res.error);
+        resolve(res);
       });
     });
   }
@@ -41,9 +41,9 @@ export function useDeleteCharacter(onError?: (error: ActionError) => void) {
   function deleteCharacter(id: string): Promise<ActionResponse> {
     return new Promise((resolve) => {
       startTransition(async () => {
-        const result = await deleteCharacterAction(id);
-        if (!result.success) onError?.(result.error);
-        resolve(result);
+        const res = await deleteCharacterAction(id);
+        if (!res.success) onError?.(res.error);
+        resolve(res);
       });
     });
   }
@@ -62,9 +62,9 @@ export function useImportCharacterFromPNG(
   function importCharacter(data: ImportFromPngForm): Promise<ActionResponse> {
     return new Promise((resolve) => {
       startTransition(async () => {
-        const result = await importCharacterFromPNGAction(data);
-        if (!result.success) onError?.(result.error);
-        resolve(result);
+        const res = await importCharacterFromPNGAction(data);
+        if (!res.success) onError?.(res.error);
+        resolve(res);
       });
     });
   }
@@ -84,9 +84,9 @@ export function useUpdateCharacter(onError?: (error: ActionError) => void) {
   }: UpdateCharacterMutationParams): Promise<ActionResponse> {
     return new Promise((resolve) => {
       startTransition(async () => {
-        const result = await updateCharacterAction(id, data);
-        if (!result.success) onError?.(result.error);
-        resolve(result);
+        const res = await updateCharacterAction(id, data);
+        if (!res.success) onError?.(res.error);
+        resolve(res);
       });
     });
   }
