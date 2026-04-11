@@ -17,7 +17,7 @@ import {
   UpdateContentActionParams,
   updateContentActionParamsSchema,
 } from "@/app/chat/_lib/schema";
-import { getPersonaByIdOrFail } from "@/app/persona/_lib/data";
+import { getPersonaById } from "@/app/persona/_lib/data";
 import { hydratePrompt } from "@/app/prompt/_lib/prompt-builder";
 import { getStoryById } from "@/app/story/_lib/data";
 import { ActionResponse, toActionResponseError } from "@/lib/action-utils";
@@ -46,7 +46,7 @@ export async function createChatFromStoryAction(
   try {
     const [character, persona, newChat] = await Promise.all([
       getCharacterById(story.characterId),
-      getPersonaByIdOrFail(story.personaId),
+      getPersonaById(story.personaId),
       createChat({
         newChat: { name: new Date().toLocaleString(), storyId },
       }),
@@ -56,7 +56,7 @@ export async function createChatFromStoryAction(
     if (character && character.first_mes.length > 0) {
       const message = hydratePrompt(character.first_mes, {
         char: character.name,
-        user: persona.name,
+        user: persona ? persona.name : "",
       });
       const idGenerator = createIdGenerator({
         prefix: "msg",
