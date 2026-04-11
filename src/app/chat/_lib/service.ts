@@ -14,14 +14,14 @@ import {
   getLorebookById,
   getLorebookEntryList,
 } from "@/app/lorebook/_lib/data";
+import { convertFilesToPrompt } from "@/app/lorebook/_lib/lorebook-scanning";
 import { LorebookStatus } from "@/app/lorebook/_lib/schema";
 import { getPersonaById } from "@/app/persona/_lib/data";
 import { PromptBuilder } from "@/app/prompt/_lib/prompt-builder";
 import { PromptFragmentType, PromptInjectTag } from "@/app/prompt/_lib/schema";
 import { getWorldById } from "@/app/world/_lib/data";
-import { models } from "@/lib/ai/registry";
+import { models } from "@/lib/ai-registry";
 import { NotFoundError } from "@/lib/error";
-import { convertFilesToPrompt } from "@/lib/lorebook-scanning";
 
 interface BuildPromptFromChatParams {
   chat: ChatSessionDto;
