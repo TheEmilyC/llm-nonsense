@@ -135,6 +135,13 @@ export const obsidianFileResponseSchema = z.union([
 
 // -- DTOs
 
+export const lorebookEntityListDtoSchema = lorebookEntitySchema.pick({
+  createdAt: true,
+  id: true,
+  name: true,
+});
+export type LorebookEntityListDto = z.infer<typeof lorebookEntityListDtoSchema>;
+
 export const lorebookEntityDtoSchema = lorebookEntitySchema.pick({
   apiKey: true,
   id: true,

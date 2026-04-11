@@ -1,11 +1,12 @@
 import Link from "next/link";
 
+import { LorebookEntityListDto } from "@/app/lorebook/_lib/schema";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
 
 interface LorebookListParams {
-  lorebooks: { id: string; name: string }[];
+  lorebooks: LorebookEntityListDto[];
 }
 
 export function LorebookList({ lorebooks }: LorebookListParams) {

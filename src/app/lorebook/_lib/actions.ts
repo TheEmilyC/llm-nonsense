@@ -118,13 +118,14 @@ export async function updateLorebookAction(
 
   try {
     await updateLorebookEntity({ id, update });
-    return { success: true };
   } catch (err) {
     logger.error("Failed to update lorebook", {
       id,
       update,
       ...parseError(err),
     });
+    logger.info("Persona updated", { id });
     return toActionResponseError(err);
   }
+  return { success: true };
 }

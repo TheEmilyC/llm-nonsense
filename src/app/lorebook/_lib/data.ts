@@ -9,11 +9,12 @@ import {
   Lorebook,
   LOREBOOK_CACHE_KEY,
   LorebookEntityDto,
-  lorebookEntityDtoSchema,
+  LorebookEntityListDto,
   LorebookStatus,
   LorebookStatusDto,
   lorebookStatusDtoSchema,
   ObsidianApiConnection,
+  ObsidianFile,
   obsidianFileResponseSchema,
 } from "@/app/lorebook/_lib/schema";
 import { Lorebook as LorebookEntity } from "@/generated/client";
@@ -56,7 +57,7 @@ export async function createLorebookEntity({
       port: newLorebook.port,
     },
   });
-  const lorebook = lorebookEntityDtoSchema.parse(entity);
+  const lorebook = toLorebookEntityDto(entity);
 
   updateTag(LOREBOOK_CACHE_KEY);
   return lorebook;
@@ -138,20 +139,23 @@ export async function getLorebookEntityById(
   cacheTag(LOREBOOK_CACHE_KEY);
   const result = await prisma.lorebook.findUnique({ where: { id } });
   if (!result) return null;
-  return lorebookEntityDtoSchema.parse(result);
+  return toLorebookEntityDto(result);
 }
 
-export async function getLorebookEntityList(): Promise<LorebookEntity[]> {
+export async function getLorebookEntityList(): Promise<
+  LorebookEntityListDto[]
+> {
   "use cache";
   cacheTag(LOREBOOK_CACHE_KEY);
 
-  return await prisma.lorebook.findMany();
+  const result = await prisma.lorebook.findMany();
+  return toLorebookEntityListDto(result);
 }
 
 export async function getLorebookEntry({
   fileName,
   lorebookId,
-}: GetLorebookEntryParams) {
+}: GetLorebookEntryParams): Promise<ObsidianFile> {
   "use cache";
   cacheTag(LOREBOOK_CACHE_KEY);
 
@@ -179,7 +183,7 @@ export async function getLorebookEntry({
 export async function getLorebookEntryList({
   files,
   lorebookId,
-}: GetLorebookEntryListParams) {
+}: GetLorebookEntryListParams): Promise<ObsidianFile[]> {
   return Promise.all(
     files.map((fileName) => getLorebookEntry({ fileName, lorebookId })),
   );
@@ -209,12 +213,27 @@ export async function testLorebookConnection(api: ObsidianApiConnection) {
 export async function updateLorebookEntity({
   id,
   update,
-}: UpdateLorebookEntityParams): Promise<LorebookEntity> {
+}: UpdateLorebookEntityParams): Promise<LorebookEntityDto> {
   const entity = await prisma.lorebook.update({
     data: { apiKey: update.apiKey, name: update.name, port: update.port },
     where: { id },
   });
 
   updateTag(LOREBOOK_CACHE_KEY);
-  return entity;
+  return toLorebookEntityDto(entity);
+}
+
+function toLorebookEntityDto(lorebook: LorebookEntity): LorebookEntityDto {
+  return {
+    apiKey: lorebook.apiKey,
+    id: lorebook.id,
+    name: lorebook.name,
+    port: lorebook.port,
+  };
+}
+
+function toLorebookEntityListDto(
+  lorebooks: LorebookEntity[],
+): LorebookEntityListDto[] {
+  return lorebooks.map(({ createdAt, id, name }) => ({ createdAt, id, name }));
 }
