@@ -74,6 +74,7 @@ export const chatPostRequestBodySchema = z.object({
 export type ChatPostRequestBody = z.infer<typeof chatPostRequestBodySchema>;
 
 // -- DTOs
+
 export const chatListDtoSchema = baseChatSchema.pick({
   id: true,
   name: true,
@@ -142,6 +143,7 @@ export const chatSessionDtoSchema = baseChatSchema
 export type ChatSessionDto = z.infer<typeof chatSessionDtoSchema>;
 
 // -- Mappers
+
 export function messageDtoToAiMessage(chatMessage: ChatMessageDto) {
   const activeContent =
     chatMessage.contents.find((msg) => msg.isActive) ?? chatMessage.contents[0];
