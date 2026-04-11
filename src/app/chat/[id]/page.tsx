@@ -40,7 +40,7 @@ async function ChatPageContent({ params }: Props) {
   const personaProfile: ChatProfile = {
     avatarSrc: buildPersonaImageUrl({
       id: chatSession.persona.id,
-      imgHash: chatSession.persona.imageHash,
+      imageHash: chatSession.persona.imageHash,
     }),
     id: chatSession.persona.id,
     name: chatSession.persona.name,

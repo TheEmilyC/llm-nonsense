@@ -60,7 +60,7 @@ async function NewStoryPageContent({ searchParams }: NewStoryPageParams) {
   }));
   const personas = personaList.map((per) => ({
     id: per.id,
-    imageUrl: buildPersonaImageUrl({ id: per.id, imgHash: per.imageHash }),
+    imageUrl: buildPersonaImageUrl({ id: per.id, imageHash: per.imageHash }),
     name: per.name,
   }));
   const worlds = worldList.map((wrd) => ({
