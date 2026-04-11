@@ -10,11 +10,6 @@ import { getPromptList } from "@/app/prompt/_lib/data";
 import { StoryEdit } from "@/app/story/_components/story-edit";
 import { getStoryById } from "@/app/story/_lib/data";
 import { getWorldList } from "@/app/world/_lib/data";
-import {
-  buildCharacterImageUrl,
-  buildPersonaImageUrl,
-  buildWorldImageUrl,
-} from "@/lib/image";
 import { dbIdValidator } from "@/lib/validators";
 
 interface StoryPageParams {
@@ -35,9 +30,9 @@ export default function StoryPage({ params }: StoryPageParams) {
 
 async function StoryPageContent({ params }: StoryPageParams) {
   const [
-    characterList,
-    personaList,
-    worldList,
+    characters,
+    personas,
+    worlds,
     lorebookResult,
     promptResult,
     routeParams,
@@ -56,21 +51,6 @@ async function StoryPageContent({ params }: StoryPageParams) {
   ]);
   if (!story) notFound();
 
-  const characters = characterList.map((char) => ({
-    id: char.id,
-    imageUrl: buildCharacterImageUrl({ id: char.id, pngHash: char.pngHash }),
-    name: char.name,
-  }));
-  const personas = personaList.map((per) => ({
-    id: per.id,
-    imageUrl: buildPersonaImageUrl({ id: per.id, imageHash: per.imageHash }),
-    name: per.name,
-  }));
-  const worlds = worldList.map((wrd) => ({
-    id: wrd.id,
-    imageUrl: buildWorldImageUrl({ id: wrd.id, imgHash: wrd.imageHash }),
-    name: wrd.name,
-  }));
   const lorebooks = lorebookResult.map((lb) => ({
     label: lb.name,
     value: lb.id,

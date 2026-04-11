@@ -7,11 +7,6 @@ import { getPersonaList } from "@/app/persona/_lib/data";
 import { getPromptList } from "@/app/prompt/_lib/data";
 import { StoryNew } from "@/app/story/_components/story-new";
 import { getWorldList } from "@/app/world/_lib/data";
-import {
-  buildCharacterImageUrl,
-  buildPersonaImageUrl,
-  buildWorldImageUrl,
-} from "@/lib/image";
 import { dbIdValidator } from "@/lib/validators";
 
 type NewStoryPageParams = {
@@ -37,37 +32,16 @@ export default function NewStoryPage({ searchParams }: NewStoryPageParams) {
 }
 
 async function NewStoryPageContent({ searchParams }: NewStoryPageParams) {
-  const [
-    characterList,
-    personaList,
-    worldList,
-    lorebookResult,
-    promptResult,
-    params,
-  ] = await Promise.all([
-    getCharacterList(),
-    getPersonaList(),
-    getWorldList(),
-    getLorebookEntityList(),
-    getPromptList(),
-    searchParams,
-  ]);
+  const [characters, personas, worlds, lorebookResult, promptResult, params] =
+    await Promise.all([
+      getCharacterList(),
+      getPersonaList(),
+      getWorldList(),
+      getLorebookEntityList(),
+      getPromptList(),
+      searchParams,
+    ]);
 
-  const characters = characterList.map((char) => ({
-    id: char.id,
-    imageUrl: buildCharacterImageUrl({ id: char.id, pngHash: char.pngHash }),
-    name: char.name,
-  }));
-  const personas = personaList.map((per) => ({
-    id: per.id,
-    imageUrl: buildPersonaImageUrl({ id: per.id, imageHash: per.imageHash }),
-    name: per.name,
-  }));
-  const worlds = worldList.map((wrd) => ({
-    id: wrd.id,
-    imageUrl: buildWorldImageUrl({ id: wrd.id, imgHash: wrd.imageHash }),
-    name: wrd.name,
-  }));
   const lorebooks = lorebookResult.map((lb) => ({
     label: lb.name,
     value: lb.id,

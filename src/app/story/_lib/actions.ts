@@ -1,28 +1,28 @@
 "use server";
 
+import { redirect } from "next/navigation";
+
 import { getCharacterById } from "@/app/character/_lib/data";
 import { getPersonaById } from "@/app/persona/_lib/data";
 import { createStory, deleteStory, updateStory } from "@/app/story/_lib/data";
 import {
-  createStoryParamsSchema,
-  StoryDto,
   storyFormSchema,
   StoryFormValues,
-  updateStoryParamsSchema,
+  UpdateStoryActionParams,
+  updateStoryActionParamsSchema,
 } from "@/app/story/_lib/schema";
 import { getWorldById } from "@/app/world/_lib/data";
-import { ActionResponse } from "@/lib/action-utils";
-import { HttpStatus } from "@/lib/http";
+import { ActionResponse, toActionResponseError } from "@/lib/action-utils";
+import { logger, parseError } from "@/lib/logger";
 import { dbIdValidator } from "@/lib/validators";
 
 export async function createStoryAction(
   data: StoryFormValues,
-): Promise<ActionResponse<{ newStoryId: string }>> {
+): Promise<ActionResponse> {
   const dataParseResult = storyFormSchema.safeParse(data);
-  if (!dataParseResult.success) {
-    console.error(dataParseResult.error);
-    return { error: "Malformed story data", success: false };
-  }
+  if (!dataParseResult.success)
+    return toActionResponseError(dataParseResult.error);
+
   const formData = dataParseResult.data;
 
   let name: string = "";
@@ -33,7 +33,7 @@ export async function createStoryAction(
       formData.personaId ? getPersonaById(formData.personaId) : null,
       formData.worldId ? getWorldById(formData.worldId) : null,
     ]);
-    if (character) name += character.card.name;
+    if (character) name += character.name;
     if (persona) {
       if (name.length > 0) name += " and ";
       name += persona.name;
@@ -47,63 +47,52 @@ export async function createStoryAction(
   }
 
   let story;
-  const newStory = createStoryParamsSchema.parse({
+  const newStory = {
     ...formData,
     name,
-  });
+  };
   try {
     story = await createStory(newStory);
-    return { data: { newStoryId: story.id }, success: true };
   } catch (err) {
-    console.error(err);
-    return { error: "Create story failed", success: false };
+    logger.error("Failed to create strory", { data, ...parseError(err) });
+    return toActionResponseError(err);
   }
+  logger.info("Story created", { id: story.id });
+  redirect(`/story/${story.id}`);
 }
 
 export async function deleteStoryAction(
   storyId: string,
-): Promise<ActionResponse<null>> {
+): Promise<ActionResponse> {
   const idParseResult = dbIdValidator.safeParse(storyId);
-  if (!idParseResult.success) {
-    return { error: "not found", status: HttpStatus.NOT_FOUND, success: false };
-  }
+  if (!idParseResult.success) return toActionResponseError(idParseResult.error);
+
   const id = idParseResult.data;
 
   try {
     await deleteStory(id);
   } catch (err) {
-    console.error(err);
-    return { error: "Failed to delete story", success: false };
+    logger.error("Failed to delete story", { id, ...parseError(err) });
+    return toActionResponseError(err);
   }
-  return { data: null, success: true };
+  logger.info("Story deleted", { id });
+  redirect("/story");
 }
 
 export async function updateStoryAction(
-  storyId: string,
-  data: StoryFormValues,
-): Promise<ActionResponse<StoryDto>> {
-  const formParseResult = storyFormSchema.safeParse(data);
-  if (!formParseResult.success) {
-    console.error(formParseResult.error);
-    return { error: "Malformed story data", success: false };
-  }
-  const idParseResult = dbIdValidator.safeParse(storyId);
-  if (!idParseResult.success) {
-    console.error(idParseResult.error);
-    return { error: "Malformed story data", success: false };
-  }
-  const id = idParseResult.data;
-  const formData = formParseResult.data;
+  params: UpdateStoryActionParams,
+): Promise<ActionResponse> {
+  const parseResult = updateStoryActionParamsSchema.safeParse(params);
+  if (!parseResult.success) return toActionResponseError(parseResult.error);
+  const { id, update } = parseResult.data;
 
-  const update = updateStoryParamsSchema.parse({ ...formData, id });
-
-  let updatedStory: StoryDto;
   try {
-    updatedStory = await updateStory(update);
+    await updateStory({ id, update });
   } catch (err) {
-    console.error(err);
-    return { error: "Story update failed", success: false };
+    logger.error("Failed to update story", { id, update, ...parseError(err) });
+    return toActionResponseError(err);
   }
+  logger.info("Story updated", { id });
 
-  return { data: updatedStory, success: true };
+  return { success: true };
 }

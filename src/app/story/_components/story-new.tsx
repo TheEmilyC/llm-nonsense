@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { UseFormSetError } from "react-hook-form";
+import { toast } from "sonner";
 
 import { StoryForm } from "@/app/story/_components/story-form";
 import { useCreateStory } from "@/app/story/_lib/hooks";
@@ -32,12 +33,25 @@ export function StoryNew({
   prompts,
   worlds,
 }: StoryNewParams) {
-  const router = useRouter();
-  const { createStory, error, isPending } = useCreateStory();
+  const { createStory, isPending } = useCreateStory();
 
-  async function onSubmitHandler(data: StoryFormValues) {
-    const { newStoryId } = await createStory(data);
-    router.push(`/story/${newStoryId}`);
+  async function onSubmitHandler(
+    data: StoryFormValues,
+    setError: UseFormSetError<StoryFormValues>,
+  ) {
+    const result = await createStory(data);
+    if (!result.success && result.error.details) {
+      for (const [field, messages] of Object.entries(result.error.details)) {
+        setError(field as keyof StoryFormValues, {
+          message: messages.join("\n"),
+          type: "server",
+        });
+      }
+      return;
+    }
+    if (!result.success) {
+      toast.error(result.error.message);
+    }
   }
 
   return (
@@ -53,7 +67,6 @@ export function StoryNew({
       </Header>
 
       <Content>
-        {error && <p className="text-destructive">{error}</p>}
         <StoryForm
           characters={characters}
           defaultValues={{
