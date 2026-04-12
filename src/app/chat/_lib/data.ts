@@ -203,7 +203,6 @@ export async function getChatSession({
         .map((part) => part.text)
         .join("\n"),
       id: msg.id,
-      metadata: msg.contents[0].metadata,
       role: msg.contents[0].role,
     })),
     name: chat.name,
