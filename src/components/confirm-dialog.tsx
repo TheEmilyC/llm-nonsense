@@ -44,16 +44,13 @@ export function ConfirmDialog({
             </Button>
           </DialogClose>
           <DialogClose asChild>
-            {type === "ok" && (
-              <Button onClick={onConfirm} size="sm">
-                Ok
-              </Button>
-            )}
-            {type === "delete" && (
-              <Button onClick={onConfirm} size="sm" variant="destructive">
-                Delete
-              </Button>
-            )}
+            <Button
+              onClick={onConfirm}
+              size="sm"
+              variant={type === "delete" ? "destructive" : "default"}
+            >
+              {type === "delete" ? "Delete" : "Ok"}
+            </Button>
           </DialogClose>
         </DialogFooter>
       </DialogContent>
