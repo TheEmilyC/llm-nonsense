@@ -5,7 +5,7 @@ import z from "zod";
 import { dbIdValidator } from "@/app/_shared/schema";
 import { getCharacterList } from "@/app/character/_lib/data";
 import { getChatsForStory } from "@/app/chat/_lib/data";
-import { getLorebookEntityList } from "@/app/lorebook/_lib/data";
+import { getLorebookEntityDtoList } from "@/app/lorebook/_lib/data";
 import { getPersonaList } from "@/app/persona/_lib/data";
 import { getPromptList } from "@/app/prompt/_lib/data";
 import { StoryEdit } from "@/app/story/_components/story-edit";
@@ -40,7 +40,7 @@ async function StoryPageContent({ params }: StoryPageParams) {
     getCharacterList(),
     getPersonaList(),
     getWorldList(),
-    getLorebookEntityList(),
+    getLorebookEntityDtoList(),
     getPromptList(),
     params,
   ]);

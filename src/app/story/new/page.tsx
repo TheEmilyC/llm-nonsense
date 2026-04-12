@@ -3,7 +3,7 @@ import z from "zod";
 
 import { dbIdValidator } from "@/app/_shared/schema";
 import { getCharacterList } from "@/app/character/_lib/data";
-import { getLorebookEntityList } from "@/app/lorebook/_lib/data";
+import { getLorebookEntityDtoList } from "@/app/lorebook/_lib/data";
 import { getPersonaList } from "@/app/persona/_lib/data";
 import { getPromptList } from "@/app/prompt/_lib/data";
 import { StoryNew } from "@/app/story/_components/story-new";
@@ -37,7 +37,7 @@ async function NewStoryPageContent({ searchParams }: NewStoryPageParams) {
       getCharacterList(),
       getPersonaList(),
       getWorldList(),
-      getLorebookEntityList(),
+      getLorebookEntityDtoList(),
       getPromptList(),
       searchParams,
     ]);
