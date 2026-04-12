@@ -12,13 +12,13 @@ import {
   updateChatMessageAction,
   updateMessageContentAction,
 } from "@/app/chat/_lib/actions";
-import { ChatMessageWithContentDto } from "@/app/chat/_lib/schema";
+import { ChatMessageDto, ChatSessionDto } from "@/app/chat/_lib/schema";
 import { ActionError, ActionResponse } from "@/lib/action-utils";
 
-export function useChatMessages(
-  chatId: string,
-  initialMessages: ChatMessageWithContentDto[],
-) {
+export function useChatMessages({
+  id: chatId,
+  messages: initialMessages,
+}: ChatSessionDto) {
   const isSwipeGenerateRef = useRef(false);
   const [messageSwipes, setMessageSwipes] = useState<UIMessage[]>(
     initialMessages.length > 0
@@ -124,7 +124,10 @@ export function useChatMessages(
     const newIsHidden = !(hiddenMessages[messageId] ?? false);
     setHiddenMessages((prev) => ({ ...prev, [messageId]: newIsHidden }));
     startTransition(async () => {
-      await updateChatMessageAction({ id: messageId, update: { isHidden: newIsHidden } });
+      await updateChatMessageAction({
+        id: messageId,
+        update: { isHidden: newIsHidden },
+      });
     });
   };
 
@@ -206,18 +209,15 @@ export function useDeleteChat(onError?: (error: ActionError) => void) {
   return { deleteChat, isPending };
 }
 
-function getMessageSwipes(message: ChatMessageWithContentDto): UIMessage[] {
+function getMessageSwipes(message: ChatMessageDto): UIMessage[] {
   return message.contents.map((con) => ({
     id: con.id,
-    metadata: con.metadata,
     parts: con.parts,
     role: con.role,
   }));
 }
 
-function messageDtoToUIMessage(
-  chatMessage: ChatMessageWithContentDto,
-): UIMessage {
+function messageDtoToUIMessage(chatMessage: ChatMessageDto): UIMessage {
   const activeContent =
     chatMessage.contents.find((msg) => msg.isActive) ?? chatMessage.contents[0];
   if (!activeContent)
@@ -225,7 +225,6 @@ function messageDtoToUIMessage(
 
   return {
     id: chatMessage.id,
-    metadata: activeContent.metadata,
     parts: activeContent.parts,
     role: activeContent.role,
   };

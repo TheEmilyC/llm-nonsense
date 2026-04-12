@@ -39,7 +39,6 @@ const messageContentEntitySchema = z.object({
   id: z.string().min(1, "id is required"), // created by Vercel AI SDK so doesn't match dbIdValidator pattern
   isActive: z.boolean(),
   messageId: dbIdValidator,
-  metadata: z.record(z.string(), z.unknown()).optional(),
   modifiedAt: z.date(),
   parts: z.custom<MessagePart>().array(),
   role: messageRoleSchema,
@@ -53,7 +52,6 @@ export const updateContentActionParamsSchema = z.object({
   update: messageContentEntitySchema
     .pick({
       isActive: true,
-      metadata: true,
       parts: true,
       role: true,
     })
@@ -94,32 +92,7 @@ export const chatListDtoSchema = chatEntitySchema.pick({
 });
 export type ChatListDto = z.infer<typeof chatListDtoSchema>;
 
-export const chatDtoSchema = chatEntitySchema.pick({
-  createdAt: true,
-  id: true,
-  modifiedAt: true,
-  name: true,
-  storyId: true,
-});
-export type ChatDto = z.infer<typeof chatDtoSchema>;
-
-export const messageContentDtoSchema = messageContentEntitySchema.pick({
-  id: true,
-  isActive: true,
-  messageId: true,
-  metadata: true,
-  parts: true,
-  role: true,
-});
-export type MessageContentDto = z.infer<typeof messageContentDtoSchema>;
-
-export const chatMessageDtoSchema = chatMessageEntitySchema.pick({
-  chatId: true,
-  id: true,
-});
-export type ChatMessageDto = z.infer<typeof chatMessageDtoSchema>;
-
-export const chatMessageWithContentDtoSchema = chatMessageEntitySchema
+export const chatMessageDtoSchema = chatMessageEntitySchema
   .pick({
     id: true,
     isHidden: true,
@@ -129,15 +102,12 @@ export const chatMessageWithContentDtoSchema = chatMessageEntitySchema
       .pick({
         id: true,
         isActive: true,
-        metadata: true,
         parts: true,
         role: true,
       })
       .array(),
   });
-export type ChatMessageWithContentDto = z.infer<
-  typeof chatMessageWithContentDtoSchema
->;
+export type ChatMessageDto = z.infer<typeof chatMessageDtoSchema>;
 
 export const chatSessionDtoSchema = chatEntitySchema
   .pick({
@@ -146,7 +116,7 @@ export const chatSessionDtoSchema = chatEntitySchema
   })
   .extend({
     character: entityProfileSchema,
-    messages: chatMessageWithContentDtoSchema.array(),
+    messages: chatMessageDtoSchema.array(),
     persona: entityProfileSchema,
     story: z.object({
       id: dbIdValidator,
@@ -171,7 +141,6 @@ export const chatSessionSchema = chatEntitySchema
       .pick({ id: true })
       .extend(
         messageContentEntitySchema.pick({
-          metadata: true,
           role: true,
         }).shape,
       )

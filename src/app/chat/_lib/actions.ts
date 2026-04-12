@@ -18,8 +18,7 @@ import {
 } from "@/app/chat/_lib/data";
 import {
   CHAT_CACHE_KEY,
-  ChatDto,
-  ChatMessageDto,
+  ChatEntity,
   ChatMessageEntity,
   UpdateChatMessageActionParams,
   updateChatMessageActionParamsSchema,
@@ -101,7 +100,7 @@ export async function deleteChatAction(id: string): Promise<ActionResponse> {
   const parseResult = dbIdValidator.safeParse(id);
   if (!parseResult.success) return toActionResponseError(parseResult.error);
 
-  let chat: ChatDto | null;
+  let chat: ChatEntity | null;
   try {
     chat = await getChatById(id);
     if (!chat) return toActionResponseError(new NotFoundError("Chat", id));
@@ -124,7 +123,7 @@ export async function deleteMessageAction(
   if (!parseResult.success) return toActionResponseError(parseResult.error);
   const id = parseResult.data;
 
-  let deletedMessage: ChatMessageDto;
+  let deletedMessage: ChatMessageEntity;
   try {
     deletedMessage = await deleteChatMessage(id);
   } catch (err) {
@@ -168,7 +167,7 @@ export async function updateMessageContentAction(
 
   const { id, update } = parseResult.data;
 
-  let message: ChatMessageDto | null = null;
+  let message: ChatMessageEntity | null = null;
   try {
     const updatedContent = await updateMessageContent({
       id,

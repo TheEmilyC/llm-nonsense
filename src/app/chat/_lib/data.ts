@@ -4,15 +4,13 @@ import { cacheTag } from "next/cache";
 
 import {
   CHAT_CACHE_KEY,
-  ChatDto,
-  chatDtoSchema,
+  ChatEntity,
   ChatListDto,
-  ChatMessageDto,
   ChatMessageEntity,
   ChatSession,
   ChatSessionDto,
   chatSessionSchema,
-  MessageContentDto,
+  MessageContentEntity,
 } from "@/app/chat/_lib/schema";
 import { Chat, ChatMessage, MessageContent } from "@/generated/client";
 import { NotFoundError } from "@/lib/error";
@@ -64,7 +62,7 @@ export interface UpdateMessageContentParams {
 
 export async function createChat({
   newChat,
-}: CreateChatParams): Promise<ChatDto> {
+}: CreateChatParams): Promise<ChatEntity> {
   const chat = await prisma.chat.create({
     data: {
       name: newChat.name,
@@ -72,25 +70,14 @@ export async function createChat({
     },
   });
 
-  return toChatDto(chat);
-}
-
-export async function createChatMessage({
-  newMessage,
-}: CreateChatMessageParams): Promise<ChatMessageDto> {
-  const chatMessage = await prisma.chatMessage.create({
-    data: {
-      chatId: newMessage.chatId,
-    },
-  });
-  return toChatMessageDto(chatMessage);
+  return chat;
 }
 
 export async function createChatMessageContent({
   chatId,
   messageContent,
   messageId,
-}: CreateChatMessageContentParams): Promise<MessageContentDto> {
+}: CreateChatMessageContentParams): Promise<MessageContentEntity> {
   const result = await prisma.$transaction(async (tx) => {
     let contentMsgId: string;
     if (messageId) {
@@ -122,45 +109,46 @@ export async function createChatMessageContent({
     });
   });
 
-  return toMessageContentDto(result);
+  return result;
 }
 
 export async function deleteChat(id: string) {
   await prisma.chat.delete({ where: { id } });
 }
 
-export async function deleteChatMessage(id: string): Promise<ChatMessageDto> {
+export async function deleteChatMessage(
+  id: string,
+): Promise<ChatMessageEntity> {
   const result = await prisma.chatMessage.delete({ where: { id } });
-  return toChatMessageDto(result);
+  return result;
 }
 
-export async function getChatById(id: string): Promise<ChatDto | null> {
+export async function getChatById(id: string): Promise<ChatEntity | null> {
   "use cache";
   cacheTag(`${CHAT_CACHE_KEY}-${id}`);
 
   const chat = await prisma.chat.findUnique({ where: { id } });
   if (!chat) return null;
-  return chatDtoSchema.parse(chat);
+  return chat;
 }
 
 export async function getChatMessageById(
   id: string,
-): Promise<ChatMessageDto | null> {
+): Promise<ChatMessageEntity | null> {
   "use cache";
 
   const result = await prisma.chatMessage.findUnique({ where: { id } });
   if (!result) return null;
-  const messageDto = toChatMessageDto(result);
 
-  cacheTag(`${CHAT_CACHE_KEY}-${messageDto.chatId}`);
-  return messageDto;
+  cacheTag(`${CHAT_CACHE_KEY}-${result.chatId}`);
+  return result;
 }
 
 export async function getChatSession({
   id,
   skip = 0,
   take = 50,
-}: GetChatSessionParams) {
+}: GetChatSessionParams): Promise<ChatSession | null> {
   // Itentionally not cached, serves old messages to the chat service if it is
 
   const chat = await prisma.chat.findUnique({
@@ -311,7 +299,7 @@ export async function updateChatMessage({
 export async function updateMessageContent({
   id,
   update,
-}: UpdateMessageContentParams): Promise<MessageContentDto> {
+}: UpdateMessageContentParams): Promise<MessageContentEntity> {
   const result = await prisma.$transaction(async (tx) => {
     if (update.isActive) {
       const message = await tx.messageContent.findUniqueOrThrow({
@@ -335,36 +323,9 @@ export async function updateMessageContent({
     });
   });
 
-  return toMessageContentDto(result);
-}
-
-function toChatDto(chat: Chat): ChatDto {
-  return {
-    createdAt: chat.createdAt,
-    id: chat.id,
-    modifiedAt: chat.modifiedAt,
-    name: chat.name,
-    storyId: chat.storyId,
-  };
+  return result;
 }
 
 function toChatListDto(chatList: Chat[]): ChatListDto[] {
   return chatList.map(({ id, name }) => ({ id, name }));
-}
-
-function toChatMessageDto(message: ChatMessage): ChatMessageDto {
-  return {
-    chatId: message.chatId,
-    id: message.id,
-  };
-}
-
-function toMessageContentDto(content: MessageContent): MessageContentDto {
-  return {
-    id: content.id,
-    isActive: content.isActive,
-    messageId: content.messageId,
-    parts: content.parts,
-    role: content.role,
-  };
 }

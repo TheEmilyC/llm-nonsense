@@ -27,7 +27,7 @@ export function ChatView({ chatSession }: ChatViewParams) {
     status,
     stop,
     swipe,
-  } = useChatMessages(chatSession.id, chatSession.messages);
+  } = useChatMessages(chatSession);
   const lastMessage =
     messages.length > 0 ? messages[messages.length - 1] : null;
 
