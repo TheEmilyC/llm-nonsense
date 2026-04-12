@@ -10,7 +10,7 @@ import { getPersonaListDto } from "@/app/persona/_lib/data";
 import { getPromptListDto } from "@/app/prompt/_lib/data";
 import { StoryEdit } from "@/app/story/_components/story-edit";
 import { getStoryDto } from "@/app/story/_lib/data";
-import { getWorldList } from "@/app/world/_lib/data";
+import { getWorldListDto } from "@/app/world/_lib/data";
 
 interface StoryPageParams {
   params: Promise<{ id: string }>;
@@ -39,7 +39,7 @@ async function StoryPageContent({ params }: StoryPageParams) {
   ] = await Promise.all([
     getCharacterListDto(),
     getPersonaListDto(),
-    getWorldList(),
+    getWorldListDto(),
     getLorebookEntityDtoList(),
     getPromptListDto(),
     params,

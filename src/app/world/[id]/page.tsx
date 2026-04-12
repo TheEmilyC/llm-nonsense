@@ -4,7 +4,7 @@ import z from "zod";
 
 import { dbIdValidator } from "@/app/_shared/schema";
 import { WorldEdit } from "@/app/world/_components/world-edit";
-import { getWorldById } from "@/app/world/_lib/data";
+import { getWorldDto } from "@/app/world/_lib/data";
 
 interface WorldPageParams {
   params: Promise<{ id: string }>;
@@ -24,7 +24,7 @@ export default function WorldEditPage({ params }: WorldPageParams) {
 
 async function WorldEditPageContent({ params }: WorldPageParams) {
   const { id } = worldEditPageParamsSchema.parse(await params);
-  const world = await getWorldById(id);
+  const world = await getWorldDto(id);
   if (!world) notFound();
 
   return <WorldEdit world={world} />;

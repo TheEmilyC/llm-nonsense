@@ -7,7 +7,7 @@ import { getLorebookEntityDtoList } from "@/app/lorebook/_lib/data";
 import { getPersonaListDto } from "@/app/persona/_lib/data";
 import { getPromptListDto } from "@/app/prompt/_lib/data";
 import { StoryNew } from "@/app/story/_components/story-new";
-import { getWorldList } from "@/app/world/_lib/data";
+import { getWorldListDto } from "@/app/world/_lib/data";
 
 type NewStoryPageParams = {
   searchParams: Promise<{
@@ -36,7 +36,7 @@ async function NewStoryPageContent({ searchParams }: NewStoryPageParams) {
     await Promise.all([
       getCharacterListDto(),
       getPersonaListDto(),
-      getWorldList(),
+      getWorldListDto(),
       getLorebookEntityDtoList(),
       getPromptListDto(),
       searchParams,

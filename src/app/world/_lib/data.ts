@@ -7,7 +7,7 @@ import path, { join } from "path";
 import {
   WORLD_CACHE_KEY,
   WorldDto,
-  WorldImageFileDto,
+  WorldEntity,
   WorldListDto,
 } from "@/app/world/_lib/schema";
 import { World } from "@/generated/client";
@@ -45,12 +45,12 @@ interface UpdateWorldParams {
 export async function createWorld({
   image,
   world,
-}: CreateWorldParams): Promise<WorldDto> {
+}: CreateWorldParams): Promise<WorldEntity> {
   const { fileName, filePath, imageHash } = await saveWorldImage({
     image,
     worldName: world.name,
   });
-  const worldEntity = await prisma.world
+  const newWorld = await prisma.world
     .create({
       data: {
         description: world.description,
@@ -63,32 +63,29 @@ export async function createWorld({
       await fs.rm(filePath);
       throw err;
     });
-  const worldDto = toWorldDto(worldEntity);
-  return worldDto;
+  return newWorld;
 }
 
 export async function deleteWorld(id: string) {
-  const world = await getWorldEntityById(id);
+  const world = await getWorldById(id);
   if (!world) throw new NotFoundError("World", id);
   await prisma.world.delete({ where: { id } });
   await fs.rm(join(WORKING_DIRECTORY, world.image));
 }
 
-export async function getWorldById(id: string): Promise<null | WorldDto> {
-  const worldEntity = await getWorldEntityById(id);
-  if (!worldEntity) return null;
-  return toWorldDto(worldEntity);
+export async function getWorldById(id: string): Promise<null | WorldEntity> {
+  "use cache";
+  cacheTag(`${WORLD_CACHE_KEY}-${id}`);
+  return prisma.world.findUnique({ where: { id } });
 }
 
-export async function getWorldImageFile(
-  id: string,
-): Promise<null | WorldImageFileDto> {
-  const result = await getWorldEntityById(id);
-  if (!result) return null;
-  return toWorldImageFileDto(result);
+export async function getWorldDto(id: string): Promise<null | WorldDto> {
+  const world = await getWorldById(id);
+  if (!world) return null;
+  return toWorldDto(world);
 }
 
-export async function getWorldList(): Promise<WorldListDto[]> {
+export async function getWorldListDto(): Promise<WorldListDto[]> {
   "use cache";
   cacheTag(WORLD_CACHE_KEY);
 
@@ -101,8 +98,8 @@ export async function getWorldList(): Promise<WorldListDto[]> {
 export async function updateWorld({
   id,
   update: { image, ...update },
-}: UpdateWorldParams): Promise<WorldDto> {
-  const orgWorld = await getWorldEntityById(id);
+}: UpdateWorldParams): Promise<WorldEntity> {
+  const orgWorld = await getWorldById(id);
   if (!orgWorld) throw new NotFoundError("World", id);
 
   let imageHash: string | undefined;
@@ -114,7 +111,7 @@ export async function updateWorld({
     imageHash = worldImage.imageHash;
   }
 
-  const worldEntity = await prisma.world.update({
+  const world = await prisma.world.update({
     data: {
       description: update.description,
       imageHash,
@@ -122,15 +119,8 @@ export async function updateWorld({
     },
     where: { id },
   });
-  const worldDto = toWorldDto(worldEntity);
 
-  return worldDto;
-}
-
-async function getWorldEntityById(id: string): Promise<null | World> {
-  "use cache";
-  cacheTag(`${WORLD_CACHE_KEY}-${id}`);
-  return prisma.world.findUnique({ where: { id } });
+  return world;
 }
 
 async function saveWorldImage(
@@ -172,12 +162,6 @@ function toWorldDto({ description, id, imageHash, name }: World): WorldDto {
     imageUrl: buildWorldImageUrl(id, imageHash),
     name: name,
   };
-}
-
-function toWorldImageFileDto(
-  persona: Pick<World, "id" | "image">,
-): WorldImageFileDto {
-  return { id: persona.id, image: persona.image };
 }
 
 function toWorldListDto(worlds: Pick<World, "id" | "imageHash" | "name">[]) {
