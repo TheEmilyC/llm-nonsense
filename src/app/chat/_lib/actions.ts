@@ -5,7 +5,7 @@ import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { dbIdValidator } from "@/app/_shared/schema";
-import { getCharacterById } from "@/app/character/_lib/data";
+import { getCharacterRecord } from "@/app/character/_lib/data";
 import {
   createChat,
   createChatMessageContent,
@@ -50,7 +50,7 @@ export async function createChatFromStoryAction(
   let chat;
   try {
     const [character, persona, newChat] = await Promise.all([
-      getCharacterById(story.characterId),
+      getCharacterRecord(story.characterId),
       getPersonaById(story.personaId),
       createChat({
         newChat: { name: new Date().toLocaleString(), storyId },
@@ -58,9 +58,9 @@ export async function createChatFromStoryAction(
     ]);
 
     // preload character first message
-    if (character && character.first_mes.length > 0) {
-      const message = hydratePrompt(character.first_mes, {
-        char: character.name,
+    if (character && character.card.first_mes.length > 0) {
+      const message = hydratePrompt(character.card.first_mes, {
+        char: character.card.name,
         user: persona ? persona.name : "",
       });
       const idGenerator = createIdGenerator({

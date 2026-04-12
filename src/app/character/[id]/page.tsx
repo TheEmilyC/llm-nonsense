@@ -4,7 +4,7 @@ import z from "zod";
 
 import { dbIdValidator } from "@/app/_shared/schema";
 import { CharacterEdit } from "@/app/character/_components/character-edit";
-import { getCharacterById } from "@/app/character/_lib/data";
+import { getCharacterDto } from "@/app/character/_lib/data";
 
 interface CharacterPageParams {
   params: Promise<{ id: string }>;
@@ -24,7 +24,7 @@ export default function CharacterPage({ params }: CharacterPageParams) {
 
 async function CharacterPageContent({ params }: CharacterPageParams) {
   const { id } = characterEditPageParamsSchema.parse(await params);
-  const character = await getCharacterById(id);
+  const character = await getCharacterDto(id);
   if (!character) notFound();
   return <CharacterEdit character={character} />;
 }

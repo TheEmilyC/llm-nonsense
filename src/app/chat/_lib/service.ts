@@ -3,7 +3,7 @@
 import { createIdGenerator, stepCountIs, streamText, tool } from "ai";
 import z from "zod";
 
-import { getCharacterById } from "@/app/character/_lib/data";
+import { getCharacterRecord } from "@/app/character/_lib/data";
 import { createChatMessageContent, getChatSession } from "@/app/chat/_lib/data";
 import { ChatSession, MessagePart } from "@/app/chat/_lib/schema";
 import {
@@ -127,7 +127,7 @@ async function buildPromptFromChat({
   chat,
   regenerate,
 }: BuildPromptFromChatParams) {
-  const character = await getCharacterById(chat.character.id);
+  const character = await getCharacterRecord(chat.character.id);
   if (!character) throw new NotFoundError("Character", chat.character.id);
   const lorebook = chat.lorebookId
     ? await getLorebookById(chat.lorebookId)
@@ -137,7 +137,7 @@ async function buildPromptFromChat({
   const world = chat.world ? await getWorldById(chat.world.id) : null;
 
   const promptBuilder = new PromptBuilder({
-    characterName: character.name,
+    characterName: character.card.name,
     maxTokens: chat.prompt.maxTokens,
     personaName: persona?.name ?? "",
     promptSkeleton: chat.prompt.promptFragments.map((frag) =>
@@ -164,15 +164,15 @@ async function buildPromptFromChat({
   promptBuilder.addToPrompt(PromptInjectTag.lastMessage, lastMessage.content);
   promptBuilder.addToPrompt(
     PromptInjectTag.characterDescription,
-    character.description,
+    character.card.description,
   );
   promptBuilder.addToPrompt(
     PromptInjectTag.characterPersonality,
-    character.personality,
+    character.card.personality,
   );
   promptBuilder.addToPrompt(
     PromptInjectTag.characterScenario,
-    character.scenario,
+    character.card.scenario,
   );
 
   if (persona) {

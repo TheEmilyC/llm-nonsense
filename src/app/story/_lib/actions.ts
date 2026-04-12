@@ -4,7 +4,7 @@ import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { dbIdValidator } from "@/app/_shared/schema";
-import { getCharacterById } from "@/app/character/_lib/data";
+import { getCharacterEntityById } from "@/app/character/_lib/data";
 import { getPersonaById } from "@/app/persona/_lib/data";
 import { createStory, deleteStory, updateStory } from "@/app/story/_lib/data";
 import {
@@ -31,7 +31,9 @@ export async function createStoryAction(
   if (!formData.name) {
     // generate name
     const [character, persona, world] = await Promise.all([
-      formData.characterId ? getCharacterById(formData.characterId) : null,
+      formData.characterId
+        ? getCharacterEntityById(formData.characterId)
+        : null,
       formData.personaId ? getPersonaById(formData.personaId) : null,
       formData.worldId ? getWorldById(formData.worldId) : null,
     ]);
