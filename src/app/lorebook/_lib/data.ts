@@ -1,6 +1,6 @@
 "use server";
 
-import { cacheTag, updateTag } from "next/cache";
+import { cacheTag } from "next/cache";
 import path from "path";
 
 import {
@@ -59,18 +59,16 @@ export async function createLorebookEntity({
   });
   const lorebook = toLorebookEntityDto(entity);
 
-  updateTag(LOREBOOK_CACHE_KEY);
   return lorebook;
 }
 
 export async function deleteLorebookEntity(id: string) {
   await prisma.lorebook.delete({ where: { id } });
-  updateTag(LOREBOOK_CACHE_KEY);
 }
 
 export async function getLorebookById(id: string): Promise<Lorebook | null> {
   "use cache";
-  cacheTag(LOREBOOK_CACHE_KEY);
+  cacheTag(`${LOREBOOK_CACHE_KEY}-${id}`);
 
   // Get lorebook entity
   const entity = await getLorebookEntityById(id);
@@ -136,7 +134,7 @@ export async function getLorebookEntityById(
   id: string,
 ): Promise<LorebookEntityDto | null> {
   "use cache";
-  cacheTag(LOREBOOK_CACHE_KEY);
+  cacheTag(`${LOREBOOK_CACHE_KEY}-${id}`);
   const result = await prisma.lorebook.findUnique({ where: { id } });
   if (!result) return null;
   return toLorebookEntityDto(result);
@@ -157,7 +155,7 @@ export async function getLorebookEntry({
   lorebookId,
 }: GetLorebookEntryParams): Promise<ObsidianFile> {
   "use cache";
-  cacheTag(LOREBOOK_CACHE_KEY);
+  cacheTag(`${LOREBOOK_CACHE_KEY}-${lorebookId}`);
 
   const lorebookEntity = await getLorebookEntityById(lorebookId);
   if (!lorebookEntity) throw new NotFoundError("Lorebook", lorebookId);
@@ -192,6 +190,9 @@ export async function getLorebookEntryList({
 export async function getLorebookStatusDto(
   id: string,
 ): Promise<LorebookStatusDto | null> {
+  "use cache";
+  cacheTag(`${LOREBOOK_CACHE_KEY}-${id}`);
+
   const lorebook = await getLorebookById(id);
   if (!lorebook) return null;
   return lorebookStatusDtoSchema.parse(lorebook);
@@ -219,7 +220,6 @@ export async function updateLorebookEntity({
     where: { id },
   });
 
-  updateTag(LOREBOOK_CACHE_KEY);
   return toLorebookEntityDto(entity);
 }
 

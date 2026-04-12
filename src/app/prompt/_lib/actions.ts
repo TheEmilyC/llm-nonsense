@@ -1,5 +1,6 @@
 "use server";
 
+import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
@@ -9,6 +10,7 @@ import {
 } from "@/app/prompt/_lib/data";
 import {
   CreatePromptParams,
+  PROMPT_CACHE_KEY,
   PromptDto,
   promptFormSchema,
   PromptFormValues,
@@ -59,6 +61,8 @@ export async function createPromptAction(
     return toActionResponseError(err);
   }
   logger.info("Prompt created", { id: prompt.id });
+
+  updateTag(PROMPT_CACHE_KEY);
   redirect(`/prompt/${prompt.id}`);
 }
 
@@ -77,6 +81,9 @@ export async function deletePromptAction(
     return toActionResponseError(err);
   }
   logger.info("Prompt deleted", { id });
+
+  updateTag(PROMPT_CACHE_KEY);
+  updateTag(`${PROMPT_CACHE_KEY}-${id}`);
   redirect("/prompt");
 }
 
@@ -125,5 +132,8 @@ export async function updatePromptAction(
     return toActionResponseError(err);
   }
   logger.info("Prompt updated", { id });
+
+  updateTag(PROMPT_CACHE_KEY);
+  updateTag(`${PROMPT_CACHE_KEY}-${id}`);
   return { success: true };
 }

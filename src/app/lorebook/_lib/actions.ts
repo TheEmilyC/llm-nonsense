@@ -13,6 +13,7 @@ import {
 import {
   GetLorebookActionParams,
   getLorebookActionParamsSchema,
+  LOREBOOK_CACHE_KEY,
   LorebookEntityDto,
   lorebookFormSchema,
   LorebookFormValues,
@@ -43,6 +44,7 @@ export async function createLorebookAction(
     return toActionResponseError(err);
   }
   logger.info("Lorebook created", { id: lorebook.id });
+  updateTag(LOREBOOK_CACHE_KEY);
   redirect(`/lorebook/${lorebook.id}`);
 }
 
@@ -61,7 +63,10 @@ export async function deleteLorebookAction(
     });
     return toActionResponseError(err);
   }
+  logger.info("Lorebook deleted", { id: lorebookId });
 
+  updateTag(`${LOREBOOK_CACHE_KEY}-${lorebookId}`);
+  updateTag(LOREBOOK_CACHE_KEY);
   redirect("/lorebook");
 }
 
@@ -124,8 +129,11 @@ export async function updateLorebookAction(
       update,
       ...parseError(err),
     });
-    logger.info("Persona updated", { id });
     return toActionResponseError(err);
   }
+  logger.info("Persona updated", { id });
+
+  updateTag(LOREBOOK_CACHE_KEY);
+  updateTag(`${LOREBOOK_CACHE_KEY}-${id}`);
   return { success: true };
 }

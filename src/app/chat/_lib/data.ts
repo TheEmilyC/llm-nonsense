@@ -1,6 +1,6 @@
 "use server";
 
-import { cacheTag, updateTag } from "next/cache";
+import { cacheTag } from "next/cache";
 
 import {
   CHAT_CACHE_KEY,
@@ -58,7 +58,6 @@ export async function createChat({
     },
   });
 
-  updateTag(CHAT_CACHE_KEY);
   return toChatDto(chat);
 }
 
@@ -109,23 +108,16 @@ export async function createChatMessageContent({
     });
   });
 
-  updateTag(`${CHAT_CACHE_KEY}-${chatId}`);
   return toMessageContentDto(result);
 }
 
 export async function deleteChat(id: string) {
   await prisma.chat.delete({ where: { id } });
-  updateTag(CHAT_CACHE_KEY);
-  updateTag(`${CHAT_CACHE_KEY}-${id}`);
 }
 
-export async function deleteChatMessage(id: string) {
-  const message = await prisma.chatMessage.findUnique({
-    select: { chatId: true },
-    where: { id },
-  });
-  await prisma.chatMessage.delete({ where: { id } });
-  if (message) updateTag(`${CHAT_CACHE_KEY}-${message.chatId}`);
+export async function deleteChatMessage(id: string): Promise<ChatMessageDto> {
+  const result = await prisma.chatMessage.delete({ where: { id } });
+  return toChatMessageDto(result);
 }
 
 export async function getChatById(id: string): Promise<ChatDto | null> {
@@ -135,6 +127,19 @@ export async function getChatById(id: string): Promise<ChatDto | null> {
   const chat = await prisma.chat.findUnique({ where: { id } });
   if (!chat) return null;
   return chatDtoSchema.parse(chat);
+}
+
+export async function getChatMessageById(
+  id: string,
+): Promise<ChatMessageDto | null> {
+  "use cache";
+
+  const result = await prisma.chatMessage.findUnique({ where: { id } });
+  if (!result) return null;
+  const messageDto = toChatMessageDto(result);
+
+  cacheTag(`${CHAT_CACHE_KEY}-${messageDto.chatId}`);
+  return messageDto;
 }
 
 export async function getChatSession({
@@ -188,7 +193,6 @@ export async function getChatSession({
     id: chat.id,
     lorebookId: chat.story.lorebookId ?? undefined,
     messages: chat.messages.map((msg) => ({
-      chatId: msg.chatId,
       contents: msg.contents.map((con) => ({
         id: con.id,
         isActive: con.isActive,
@@ -248,12 +252,6 @@ export async function updateMessageContent({
     });
   });
 
-  const message = await prisma.chatMessage.findUnique({
-    select: { chatId: true },
-    where: { id: result.messageId },
-  });
-  if (message) updateTag(`${CHAT_CACHE_KEY}-${message.chatId}`);
-
   return toMessageContentDto(result);
 }
 
@@ -282,6 +280,7 @@ function toMessageContentDto(content: MessageContent): MessageContentDto {
   return {
     id: content.id,
     isActive: content.isActive,
+    messageId: content.messageId,
     parts: content.parts,
     role: content.role,
   };

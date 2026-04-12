@@ -1,6 +1,6 @@
 "use server";
 
-import { cacheTag, updateTag } from "next/cache";
+import { cacheTag } from "next/cache";
 
 import {
   STORY_CACHE_KEY,
@@ -43,14 +43,11 @@ export async function createStory(
       worldId: newStory.worldId,
     },
   });
-  updateTag(STORY_CACHE_KEY);
   return toStoryDto(story);
 }
 
 export async function deleteStory(id: string) {
   await prisma.story.delete({ where: { id } });
-  updateTag(STORY_CACHE_KEY);
-  updateTag(`${STORY_CACHE_KEY}-${id}`);
 }
 
 export async function getStoryById(id: string): Promise<null | StoryDto> {
@@ -93,8 +90,6 @@ export async function updateStory({
     where: { id },
   });
 
-  updateTag(STORY_CACHE_KEY);
-  updateTag(`${STORY_CACHE_KEY}-${id}`);
   return toStoryDto(story);
 }
 

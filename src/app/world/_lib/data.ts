@@ -1,7 +1,7 @@
 "use server";
 
 import fs from "fs/promises";
-import { cacheTag, updateTag } from "next/cache";
+import { cacheTag } from "next/cache";
 import path, { join } from "path";
 
 import {
@@ -64,7 +64,6 @@ export async function createWorld({
       throw err;
     });
   const worldDto = toWorldDto(worldEntity);
-  updateTag(WORLD_CACHE_KEY);
   return worldDto;
 }
 
@@ -73,9 +72,6 @@ export async function deleteWorld(id: string) {
   if (!world) throw new NotFoundError("World", id);
   await prisma.world.delete({ where: { id } });
   await fs.rm(join(WORKING_DIRECTORY, world.image));
-
-  updateTag(WORLD_CACHE_KEY);
-  updateTag(`${WORLD_CACHE_KEY}-${id}`);
 }
 
 export async function getWorldById(id: string): Promise<null | WorldDto> {
@@ -128,8 +124,6 @@ export async function updateWorld({
   });
   const worldDto = toWorldDto(worldEntity);
 
-  updateTag(WORLD_CACHE_KEY);
-  updateTag(`${WORLD_CACHE_KEY}-${id}`);
   return worldDto;
 }
 
