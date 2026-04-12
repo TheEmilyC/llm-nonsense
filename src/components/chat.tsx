@@ -55,11 +55,9 @@ interface ChatHistoryProps {
 }
 
 interface ChatInputParams {
-  input: string;
   isLoading: boolean;
-  onInputChange: (value: string) => void;
   onStop: () => void;
-  onSubmit: () => void;
+  onSubmit: (text: string) => void;
 }
 
 interface ChatMessageProps {
@@ -119,20 +117,21 @@ export function ChatHistory({ children }: ChatHistoryProps) {
   );
 }
 
-export function ChatInput({
-  input,
-  isLoading,
-  onInputChange,
-  onStop,
-  onSubmit,
-}: ChatInputParams) {
+export function ChatInput({ isLoading, onStop, onSubmit }: ChatInputParams) {
+  const [input, setInput] = useState("");
+
+  const handleSubmit = () => {
+    onSubmit(input);
+    setInput("");
+  };
+
   return (
     <div className="border-t p-4">
       <PromptInput
         className="mx-auto max-w-3xl"
         isLoading={isLoading}
-        onSubmit={onSubmit}
-        onValueChange={onInputChange}
+        onSubmit={handleSubmit}
+        onValueChange={setInput}
         value={input}
       >
         <PromptInputTextarea placeholder="Send a message…" />
@@ -141,7 +140,7 @@ export function ChatInput({
             <Button
               className="h-8 w-8 rounded-full"
               disabled={!input.trim() && !isLoading}
-              onClick={isLoading ? onStop : onSubmit}
+              onClick={isLoading ? onStop : handleSubmit}
               size="sm"
               /* disabled state causing hydration errors because of useChats
               initializtion on server vs client */

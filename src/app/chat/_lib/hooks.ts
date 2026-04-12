@@ -32,7 +32,6 @@ export function useChatMessages(
         )
       : 0,
   );
-  const [input, setInput] = useState("");
   const [, startTransition] = useTransition();
 
   const [hiddenMessages, setHiddenMessages] = useState<Record<string, boolean>>(
@@ -102,11 +101,10 @@ export function useChatMessages(
     setMessageSwipe(swipeIndex - 1);
   };
 
-  const handleSubmit = () => {
-    if (input.trim()) {
+  const handleSubmit = (text: string) => {
+    if (text.trim()) {
       isSwipeGenerateRef.current = false;
-      sendMessage({ text: input });
-      setInput("");
+      sendMessage({ text });
     }
   };
 
@@ -161,9 +159,7 @@ export function useChatMessages(
     handleSubmit,
     hiddenMessages,
     hideMessage,
-    input,
     messages,
-    setInput,
     status,
     stop,
     swipe: {

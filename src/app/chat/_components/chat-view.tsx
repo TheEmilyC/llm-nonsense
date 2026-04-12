@@ -23,9 +23,7 @@ export function ChatView({ chatSession }: ChatViewParams) {
     handleSubmit,
     hiddenMessages,
     hideMessage,
-    input,
     messages,
-    setInput,
     status,
     stop,
     swipe,
@@ -61,9 +59,7 @@ export function ChatView({ chatSession }: ChatViewParams) {
               status !== "streaming" && <ChatSwipe swipe={swipe} />}
           </ChatHistory>
           <ChatInput
-            input={input}
             isLoading={status !== "ready"}
-            onInputChange={setInput}
             onStop={stop}
             onSubmit={handleSubmit}
           />
