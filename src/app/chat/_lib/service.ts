@@ -68,8 +68,6 @@ export async function constructChatResponse({
 
   const { maxOutputTokens, maxSteps, temperature, topK, topP } = chat.prompt;
 
-  console.log("here");
-  if (1 < 2) throw "no AI";
   // --send and stream result--
   return streamText({
     maxOutputTokens,
