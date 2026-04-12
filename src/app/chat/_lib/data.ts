@@ -270,7 +270,7 @@ export async function getChatSessionDto({
   };
 }
 
-export async function getChatsForStory(
+export async function getChatsForStoryDto(
   storyId: string,
 ): Promise<ChatListDto[]> {
   "use cache";

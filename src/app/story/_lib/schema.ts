@@ -6,7 +6,7 @@ export const STORY_CACHE_KEY = "story";
 
 // -- Base
 
-const baseStorySchema = z.object({
+const storyEntitySchema = z.object({
   characterId: dbIdValidator,
   createdAt: z.date(),
   id: dbIdValidator,
@@ -17,10 +17,11 @@ const baseStorySchema = z.object({
   promptId: dbIdValidator,
   worldId: dbIdValidator.optional(),
 });
+export type StoryEntity = z.infer<typeof storyEntitySchema>;
 
 // -- Schemas
 
-const formBaseSchema = baseStorySchema.pick({
+const formBaseSchema = storyEntitySchema.pick({
   characterId: true,
   lorebookId: true,
   personaId: true,
@@ -40,7 +41,7 @@ export const storyFormSchema = z.discriminatedUnion("mode", [
 ]);
 export type StoryFormValues = z.infer<typeof storyFormSchema>;
 
-export const updateStoryActionParamsSchema = baseStorySchema
+export const updateStoryActionParamsSchema = storyEntitySchema
   .pick({ id: true })
   .extend({ update: storyFormSchema });
 export type UpdateStoryActionParams = z.infer<
@@ -49,7 +50,7 @@ export type UpdateStoryActionParams = z.infer<
 
 // -- DTOs
 
-export const storyDtoSchema = baseStorySchema.pick({
+export const storyDtoSchema = storyEntitySchema.pick({
   characterId: true,
   id: true,
   lorebookId: true,
@@ -60,7 +61,7 @@ export const storyDtoSchema = baseStorySchema.pick({
 });
 export type StoryDto = z.infer<typeof storyDtoSchema>;
 
-export const storyListItemDtoSchema = baseStorySchema.pick({
+export const storyListItemDtoSchema = storyEntitySchema.pick({
   id: true,
   name: true,
 });

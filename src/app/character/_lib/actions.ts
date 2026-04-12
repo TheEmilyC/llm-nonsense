@@ -46,7 +46,7 @@ export async function createCharacterAction(
   try {
     character = await createCharacter({ characterCard, image });
   } catch (err) {
-    logger.error("Failed creating character", parseError(err));
+    logger.error("Failed to create character", parseError(err));
     return toActionResponseError(err);
   }
   logger.info("Character created", {
@@ -68,7 +68,7 @@ export async function deleteCharacterAction(
   try {
     await deleteCharacter(id);
   } catch (err) {
-    logger.error("Failed deleting character", { id, ...parseError(err) });
+    logger.error("Failed to delete character", { id, ...parseError(err) });
     return toActionResponseError(err);
   }
   logger.info("Character deleted", {

@@ -5,6 +5,7 @@ import { cacheTag } from "next/cache";
 import {
   STORY_CACHE_KEY,
   StoryDto,
+  StoryEntity,
   StoryListItemDto,
 } from "@/app/story/_lib/schema";
 import { Story } from "@/generated/client";
@@ -32,7 +33,7 @@ interface UpdateStoryParams {
 
 export async function createStory(
   newStory: CreateStoryParams,
-): Promise<StoryDto> {
+): Promise<StoryEntity> {
   const story = await prisma.story.create({
     data: {
       characterId: newStory.characterId,
@@ -43,28 +44,28 @@ export async function createStory(
       worldId: newStory.worldId,
     },
   });
-  return toStoryDto(story);
+  return toStoryEntity(story);
 }
 
 export async function deleteStory(id: string) {
   await prisma.story.delete({ where: { id } });
 }
 
-export async function getStoryById(id: string): Promise<null | StoryDto> {
+export async function getStoryById(id: string): Promise<null | StoryEntity> {
   "use cache";
   cacheTag(`${STORY_CACHE_KEY}-${id}`);
-  const result = await prisma.story.findUnique({ where: { id } });
+  const story = await prisma.story.findUnique({ where: { id } });
+  if (!story) return null;
+  return toStoryEntity(story);
+}
+
+export async function getStoryDto(id: string): Promise<null | StoryDto> {
+  const result = await getStoryById(id);
   if (!result) return null;
   return toStoryDto(result);
 }
 
-export async function getStoryByIdOrFail(id: string): Promise<StoryDto> {
-  const result = await getStoryById(id);
-  if (!result) throw new Error(`Story ID:${id} does not exist`);
-  return result;
-}
-
-export async function getStoryList(): Promise<StoryListItemDto[]> {
+export async function getStoryListDto(): Promise<StoryListItemDto[]> {
   "use cache";
   cacheTag(STORY_CACHE_KEY);
 
@@ -77,7 +78,7 @@ export async function getStoryList(): Promise<StoryListItemDto[]> {
 export async function updateStory({
   id,
   update,
-}: UpdateStoryParams): Promise<StoryDto> {
+}: UpdateStoryParams): Promise<StoryEntity> {
   const story = await prisma.story.update({
     data: {
       characterId: update.characterId,
@@ -90,17 +91,25 @@ export async function updateStory({
     where: { id },
   });
 
-  return toStoryDto(story);
+  return toStoryEntity(story);
 }
 
-function toStoryDto(story: Story): StoryDto {
+function toStoryDto(story: StoryEntity): StoryDto {
   return {
     characterId: story.characterId,
     id: story.id,
-    lorebookId: story.lorebookId ?? undefined,
+    lorebookId: story.lorebookId,
     name: story.name,
     personaId: story.personaId,
     promptId: story.promptId,
+    worldId: story.worldId,
+  };
+}
+
+function toStoryEntity(story: Story): StoryEntity {
+  return {
+    ...story,
+    lorebookId: story.lorebookId ?? undefined,
     worldId: story.worldId ?? undefined,
   };
 }

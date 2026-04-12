@@ -9,6 +9,7 @@ import { getPersonaById } from "@/app/persona/_lib/data";
 import { createStory, deleteStory, updateStory } from "@/app/story/_lib/data";
 import {
   STORY_CACHE_KEY,
+  StoryEntity,
   storyFormSchema,
   StoryFormValues,
   UpdateStoryActionParams,
@@ -50,7 +51,7 @@ export async function createStoryAction(
     name = formData.name;
   }
 
-  let story;
+  let story: StoryEntity;
   const newStory = {
     ...formData,
     name,

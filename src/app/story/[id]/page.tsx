@@ -4,12 +4,12 @@ import z from "zod";
 
 import { dbIdValidator } from "@/app/_shared/schema";
 import { getCharacterListDto } from "@/app/character/_lib/data";
-import { getChatsForStory } from "@/app/chat/_lib/data";
+import { getChatsForStoryDto } from "@/app/chat/_lib/data";
 import { getLorebookEntityDtoList } from "@/app/lorebook/_lib/data";
 import { getPersonaListDto } from "@/app/persona/_lib/data";
 import { getPromptListDto } from "@/app/prompt/_lib/data";
 import { StoryEdit } from "@/app/story/_components/story-edit";
-import { getStoryById } from "@/app/story/_lib/data";
+import { getStoryDto } from "@/app/story/_lib/data";
 import { getWorldList } from "@/app/world/_lib/data";
 
 interface StoryPageParams {
@@ -46,8 +46,8 @@ async function StoryPageContent({ params }: StoryPageParams) {
   ]);
   const { id } = storyPageParamsSchema.parse(routeParams);
   const [story, chats] = await Promise.all([
-    getStoryById(id),
-    getChatsForStory(id),
+    getStoryDto(id),
+    getChatsForStoryDto(id),
   ]);
   if (!story) notFound();
 
