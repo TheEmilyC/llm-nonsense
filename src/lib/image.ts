@@ -1,32 +1,14 @@
 import crypto from "crypto";
 
-export function buildCharacterImageUrl({
-  id,
-  pngHash,
-}: {
-  id: string;
-  pngHash: string;
-}): string {
+export function buildCharacterImageUrl(id: string, pngHash: string): string {
   return `/api/character/${id}/image?v=${pngHash}`;
 }
 
-export function buildPersonaImageUrl({
-  id,
-  imageHash,
-}: {
-  id: string;
-  imageHash: string;
-}): string {
+export function buildPersonaImageUrl(id: string, imageHash: string): string {
   return `/api/persona/${id}/image?v=${imageHash}`;
 }
 
-export function buildWorldImageUrl({
-  id,
-  imageHash,
-}: {
-  id: string;
-  imageHash: string;
-}): string {
+export function buildWorldImageUrl(id: string, imageHash: string): string {
   return `/api/world/${id}/image?v=${imageHash}`;
 }
 

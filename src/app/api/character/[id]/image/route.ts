@@ -1,10 +1,10 @@
 import fs from "fs/promises";
 import { NextResponse } from "next/server";
 
+import { dbIdValidator } from "@/app/_shared/schema";
 import { getCharacterImageFile } from "@/app/character/_lib/data";
 import { HttpStatus } from "@/lib/http";
 import { logger, parseError } from "@/lib/logger";
-import { dbIdValidator } from "@/lib/validators";
 
 interface Params {
   params: Promise<{ id: string }>;

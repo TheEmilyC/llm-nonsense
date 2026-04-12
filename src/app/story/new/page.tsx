@@ -1,13 +1,13 @@
 import { Suspense } from "react";
 import z from "zod";
 
+import { dbIdValidator } from "@/app/_shared/schema";
 import { getCharacterList } from "@/app/character/_lib/data";
 import { getLorebookEntityList } from "@/app/lorebook/_lib/data";
 import { getPersonaList } from "@/app/persona/_lib/data";
 import { getPromptList } from "@/app/prompt/_lib/data";
 import { StoryNew } from "@/app/story/_components/story-new";
 import { getWorldList } from "@/app/world/_lib/data";
-import { dbIdValidator } from "@/lib/validators";
 
 type NewStoryPageParams = {
   searchParams: Promise<{

@@ -3,6 +3,7 @@
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { dbIdValidator } from "@/app/_shared/schema";
 import {
   createLorebookEntity,
   deleteLorebookEntity,
@@ -27,7 +28,6 @@ import { ActionResponse, toActionResponseError } from "@/lib/action-utils";
 import { LOREBOOK_TAG } from "@/lib/env-variables";
 import { NotFoundError } from "@/lib/error";
 import { logger, parseError } from "@/lib/logger";
-import { dbIdValidator } from "@/lib/validators";
 
 export async function createLorebookAction(
   data: LorebookFormValues,

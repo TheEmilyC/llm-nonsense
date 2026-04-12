@@ -3,6 +3,7 @@
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { dbIdValidator } from "@/app/_shared/schema";
 import {
   createPrompt,
   deletePrompt,
@@ -22,7 +23,6 @@ import {
 } from "@/app/prompt/_lib/schema";
 import { ActionResponse, toActionResponseError } from "@/lib/action-utils";
 import { logger, parseError } from "@/lib/logger";
-import { dbIdValidator } from "@/lib/validators";
 
 export async function createPromptAction(
   data: PromptFormValues,

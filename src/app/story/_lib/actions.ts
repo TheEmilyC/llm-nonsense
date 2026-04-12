@@ -3,6 +3,7 @@
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { dbIdValidator } from "@/app/_shared/schema";
 import { getCharacterById } from "@/app/character/_lib/data";
 import { getPersonaById } from "@/app/persona/_lib/data";
 import { createStory, deleteStory, updateStory } from "@/app/story/_lib/data";
@@ -16,7 +17,6 @@ import {
 import { getWorldById } from "@/app/world/_lib/data";
 import { ActionResponse, toActionResponseError } from "@/lib/action-utils";
 import { logger, parseError } from "@/lib/logger";
-import { dbIdValidator } from "@/lib/validators";
 
 export async function createStoryAction(
   data: StoryFormValues,

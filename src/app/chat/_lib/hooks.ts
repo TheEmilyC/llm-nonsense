@@ -9,19 +9,17 @@ import {
   createChatFromStoryAction,
   deleteChatAction,
   deleteMessageAction,
+  updateChatMessageAction,
   updateMessageContentAction,
 } from "@/app/chat/_lib/actions";
-import {
-  ChatMessageWithContentDto,
-  UpdateContentActionParams,
-} from "@/app/chat/_lib/schema";
+import { ChatMessageDto, ChatSessionDto } from "@/app/chat/_lib/schema";
 import { ActionError, ActionResponse } from "@/lib/action-utils";
 
-export function useChatMessages(
-  chatId: string,
-  initialMessages: ChatMessageWithContentDto[],
-) {
-  const [isSwipeGenerate, setIsSwipeGenerate] = useState(false);
+export function useChatMessages({
+  id: chatId,
+  messages: initialMessages,
+}: ChatSessionDto) {
+  const isSwipeGenerateRef = useRef(false);
   const [messageSwipes, setMessageSwipes] = useState<UIMessage[]>(
     initialMessages.length > 0
       ? getMessageSwipes(initialMessages[initialMessages.length - 1])
@@ -34,11 +32,13 @@ export function useChatMessages(
         )
       : 0,
   );
-  const [input, setInput] = useState("");
-  const { updateMessageContent } = useUpdateMessageContent();
-  const { deleteMessage: deleteMessageMutation } = useDeleteMessage();
+  const [, startTransition] = useTransition();
 
-  // Map from UIMessage id (group id) to active content id for DB persistence
+  const [hiddenMessages, setHiddenMessages] = useState<Record<string, boolean>>(
+    Object.fromEntries(initialMessages.map((msg) => [msg.id, msg.isHidden])),
+  );
+
+  // Map from UIMessage id (message id) to active content id for DB persistence
   const contentIdMapRef = useRef(
     new Map<string, string>(
       initialMessages.flatMap((msg) => {
@@ -53,14 +53,16 @@ export function useChatMessages(
     useChat({
       messages: initialMessages.map((msg) => messageDtoToUIMessage(msg)),
       onFinish: ({ message }) => {
-        if (isSwipeGenerate) {
-          setMessageSwipes((prev) => [...prev, message]);
-          _setSwipeIndex(messageSwipes.length);
+        if (isSwipeGenerateRef.current) {
+          setMessageSwipes((prev) => {
+            _setSwipeIndex(prev.length);
+            return [...prev, message];
+          });
         } else {
           setMessageSwipes([message]);
           _setSwipeIndex(0);
         }
-        setIsSwipeGenerate(false);
+        isSwipeGenerateRef.current = false;
       },
       transport: new DefaultChatTransport({
         api: `/api/chat/${chatId}`,
@@ -73,10 +75,11 @@ export function useChatMessages(
       }),
     });
 
-  const debouncedUpdateMessageContent = useDebouncedCallback(
-    (id: string) => updateMessageContent({ id, update: { isActive: true } }),
-    500,
-  );
+  const debouncedUpdateMessageContent = useDebouncedCallback((id: string) => {
+    startTransition(async () => {
+      await updateMessageContentAction({ id, update: { isActive: true } });
+    });
+  }, 500);
 
   const setMessageSwipe = (index: number) => {
     if (index < 0 || index >= messageSwipes.length) return;
@@ -94,31 +97,41 @@ export function useChatMessages(
   };
 
   const prevSwipe = () => {
-    if (swipeIndex <= 0) {
-      return;
-    }
+    if (swipeIndex <= 0) return;
     setMessageSwipe(swipeIndex - 1);
   };
 
-  const handleSubmit = () => {
-    if (input.trim()) {
-      setIsSwipeGenerate(false);
-      sendMessage({ text: input });
-      setInput("");
+  const handleSubmit = (text: string) => {
+    if (text.trim()) {
+      isSwipeGenerateRef.current = false;
+      sendMessage({ text });
     }
   };
 
   const handleSwipeGenerate = () => {
-    setIsSwipeGenerate(true);
+    isSwipeGenerateRef.current = true;
     regenerate();
   };
 
   const deleteMessage = (messageId: string) => {
     setMessages(messages.filter((m) => m.id !== messageId));
-    deleteMessageMutation(messageId);
+    startTransition(async () => {
+      await deleteMessageAction(messageId);
+    });
   };
 
-  const editMessage = (messageId: string, newText: string) => {
+  const hideMessage = (messageId: string) => {
+    const newIsHidden = !(hiddenMessages[messageId] ?? false);
+    setHiddenMessages((prev) => ({ ...prev, [messageId]: newIsHidden }));
+    startTransition(async () => {
+      await updateChatMessageAction({
+        id: messageId,
+        update: { isHidden: newIsHidden },
+      });
+    });
+  };
+
+  const editContent = (messageId: string, newText: string) => {
     const updateParts = (parts: UIMessage["parts"]) =>
       parts.map((p) => (p.type === "text" ? { ...p, text: newText } : p));
 
@@ -134,20 +147,22 @@ export function useChatMessages(
     );
     const contentId = contentIdMapRef.current.get(messageId);
     if (contentId) {
-      updateMessageContent({
-        id: contentId,
-        update: { parts: [{ text: newText, type: "text" }] },
+      startTransition(async () => {
+        await updateMessageContentAction({
+          id: contentId,
+          update: { parts: [{ text: newText, type: "text" }] },
+        });
       });
     }
   };
 
   return {
     deleteMessage,
-    editMessage,
+    editContent,
     handleSubmit,
-    input,
+    hiddenMessages,
+    hideMessage,
     messages,
-    setInput,
     status,
     stop,
     swipe: {
@@ -194,55 +209,15 @@ export function useDeleteChat(onError?: (error: ActionError) => void) {
   return { deleteChat, isPending };
 }
 
-export function useDeleteMessage(onError?: (error: ActionError) => void) {
-  const [isPending, startTransition] = useTransition();
-
-  function deleteMessage(messageId: string): Promise<ActionResponse> {
-    return new Promise((resolve) => {
-      startTransition(async () => {
-        const res = await deleteMessageAction(messageId);
-        if (!res.success) onError?.(res.error);
-        resolve(res);
-      });
-    });
-  }
-
-  return { deleteMessage, isPending };
-}
-
-export function useUpdateMessageContent(
-  onError?: (error: ActionError) => void,
-) {
-  const [isPending, startTransition] = useTransition();
-
-  function updateMessageContent(params: UpdateContentActionParams) {
-    return new Promise((resolve) => {
-      startTransition(async () => {
-        const res = await updateMessageContentAction(params);
-        if (!res.success) onError?.(res.error);
-        resolve(res);
-      });
-    });
-  }
-
-  return {
-    isPending,
-    updateMessageContent,
-  };
-}
-
-function getMessageSwipes(message: ChatMessageWithContentDto): UIMessage[] {
+function getMessageSwipes(message: ChatMessageDto): UIMessage[] {
   return message.contents.map((con) => ({
     id: con.id,
-    metadata: con.metadata,
     parts: con.parts,
     role: con.role,
   }));
 }
 
-function messageDtoToUIMessage(
-  chatMessage: ChatMessageWithContentDto,
-): UIMessage {
+function messageDtoToUIMessage(chatMessage: ChatMessageDto): UIMessage {
   const activeContent =
     chatMessage.contents.find((msg) => msg.isActive) ?? chatMessage.contents[0];
   if (!activeContent)
@@ -250,7 +225,6 @@ function messageDtoToUIMessage(
 
   return {
     id: chatMessage.id,
-    metadata: activeContent.metadata,
     parts: activeContent.parts,
     role: activeContent.role,
   };

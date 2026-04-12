@@ -7,6 +7,8 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Eye,
+  EyeOff,
   Pencil,
   Square,
   Trash2,
@@ -15,7 +17,7 @@ import {
 import Image from "next/image";
 import { ReactNode, useState } from "react";
 
-import { ChatProfile } from "@/app/chat/_lib/schema";
+import { EntityProfile } from "@/app/_shared/schema";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,6 +44,12 @@ import {
 } from "@/components/ui/reasoning";
 import { ScrollButton } from "@/components/ui/scroll-button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export interface ChatHistoryContainerParams {
@@ -53,33 +61,35 @@ interface ChatHistoryProps {
 }
 
 interface ChatInputParams {
-  input: string;
   isLoading: boolean;
-  onInputChange: (value: string) => void;
   onStop: () => void;
-  onSubmit: () => void;
+  onSubmit: (text: string) => void;
 }
 
 interface ChatMessageProps {
-  character: ChatProfile;
+  character: EntityProfile;
+  isHidden: boolean;
   isStreaming: boolean;
   message: UIMessage;
   onDelete?: () => void;
   onEdit?: (newText: string) => void;
-  persona: ChatProfile;
+  onHide?: () => void;
+  persona: EntityProfile;
 }
 
 interface ChatMessagesProps {
-  character: ChatProfile;
+  character: EntityProfile;
+  hiddenMessages: Record<string, boolean>;
   messages: UIMessage[];
   onDelete?: (messageId: string) => void;
   onEdit?: (messageId: string, newText: string) => void;
-  persona: ChatProfile;
+  onHide?: (messageId: string) => void;
+  persona: EntityProfile;
   status: "error" | "ready" | "streaming" | "submitted";
 }
 
 interface ChatMessageThinkingProps {
-  character: ChatProfile;
+  character: EntityProfile;
 }
 
 interface ChatSwipeParams {
@@ -113,20 +123,21 @@ export function ChatHistory({ children }: ChatHistoryProps) {
   );
 }
 
-export function ChatInput({
-  input,
-  isLoading,
-  onInputChange,
-  onStop,
-  onSubmit,
-}: ChatInputParams) {
+export function ChatInput({ isLoading, onStop, onSubmit }: ChatInputParams) {
+  const [input, setInput] = useState("");
+
+  const handleSubmit = () => {
+    onSubmit(input);
+    setInput("");
+  };
+
   return (
     <div className="border-t p-4">
       <PromptInput
         className="mx-auto max-w-3xl"
         isLoading={isLoading}
-        onSubmit={onSubmit}
-        onValueChange={onInputChange}
+        onSubmit={handleSubmit}
+        onValueChange={setInput}
         value={input}
       >
         <PromptInputTextarea placeholder="Send a message…" />
@@ -135,7 +146,7 @@ export function ChatInput({
             <Button
               className="h-8 w-8 rounded-full"
               disabled={!input.trim() && !isLoading}
-              onClick={isLoading ? onStop : onSubmit}
+              onClick={isLoading ? onStop : handleSubmit}
               size="sm"
               /* disabled state causing hydration errors because of useChats
               initializtion on server vs client */
@@ -156,10 +167,12 @@ export function ChatInput({
 
 export function ChatMessage({
   character,
+  isHidden,
   isStreaming,
   message,
   onDelete,
   onEdit,
+  onHide,
   persona,
 }: ChatMessageProps) {
   const isUser = message.role === "user";
@@ -191,7 +204,7 @@ export function ChatMessage({
         <ChatAvatar
           alt={isUser ? persona.name : character.name}
           isUser={isUser}
-          src={isUser ? persona.avatarSrc : character.avatarSrc}
+          src={isUser ? persona.imageSrc : character.imageSrc}
         />
         <div className="flex flex-col gap-2 p-3 min-w-0 flex-1">
           <span className="text-xs font-semibold tracking-wide uppercase opacity-60">
@@ -285,18 +298,36 @@ export function ChatMessage({
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                     </MessageAction>
-                    <MessageAction tooltip="Delete">
-                      <ConfirmDialog
-                        description="This will permanently delete this message and all its swipes."
-                        onConfirm={onDelete}
-                        title="Delete message?"
-                        type="delete"
+                    <MessageAction tooltip={isHidden ? "Unhide (message will be sent to LLM)" : "Hide (message won't be sent to LLM)"}>
+                      <button
+                        aria-label={isHidden ? "Unhide message" : "Hide message"}
+                        className="p-1 hover:text-foreground transition-colors text-muted-foreground"
+                        onClick={onHide}
                       >
-                        <button className="p-1 hover:text-destructive transition-colors">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </ConfirmDialog>
+                        {isHidden ? (
+                          <Eye className="h-3.5 w-3.5" />
+                        ) : (
+                          <EyeOff className="h-3.5 w-3.5" />
+                        )}
+                      </button>
                     </MessageAction>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <ConfirmDialog
+                          description="This will permanently delete this message and all its swipes."
+                          onConfirm={onDelete}
+                          title="Delete message?"
+                          type="delete"
+                        >
+                          <TooltipTrigger asChild>
+                            <button className="p-1 hover:text-destructive transition-colors">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </TooltipTrigger>
+                        </ConfirmDialog>
+                        <TooltipContent side="top">Delete</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </MessageActions>
                 </div>
               );
@@ -311,9 +342,11 @@ export function ChatMessage({
 
 export function ChatMessages({
   character,
+  hiddenMessages,
   messages,
   onDelete,
   onEdit,
+  onHide,
   persona,
   status,
 }: ChatMessagesProps) {
@@ -322,11 +355,13 @@ export function ChatMessages({
       {messages.map((message, i) => (
         <ChatMessage
           character={character}
+          isHidden={hiddenMessages[message.id] ?? false}
           isStreaming={status === "streaming" && i === messages.length - 1}
           key={message.id}
           message={message}
           onDelete={onDelete ? () => onDelete(message.id) : undefined}
           onEdit={onEdit ? (newText) => onEdit(message.id, newText) : undefined}
+          onHide={onHide ? () => onHide(message.id) : undefined}
           persona={persona}
         />
       ))}
@@ -338,7 +373,7 @@ export function ChatMessageThinking({ character }: ChatMessageThinkingProps) {
   return (
     <Message>
       <div className="flex flex-row-reverse w-full overflow-hidden rounded-lg bg-secondary shadow-lg ring-1 ring-black/10">
-        <ChatAvatar alt="AI" isUser={false} src={character.avatarSrc} />
+        <ChatAvatar alt="AI" isUser={false} src={character.imageSrc} />
         <div className="flex flex-col gap-2 p-3">
           <span className="text-xs font-semibold tracking-wide uppercase opacity-60">
             {character.name}

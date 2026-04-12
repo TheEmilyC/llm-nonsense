@@ -1,7 +1,7 @@
 "use client";
 
 import { useChatMessages } from "@/app/chat/_lib/hooks";
-import { ChatMessageWithContentDto, ChatProfile } from "@/app/chat/_lib/schema";
+import { ChatSessionDto } from "@/app/chat/_lib/schema";
 import {
   ChatContainer,
   ChatHistory,
@@ -13,56 +13,53 @@ import {
 import { Header } from "@/components/header";
 
 export interface ChatViewParams {
-  character: ChatProfile;
-  chat: { id: string; messages: ChatMessageWithContentDto[]; name: string };
-  persona: ChatProfile;
-  story: { id: string; name: string };
+  chatSession: ChatSessionDto;
 }
 
-export function ChatView({ character, chat, persona, story }: ChatViewParams) {
+export function ChatView({ chatSession }: ChatViewParams) {
   const {
     deleteMessage,
-    editMessage,
+    editContent,
     handleSubmit,
-    input,
+    hiddenMessages,
+    hideMessage,
     messages,
-    setInput,
     status,
     stop,
     swipe,
-  } = useChatMessages(chat.id, chat.messages);
+  } = useChatMessages(chatSession);
   const lastMessage =
     messages.length > 0 ? messages[messages.length - 1] : null;
 
   return (
     <div className="flex h-screen flex-col bg-background">
       <Header
-        backLinkDestination={`/story/${story.id}`}
-        backLinkLabel={story.name}
-        pageTitle={chat.name}
+        backLinkDestination={`/story/${chatSession.story.id}`}
+        backLinkLabel={chatSession.story.name}
+        pageTitle={chatSession.name}
       />
       <div className="w-full mx-auto max-w-6xl p-6 flex-1 flex flex-col min-h-0">
         <ChatContainer>
           <ChatHistory>
             <ChatMessages
-              character={character}
+              character={chatSession.character}
+              hiddenMessages={hiddenMessages}
               messages={messages}
               onDelete={deleteMessage}
-              onEdit={editMessage}
-              persona={persona}
+              onEdit={editContent}
+              onHide={hideMessage}
+              persona={chatSession.persona}
               status={status}
             />
             {status === "submitted" && (
-              <ChatMessageThinking character={character} />
+              <ChatMessageThinking character={chatSession.character} />
             )}
             {lastMessage &&
               lastMessage.role === "assistant" &&
               status !== "streaming" && <ChatSwipe swipe={swipe} />}
           </ChatHistory>
           <ChatInput
-            input={input}
             isLoading={status !== "ready"}
-            onInputChange={setInput}
             onStop={stop}
             onSubmit={handleSubmit}
           />

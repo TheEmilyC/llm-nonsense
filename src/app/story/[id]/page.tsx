@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import z from "zod";
 
+import { dbIdValidator } from "@/app/_shared/schema";
 import { getCharacterList } from "@/app/character/_lib/data";
 import { getChatsForStory } from "@/app/chat/_lib/data";
 import { getLorebookEntityList } from "@/app/lorebook/_lib/data";
@@ -10,7 +11,6 @@ import { getPromptList } from "@/app/prompt/_lib/data";
 import { StoryEdit } from "@/app/story/_components/story-edit";
 import { getStoryById } from "@/app/story/_lib/data";
 import { getWorldList } from "@/app/world/_lib/data";
-import { dbIdValidator } from "@/lib/validators";
 
 interface StoryPageParams {
   params: Promise<{ id: string }>;

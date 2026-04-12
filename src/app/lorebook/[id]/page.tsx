@@ -2,9 +2,9 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import z from "zod";
 
+import { dbIdValidator } from "@/app/_shared/schema";
 import { LorebookEdit } from "@/app/lorebook/_components/lorebook-edit";
 import { getLorebookEntityById } from "@/app/lorebook/_lib/data";
-import { dbIdValidator } from "@/lib/validators";
 
 interface LorebookEditPageParams {
   params: Promise<{ id: string }>;

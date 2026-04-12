@@ -5,11 +5,7 @@ import z from "zod";
 
 import { getCharacterById } from "@/app/character/_lib/data";
 import { createChatMessageContent, getChatSession } from "@/app/chat/_lib/data";
-import {
-  ChatMessageWithContentDto,
-  ChatSessionDto,
-  MessagePart,
-} from "@/app/chat/_lib/schema";
+import { ChatSession, MessagePart } from "@/app/chat/_lib/schema";
 import {
   getLorebookById,
   getLorebookEntryList,
@@ -24,7 +20,7 @@ import { models } from "@/lib/ai-registry";
 import { NotFoundError } from "@/lib/error";
 
 interface BuildPromptFromChatParams {
-  chat: ChatSessionDto;
+  chat: ChatSession;
   regenerate?: boolean;
 }
 
@@ -159,9 +155,8 @@ async function buildPromptFromChat({
     worldName: world?.name,
   });
 
-  const lastMessage = messageDtoToAiMessage(
-    regenerate ? chat.messages[1] : chat.messages[0],
-  );
+  const lastMessage = regenerate ? chat.messages[1] : chat.messages[0];
+
   const chatHistory = regenerate
     ? chat.messages.slice(2)
     : chat.messages.slice(1);
@@ -198,27 +193,7 @@ async function buildPromptFromChat({
       .join("\n");
     promptBuilder.addToPrompt(PromptInjectTag.lorebook, lorebookPrompt);
   }
-  const modelMessages = chatHistory.map((msg) => messageDtoToAiMessage(msg));
-  promptBuilder.injectChatHistory(modelMessages);
+  promptBuilder.injectChatHistory(chatHistory);
 
   return promptBuilder.build();
-}
-
-function messageDtoToAiMessage(
-  chatMessage: Omit<ChatMessageWithContentDto, "chatId">,
-) {
-  const activeContent =
-    chatMessage.contents.find((msg) => msg.isActive) ?? chatMessage.contents[0];
-  if (!activeContent)
-    throw new Error(`No content for message ${chatMessage.id}`);
-
-  const content = activeContent.parts
-    .filter((part) => part.type === "text")
-    .map((part) => part.text)
-    .join("\n");
-
-  return {
-    content,
-    role: activeContent.role,
-  };
 }
