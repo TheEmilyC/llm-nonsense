@@ -75,6 +75,16 @@ export const promptFragmentSchema = z.discriminatedUnion("type", [
 ]);
 export type PromptFragment = z.infer<typeof promptFragmentSchema>;
 
+export const promptWithFragmentsSchema = promptEntitySchema
+  .pick({
+    id: true,
+    ...promptSettingsFields,
+  })
+  .extend({
+    promptFragments: promptFragmentSchema.array(),
+  });
+export type PromptWithFragments = z.infer<typeof promptWithFragmentsSchema>;
+
 // -- Schema
 
 export const promptFragmentCreateSchema = z.discriminatedUnion("type", [

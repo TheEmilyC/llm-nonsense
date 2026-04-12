@@ -12,10 +12,8 @@ import {
 } from "@/app/lorebook/_lib/data";
 import { convertFilesToPrompt } from "@/app/lorebook/_lib/lorebook-scanning";
 import { LorebookStatus } from "@/app/lorebook/_lib/schema";
-import { getPersonaById } from "@/app/persona/_lib/data";
 import { PromptBuilder } from "@/app/prompt/_lib/prompt-builder";
 import { PromptFragmentType, PromptInjectTag } from "@/app/prompt/_lib/schema";
-import { getWorldById } from "@/app/world/_lib/data";
 import { models } from "@/lib/ai-registry";
 import { NotFoundError } from "@/lib/error";
 
@@ -132,14 +130,11 @@ async function buildPromptFromChat({
   const lorebook = chat.lorebookId
     ? await getLorebookById(chat.lorebookId)
     : null;
-  // TODO: return as part of chatSessionDTO
-  const persona = await getPersonaById(chat.persona.id);
-  const world = chat.world ? await getWorldById(chat.world.id) : null;
 
   const promptBuilder = new PromptBuilder({
     characterName: character.card.name,
     maxTokens: chat.prompt.maxTokens,
-    personaName: persona?.name ?? "",
+    personaName: chat.persona?.name ?? "",
     promptSkeleton: chat.prompt.promptFragments.map((frag) =>
       frag.type === PromptFragmentType.chatHistory
         ? { type: PromptFragmentType.chatHistory }
@@ -152,7 +147,7 @@ async function buildPromptFromChat({
               type: PromptFragmentType.inject,
             },
     ),
-    worldName: world?.name,
+    worldName: chat.world?.name,
   });
 
   const lastMessage = regenerate ? chat.messages[1] : chat.messages[0];
@@ -175,16 +170,16 @@ async function buildPromptFromChat({
     character.card.scenario,
   );
 
-  if (persona) {
+  if (chat.persona) {
     promptBuilder.addToPrompt(
       PromptInjectTag.personaDescription,
-      persona.description,
+      chat.persona.description,
     );
   }
-  if (world) {
+  if (chat.world) {
     promptBuilder.addToPrompt(
       PromptInjectTag.worldDescription,
-      world.description,
+      chat.world.description,
     );
   }
   if (lorebook && lorebook.status === LorebookStatus.Ready) {

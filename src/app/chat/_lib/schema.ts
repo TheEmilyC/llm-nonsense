@@ -6,7 +6,11 @@ import {
   entityProfileSchema,
   messageRoleSchema,
 } from "@/app/_shared/schema";
-import { promptFragmentSchema } from "@/app/prompt/_lib/schema";
+import { characterEntitySchema } from "@/app/character/_lib/schema";
+import { personaEntitySchema } from "@/app/persona/_lib/schema";
+import { promptWithFragmentsSchema } from "@/app/prompt/_lib/schema";
+import { storyEntitySchema } from "@/app/story/_lib/schema";
+import { worldEntitySchema } from "@/app/world/_lib/schema";
 
 export const CHAT_CACHE_KEY = "chat";
 
@@ -131,11 +135,7 @@ export const chatSessionSchema = chatEntitySchema
     name: true,
   })
   .extend({
-    character: z.object({
-      id: dbIdValidator,
-      name: z.string().min(1),
-      pngHash: z.string().min(1),
-    }),
+    character: characterEntitySchema,
     lorebookId: dbIdValidator.optional(),
     messages: chatMessageEntitySchema
       .pick({ id: true })
@@ -148,25 +148,9 @@ export const chatSessionSchema = chatEntitySchema
         content: z.string(),
       })
       .array(),
-    persona: z.object({
-      id: dbIdValidator,
-      imageHash: z.string().min(1),
-      name: z.string().min(1),
-    }),
-    prompt: z.object({
-      id: dbIdValidator,
-      maxOutputTokens: z.number().int().positive(),
-      maxSteps: z.number().int().positive(),
-      maxTokens: z.number(),
-      promptFragments: promptFragmentSchema.array(),
-      temperature: z.number(),
-      topK: z.number().int().positive(),
-      topP: z.number(),
-    }),
-    story: z.object({
-      id: dbIdValidator,
-      name: z.string().min(1, "Story Name is required"),
-    }),
-    world: z.object({ id: dbIdValidator }).optional(),
+    persona: personaEntitySchema,
+    prompt: promptWithFragmentsSchema,
+    story: storyEntitySchema,
+    world: worldEntitySchema.optional(),
   });
 export type ChatSession = z.infer<typeof chatSessionSchema>;

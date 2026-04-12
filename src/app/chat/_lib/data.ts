@@ -196,10 +196,8 @@ export async function getChatSession({
     name: chat.name,
     persona: chat.story.persona,
     prompt: chat.story.prompt,
-    story: {
-      id: chat.storyId,
-      name: chat.story.name,
-    },
+    story: chat.story,
+    world: chat.story.world,
   } as ChatSession);
 }
 
