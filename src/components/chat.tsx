@@ -44,6 +44,12 @@ import {
 } from "@/components/ui/reasoning";
 import { ScrollButton } from "@/components/ui/scroll-button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export interface ChatHistoryContainerParams {
@@ -292,21 +298,36 @@ export function ChatMessage({
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                     </MessageAction>
-                    <MessageAction tooltip={isHidden ? "Unhide" : "Hide"}>
-                      <HideButton isHidden={isHidden} onClick={onHide} />
-                    </MessageAction>
-                    <MessageAction tooltip="Delete">
-                      <ConfirmDialog
-                        description="This will permanently delete this message and all its swipes."
-                        onConfirm={onDelete}
-                        title="Delete message?"
-                        type="delete"
+                    <MessageAction tooltip={isHidden ? "Unhide (message will be sent to LLM)" : "Hide (message won't be sent to LLM)"}>
+                      <button
+                        aria-label={isHidden ? "Unhide message" : "Hide message"}
+                        className="p-1 hover:text-foreground transition-colors text-muted-foreground"
+                        onClick={onHide}
                       >
-                        <button className="p-1 hover:text-destructive transition-colors">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </ConfirmDialog>
+                        {isHidden ? (
+                          <Eye className="h-3.5 w-3.5" />
+                        ) : (
+                          <EyeOff className="h-3.5 w-3.5" />
+                        )}
+                      </button>
                     </MessageAction>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <ConfirmDialog
+                          description="This will permanently delete this message and all its swipes."
+                          onConfirm={onDelete}
+                          title="Delete message?"
+                          type="delete"
+                        >
+                          <TooltipTrigger asChild>
+                            <button className="p-1 hover:text-destructive transition-colors">
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </TooltipTrigger>
+                        </ConfirmDialog>
+                        <TooltipContent side="top">Delete</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </MessageActions>
                 </div>
               );
@@ -412,27 +433,5 @@ function ChatAvatar({
         )}
       />
     </div>
-  );
-}
-
-function HideButton({
-  isHidden,
-  onClick,
-}: {
-  isHidden: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      aria-label={isHidden ? "Unhide message" : "Hide message"}
-      className="p-1 hover:text-foreground transition-colors text-muted-foreground"
-      onClick={onClick}
-    >
-      {isHidden ? (
-        <Eye className="h-3.5 w-3.5" />
-      ) : (
-        <EyeOff className="h-3.5 w-3.5" />
-      )}
-    </button>
   );
 }
