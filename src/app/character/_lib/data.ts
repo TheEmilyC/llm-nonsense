@@ -99,14 +99,12 @@ export async function getCharacterEntityById(
 export async function getCharacterImageFile(
   id: string,
 ): Promise<CharacterImageFileDto | null> {
-  "use cache";
-  cacheTag(`${CHARACTER_CACHE_KEY}-${id}`);
   const entity = await getCharacterEntityById(id);
   if (!entity) return null;
   return toCharacterImageFileDto(entity);
 }
 
-export async function getCharacterList(): Promise<CharacterListDto[]> {
+export async function getCharacterListDto(): Promise<CharacterListDto[]> {
   "use cache";
   cacheTag(CHARACTER_CACHE_KEY);
   const characterList = await prisma.character.findMany();

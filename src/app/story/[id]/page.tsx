@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import z from "zod";
 
 import { dbIdValidator } from "@/app/_shared/schema";
-import { getCharacterList } from "@/app/character/_lib/data";
+import { getCharacterListDto } from "@/app/character/_lib/data";
 import { getChatsForStory } from "@/app/chat/_lib/data";
 import { getLorebookEntityDtoList } from "@/app/lorebook/_lib/data";
 import { getPersonaList } from "@/app/persona/_lib/data";
@@ -37,7 +37,7 @@ async function StoryPageContent({ params }: StoryPageParams) {
     promptResult,
     routeParams,
   ] = await Promise.all([
-    getCharacterList(),
+    getCharacterListDto(),
     getPersonaList(),
     getWorldList(),
     getLorebookEntityDtoList(),

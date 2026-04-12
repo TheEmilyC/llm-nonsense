@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import z from "zod";
 
 import { dbIdValidator } from "@/app/_shared/schema";
-import { getCharacterList } from "@/app/character/_lib/data";
+import { getCharacterListDto } from "@/app/character/_lib/data";
 import { getLorebookEntityDtoList } from "@/app/lorebook/_lib/data";
 import { getPersonaList } from "@/app/persona/_lib/data";
 import { getPromptList } from "@/app/prompt/_lib/data";
@@ -34,7 +34,7 @@ export default function NewStoryPage({ searchParams }: NewStoryPageParams) {
 async function NewStoryPageContent({ searchParams }: NewStoryPageParams) {
   const [characters, personas, worlds, lorebookResult, promptResult, params] =
     await Promise.all([
-      getCharacterList(),
+      getCharacterListDto(),
       getPersonaList(),
       getWorldList(),
       getLorebookEntityDtoList(),

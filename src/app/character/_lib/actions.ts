@@ -13,9 +13,9 @@ import {
 import {
   CHARACTER_CACHE_KEY,
   characterCardSchema,
-  CharacterDto,
   characterFormSchema,
   CharacterFormValues,
+  CharacterRecord,
   ImportFromPngForm,
   importFromPngFormSchema,
 } from "@/app/character/_lib/schema";
@@ -42,7 +42,7 @@ export async function createCharacterAction(
     ...card,
   };
 
-  let character: CharacterDto;
+  let character: CharacterRecord;
   try {
     character = await createCharacter({ characterCard, image });
   } catch (err) {
@@ -50,11 +50,11 @@ export async function createCharacterAction(
     return toActionResponseError(err);
   }
   logger.info("Character created", {
-    id: character.id,
+    id: character.entity.id,
   });
 
   updateTag(CHARACTER_CACHE_KEY);
-  redirect(`/character/${character.id}`);
+  redirect(`/character/${character.entity.id}`);
 }
 
 export async function deleteCharacterAction(
@@ -91,7 +91,7 @@ export async function importCharacterFromPNGAction(
   const { png } = parseResult.data;
 
   // extract character data
-  let character: CharacterDto;
+  let character: CharacterRecord;
   try {
     const imageBuffer = Buffer.from(await png.arrayBuffer());
     const imageText = JSON.parse(readCharacterFromBuffer(imageBuffer));
@@ -105,10 +105,10 @@ export async function importCharacterFromPNGAction(
     logger.error("Failed to create character", parseError(err));
     return toActionResponseError(err);
   }
-  logger.info("Character imported", { id: character.id });
+  logger.info("Character imported", { id: character.entity.id });
 
   updateTag(CHARACTER_CACHE_KEY);
-  redirect(`/character/${character.id}`);
+  redirect(`/character/${character.entity.id}`);
 }
 
 export async function updateCharacterAction(
