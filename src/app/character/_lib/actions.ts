@@ -1,5 +1,6 @@
 "use server";
 
+import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { readCharacterFromBuffer } from "@/app/character/_lib/character-card-parser";
@@ -9,6 +10,7 @@ import {
   updateCharacter,
 } from "@/app/character/_lib/data";
 import {
+  CHARACTER_CACHE_KEY,
   characterCardSchema,
   CharacterDto,
   characterFormSchema,
@@ -51,6 +53,7 @@ export async function createCharacterAction(
     id: character.id,
   });
 
+  updateTag(CHARACTER_CACHE_KEY);
   redirect(`/character/${character.id}`);
 }
 
@@ -72,6 +75,8 @@ export async function deleteCharacterAction(
     id: characterId,
   });
 
+  updateTag(CHARACTER_CACHE_KEY);
+  updateTag(`${CHARACTER_CACHE_KEY}-${id}`);
   redirect("/character");
 }
 
@@ -102,6 +107,7 @@ export async function importCharacterFromPNGAction(
   }
   logger.info("Character imported", { id: character.id });
 
+  updateTag(CHARACTER_CACHE_KEY);
   redirect(`/character/${character.id}`);
 }
 
@@ -131,5 +137,7 @@ export async function updateCharacterAction(
   }
   logger.info(`Character updated`, { id });
 
+  updateTag(CHARACTER_CACHE_KEY);
+  updateTag(`${CHARACTER_CACHE_KEY}-${id}`);
   return { success: true };
 }

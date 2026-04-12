@@ -1,11 +1,13 @@
 "use server";
 
+import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createWorld, deleteWorld, updateWorld } from "@/app/world/_lib/data";
 import {
   UpdateWorldActionParams,
   updateWorldActionParamsSchema,
+  WORLD_CACHE_KEY,
   worldFormSchema,
   WorldFormValues,
 } from "@/app/world/_lib/schema";
@@ -30,6 +32,8 @@ export async function createWorldAction(
     return toActionResponseError(err);
   }
   logger.info("World created", { id: newWorld.id });
+
+  updateTag(WORLD_CACHE_KEY);
   redirect(`/world/${newWorld.id}`);
 }
 
@@ -49,6 +53,9 @@ export async function deleteWorldAction(
     return toActionResponseError(err);
   }
   logger.info("World deleted", { id });
+
+  updateTag(WORLD_CACHE_KEY);
+  updateTag(`${WORLD_CACHE_KEY}-${id}`);
   redirect("/world");
 }
 
@@ -66,5 +73,8 @@ export async function updateWorldAction(
     return toActionResponseError(err);
   }
   logger.info("World updated", { id });
+
+  updateTag(WORLD_CACHE_KEY);
+  updateTag(`${WORLD_CACHE_KEY}-${id}`);
   return { success: true };
 }

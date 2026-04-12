@@ -94,6 +94,7 @@ export type ChatDto = z.infer<typeof chatDtoSchema>;
 export const messageContentDtoSchema = baseMessageContentSchema.pick({
   id: true,
   isActive: true,
+  messageId: true,
   metadata: true,
   parts: true,
   role: true,
@@ -106,9 +107,21 @@ export const chatMessageDtoSchema = baseChatMessageSchema.pick({
 });
 export type ChatMessageDto = z.infer<typeof chatMessageDtoSchema>;
 
-export const chatMessageWithContentDtoSchema = chatMessageDtoSchema.extend({
-  contents: messageContentDtoSchema.array(),
-});
+export const chatMessageWithContentDtoSchema = baseChatMessageSchema
+  .pick({
+    id: true,
+  })
+  .extend({
+    contents: baseMessageContentSchema
+      .pick({
+        id: true,
+        isActive: true,
+        metadata: true,
+        parts: true,
+        role: true,
+      })
+      .array(),
+  });
 export type ChatMessageWithContentDto = z.infer<
   typeof chatMessageWithContentDtoSchema
 >;

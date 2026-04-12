@@ -1,7 +1,7 @@
 "use server";
 
 import fs from "fs/promises";
-import { cacheTag, updateTag } from "next/cache";
+import { cacheTag } from "next/cache";
 import { join } from "path";
 
 import {
@@ -67,7 +67,6 @@ export async function createCharacter({
       throw err;
     });
 
-  updateTag(CHARACTER_CACHE_KEY);
   return toCharacterDto({ card: characterCard, entity: characterEntity });
 }
 
@@ -78,8 +77,6 @@ export async function deleteCharacter(id: string) {
   await prisma.character.delete({ where: { id } });
   // remove image
   await fs.rm(join(WORKING_DIRECTORY, entity.png));
-  updateTag(CHARACTER_CACHE_KEY);
-  updateTag(`${CHARACTER_CACHE_KEY}-${id}`);
 }
 
 export async function getCharacterById(
@@ -149,9 +146,6 @@ export async function updateCharacter({
   } else {
     characterEntity = orgRecord.entity;
   }
-
-  updateTag(CHARACTER_CACHE_KEY);
-  updateTag(`${CHARACTER_CACHE_KEY}-${id}`);
   return toCharacterDto({ card: updatedCard, entity: characterEntity });
 }
 

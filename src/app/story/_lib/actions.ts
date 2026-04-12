@@ -1,11 +1,13 @@
 "use server";
 
+import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { getCharacterById } from "@/app/character/_lib/data";
 import { getPersonaById } from "@/app/persona/_lib/data";
 import { createStory, deleteStory, updateStory } from "@/app/story/_lib/data";
 import {
+  STORY_CACHE_KEY,
   storyFormSchema,
   StoryFormValues,
   UpdateStoryActionParams,
@@ -58,6 +60,8 @@ export async function createStoryAction(
     return toActionResponseError(err);
   }
   logger.info("Story created", { id: story.id });
+
+  updateTag(STORY_CACHE_KEY);
   redirect(`/story/${story.id}`);
 }
 
@@ -76,6 +80,9 @@ export async function deleteStoryAction(
     return toActionResponseError(err);
   }
   logger.info("Story deleted", { id });
+
+  updateTag(STORY_CACHE_KEY);
+  updateTag(`${STORY_CACHE_KEY}-${id}`);
   redirect("/story");
 }
 
@@ -94,5 +101,7 @@ export async function updateStoryAction(
   }
   logger.info("Story updated", { id });
 
+  updateTag(STORY_CACHE_KEY);
+  updateTag(`${STORY_CACHE_KEY}-${id}`);
   return { success: true };
 }

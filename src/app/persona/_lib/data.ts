@@ -1,7 +1,7 @@
 "use server";
 
 import fs from "fs/promises";
-import { cacheTag, updateTag } from "next/cache";
+import { cacheTag } from "next/cache";
 import path, { join } from "path";
 
 import {
@@ -67,7 +67,6 @@ export async function createPersona({
 
   const personaDto = toPersonaDto(result);
 
-  updateTag(PERSONA_CACHE_KEY);
   return personaDto;
 }
 
@@ -78,9 +77,6 @@ export async function deletePersona(id: string) {
   await prisma.persona.delete({ where: { id } });
   // remove image
   await fs.rm(join(WORKING_DIRECTORY, persona.image));
-
-  updateTag(PERSONA_CACHE_KEY);
-  updateTag(`${PERSONA_CACHE_KEY}-${id}`);
 }
 
 export async function getPersonaById(id: string): Promise<null | PersonaDto> {
@@ -129,8 +125,6 @@ export async function updatePersona({
   });
   const personaDto = toPersonaDto(personaEntity);
 
-  updateTag(PERSONA_CACHE_KEY);
-  updateTag(`${PERSONA_CACHE_KEY}-${id}`);
   return personaDto;
 }
 

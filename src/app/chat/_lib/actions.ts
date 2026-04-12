@@ -1,6 +1,7 @@
 "use server";
 
 import { createIdGenerator } from "ai";
+import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { getCharacterById } from "@/app/character/_lib/data";
@@ -10,10 +11,13 @@ import {
   deleteChat,
   deleteChatMessage,
   getChatById,
+  getChatMessageById,
   updateMessageContent,
 } from "@/app/chat/_lib/data";
 import {
+  CHAT_CACHE_KEY,
   ChatDto,
+  ChatMessageDto,
   UpdateContentActionParams,
   updateContentActionParamsSchema,
 } from "@/app/chat/_lib/schema";
@@ -87,6 +91,7 @@ export async function createChatFromStoryAction(
     return toActionResponseError(err);
   }
   logger.info("Chat created from story", { chatId: chat.id, storyId });
+  updateTag(CHAT_CACHE_KEY);
   redirect(`/chat/${chat.id}`);
 }
 
@@ -107,6 +112,8 @@ export async function deleteChatAction(id: string): Promise<ActionResponse> {
   }
   logger.info("Chat deleted", { id });
 
+  updateTag(CHAT_CACHE_KEY);
+  updateTag(`${CHAT_CACHE_KEY}-${id}`);
   redirect(`/story/${chat.storyId}`);
 }
 
@@ -117,14 +124,17 @@ export async function deleteMessageAction(
   if (!parseResult.success) {
     return toActionResponseError(parseResult.error);
   }
+
+  let deletedMessage: ChatMessageDto;
   try {
-    await deleteChatMessage(messageId);
+    deletedMessage = await deleteChatMessage(messageId);
   } catch (err) {
     logger.error("Failed to delete message", { messageId, ...parseError(err) });
     return toActionResponseError(err);
   }
   logger.info("Message deleted", { id: messageId });
 
+  updateTag(`${CHAT_CACHE_KEY}-${deletedMessage.chatId}`);
   return { success: true };
 }
 
@@ -137,11 +147,13 @@ export async function updateMessageContentAction(
   }
   const { id, update } = parseResult.data;
 
+  let message: ChatMessageDto | null = null;
   try {
-    await updateMessageContent({
+    const updatedContent = await updateMessageContent({
       id,
       update,
     });
+    message = await getChatMessageById(updatedContent.messageId);
   } catch (err) {
     logger.error("Failed to update message content", {
       id,
@@ -150,6 +162,8 @@ export async function updateMessageContentAction(
     });
   }
   logger.info("Message content update", { id });
+  if (message) updateTag(`${CHAT_CACHE_KEY}-${message.chatId}`);
+  updateTag(CHAT_CACHE_KEY);
 
   return { success: true };
 }

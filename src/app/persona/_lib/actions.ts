@@ -1,5 +1,6 @@
 "use server";
 
+import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
@@ -8,6 +9,7 @@ import {
   updatePersona,
 } from "@/app/persona/_lib/data";
 import {
+  PERSONA_CACHE_KEY,
   PersonaDto,
   personaFormSchema,
   PersonaFormValues,
@@ -35,6 +37,8 @@ export async function createPersonaAction(
     return toActionResponseError(err);
   }
   logger.info("New person created", { id: newPersona.id });
+
+  updateTag(PERSONA_CACHE_KEY);
   redirect(`/persona/${newPersona.id}`);
 }
 
@@ -52,6 +56,9 @@ export async function deletePersonaAction(
     return toActionResponseError(err);
   }
   logger.info("Persona deleted", { id });
+
+  updateTag(PERSONA_CACHE_KEY);
+  updateTag(`${PERSONA_CACHE_KEY}-${id}`);
   redirect("/persona");
 }
 
@@ -73,5 +80,8 @@ export async function updatePersonaAction(
     return toActionResponseError(err);
   }
   logger.info("Persona updated", { id });
+
+  updateTag(PERSONA_CACHE_KEY);
+  updateTag(`${PERSONA_CACHE_KEY}-${id}`);
   return { success: true };
 }
