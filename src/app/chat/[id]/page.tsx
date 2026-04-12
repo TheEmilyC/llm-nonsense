@@ -2,11 +2,10 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import z from "zod";
 
+import { dbIdValidator, EntityProfile } from "@/app/_shared/schema";
 import { ChatView } from "@/app/chat/_components/chat-view";
 import { getChatSession } from "@/app/chat/_lib/data";
-import { ChatProfile } from "@/app/chat/_lib/schema";
 import { buildCharacterImageUrl, buildPersonaImageUrl } from "@/lib/image";
-import { dbIdValidator } from "@/lib/validators";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -29,20 +28,20 @@ async function ChatPageContent({ params }: Props) {
   const chatSession = await getChatSession({ id });
   if (!chatSession) notFound();
 
-  const characterProfile: ChatProfile = {
-    avatarSrc: buildCharacterImageUrl({
+  const characterProfile: EntityProfile = {
+    id: chatSession.character.id,
+    imageSrc: buildCharacterImageUrl({
       id: chatSession.character.id,
       pngHash: chatSession.character.pngHash,
     }),
-    id: chatSession.character.id,
     name: chatSession.character.name,
   };
-  const personaProfile: ChatProfile = {
-    avatarSrc: buildPersonaImageUrl({
+  const personaProfile: EntityProfile = {
+    id: chatSession.persona.id,
+    imageSrc: buildPersonaImageUrl({
       id: chatSession.persona.id,
       imageHash: chatSession.persona.imageHash,
     }),
-    id: chatSession.persona.id,
     name: chatSession.persona.name,
   };
   const chat = {

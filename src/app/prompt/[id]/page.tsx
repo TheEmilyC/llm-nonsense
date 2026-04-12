@@ -2,9 +2,9 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import z from "zod";
 
+import { dbIdValidator } from "@/app/_shared/schema";
 import { PromptEdit } from "@/app/prompt/_component/prompt-edit";
 import { getPromptById } from "@/app/prompt/_lib/data";
-import { dbIdValidator } from "@/lib/validators";
 
 interface PromptEditPageParams {
   params: Promise<{ id: string }>;

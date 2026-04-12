@@ -1,6 +1,6 @@
 import z from "zod";
 
-import { dbIdValidator } from "@/lib/validators";
+import { dbIdValidator } from "@/app/_shared/schema";
 
 export const PERSONA_CACHE_KEY = "persona";
 

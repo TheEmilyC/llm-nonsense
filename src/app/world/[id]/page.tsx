@@ -2,9 +2,9 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import z from "zod";
 
+import { dbIdValidator } from "@/app/_shared/schema";
 import { WorldEdit } from "@/app/world/_components/world-edit";
 import { getWorldById } from "@/app/world/_lib/data";
-import { dbIdValidator } from "@/lib/validators";
 
 interface WorldPageParams {
   params: Promise<{ id: string }>;

@@ -1,9 +1,8 @@
 import { UIDataTypes, UIMessagePart, UITools } from "ai";
 import z from "zod";
 
-import { messageRoleSchema } from "@/app/_shared/schema";
+import { dbIdValidator, messageRoleSchema } from "@/app/_shared/schema";
 import { promptFragmentDtoSchema } from "@/app/prompt/_lib/schema";
-import { dbIdValidator } from "@/lib/validators";
 
 export const CHAT_CACHE_KEY = "chat";
 
@@ -12,13 +11,6 @@ export const CHAT_CACHE_KEY = "chat";
 // trying to replicate these types DRY is a headache
 export const messagePartSchema = z.custom<MessagePart>();
 export type MessagePart = UIMessagePart<UIDataTypes, UITools>;
-
-export const chatProfileSchema = z.object({
-  avatarSrc: z.string().min(1),
-  id: dbIdValidator,
-  name: z.string().min(1),
-});
-export type ChatProfile = z.infer<typeof chatProfileSchema>;
 
 const baseChatSchema = z.object({
   createdAt: z.date(),
@@ -32,6 +24,7 @@ const baseChatMessageSchema = z.object({
   chatId: dbIdValidator,
   createdAt: z.date(),
   id: dbIdValidator,
+  isHidden: z.boolean(),
   modifiedAt: z.date(),
 });
 

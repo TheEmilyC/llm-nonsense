@@ -2,9 +2,9 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import z from "zod";
 
+import { dbIdValidator } from "@/app/_shared/schema";
 import { PersonaEdit } from "@/app/persona/_components/persona-edit";
 import { getPersonaById } from "@/app/persona/_lib/data";
-import { dbIdValidator } from "@/lib/validators";
 
 interface PersonaPageParams {
   params: Promise<{ id: string }>;

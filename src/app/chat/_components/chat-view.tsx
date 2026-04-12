@@ -1,7 +1,8 @@
 "use client";
 
+import { EntityProfile } from "@/app/_shared/schema";
 import { useChatMessages } from "@/app/chat/_lib/hooks";
-import { ChatMessageWithContentDto, ChatProfile } from "@/app/chat/_lib/schema";
+import { ChatMessageWithContentDto } from "@/app/chat/_lib/schema";
 import {
   ChatContainer,
   ChatHistory,
@@ -13,9 +14,9 @@ import {
 import { Header } from "@/components/header";
 
 export interface ChatViewParams {
-  character: ChatProfile;
+  character: EntityProfile;
   chat: { id: string; messages: ChatMessageWithContentDto[]; name: string };
-  persona: ChatProfile;
+  persona: EntityProfile;
   story: { id: string; name: string };
 }
 

@@ -15,7 +15,7 @@ import {
 import Image from "next/image";
 import { ReactNode, useState } from "react";
 
-import { ChatProfile } from "@/app/chat/_lib/schema";
+import { EntityProfile } from "@/app/_shared/schema";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,25 +61,25 @@ interface ChatInputParams {
 }
 
 interface ChatMessageProps {
-  character: ChatProfile;
+  character: EntityProfile;
   isStreaming: boolean;
   message: UIMessage;
   onDelete?: () => void;
   onEdit?: (newText: string) => void;
-  persona: ChatProfile;
+  persona: EntityProfile;
 }
 
 interface ChatMessagesProps {
-  character: ChatProfile;
+  character: EntityProfile;
   messages: UIMessage[];
   onDelete?: (messageId: string) => void;
   onEdit?: (messageId: string, newText: string) => void;
-  persona: ChatProfile;
+  persona: EntityProfile;
   status: "error" | "ready" | "streaming" | "submitted";
 }
 
 interface ChatMessageThinkingProps {
-  character: ChatProfile;
+  character: EntityProfile;
 }
 
 interface ChatSwipeParams {
@@ -191,7 +191,7 @@ export function ChatMessage({
         <ChatAvatar
           alt={isUser ? persona.name : character.name}
           isUser={isUser}
-          src={isUser ? persona.avatarSrc : character.avatarSrc}
+          src={isUser ? persona.imageSrc : character.imageSrc}
         />
         <div className="flex flex-col gap-2 p-3 min-w-0 flex-1">
           <span className="text-xs font-semibold tracking-wide uppercase opacity-60">
@@ -338,7 +338,7 @@ export function ChatMessageThinking({ character }: ChatMessageThinkingProps) {
   return (
     <Message>
       <div className="flex flex-row-reverse w-full overflow-hidden rounded-lg bg-secondary shadow-lg ring-1 ring-black/10">
-        <ChatAvatar alt="AI" isUser={false} src={character.avatarSrc} />
+        <ChatAvatar alt="AI" isUser={false} src={character.imageSrc} />
         <div className="flex flex-col gap-2 p-3">
           <span className="text-xs font-semibold tracking-wide uppercase opacity-60">
             {character.name}

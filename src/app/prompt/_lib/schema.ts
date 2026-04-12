@@ -1,7 +1,6 @@
 import z from "zod";
 
-import { messageRoleSchema } from "@/app/_shared/schema";
-import { dbIdValidator } from "@/lib/validators";
+import { dbIdValidator, messageRoleSchema } from "@/app/_shared/schema";
 
 export const PROMPT_CACHE_KEY = "prompt";
 

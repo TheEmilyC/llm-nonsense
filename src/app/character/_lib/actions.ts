@@ -3,6 +3,7 @@
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { dbIdValidator } from "@/app/_shared/schema";
 import { readCharacterFromBuffer } from "@/app/character/_lib/character-card-parser";
 import {
   createCharacter,
@@ -20,7 +21,6 @@ import {
 } from "@/app/character/_lib/schema";
 import { ActionResponse, toActionResponseError } from "@/lib/action-utils";
 import { logger, parseError } from "@/lib/logger";
-import { dbIdValidator } from "@/lib/validators";
 
 export async function createCharacterAction(
   data: CharacterFormValues,

@@ -1,6 +1,6 @@
 import z from "zod";
 
-import { dbIdValidator } from "@/lib/validators";
+import { dbIdValidator } from "@/app/_shared/schema";
 
 export const WORLD_CACHE_KEY = "world";
 

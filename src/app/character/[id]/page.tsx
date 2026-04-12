@@ -2,9 +2,9 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import z from "zod";
 
+import { dbIdValidator } from "@/app/_shared/schema";
 import { CharacterEdit } from "@/app/character/_components/character-edit";
 import { getCharacterById } from "@/app/character/_lib/data";
-import { dbIdValidator } from "@/lib/validators";
 
 interface CharacterPageParams {
   params: Promise<{ id: string }>;

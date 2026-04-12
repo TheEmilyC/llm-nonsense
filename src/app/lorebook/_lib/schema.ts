@@ -1,6 +1,6 @@
 import z from "zod";
 
-import { dbIdValidator } from "@/lib/validators";
+import { dbIdValidator } from "@/app/_shared/schema";
 
 export const LOREBOOK_CACHE_KEY = "lorebook";
 
