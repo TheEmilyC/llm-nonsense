@@ -147,8 +147,7 @@ export async function getChatSession({
   skip = 0,
   take = 50,
 }: GetChatSessionParams): Promise<ChatSessionDto | null> {
-  "use cache";
-  cacheTag(`${CHAT_CACHE_KEY}-${id}`);
+  // Itentionally not cached, serves old messages to the chat if it is
 
   const chat = await prisma.chat.findUnique({
     include: {
