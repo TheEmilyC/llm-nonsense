@@ -2,7 +2,7 @@ import fs from "fs/promises";
 import { NextResponse } from "next/server";
 
 import { dbIdValidator } from "@/app/_shared/schema";
-import { getPersonaImageFile } from "@/app/persona/_lib/data";
+import { getPersonaById } from "@/app/persona/_lib/data";
 import { HttpStatus } from "@/lib/http";
 
 interface Params {
@@ -13,7 +13,7 @@ export async function GET(_req: Request, { params }: Params) {
   const { id: idRaw } = await params;
   const id = dbIdValidator.parse(idRaw);
 
-  const persona = await getPersonaImageFile(id);
+  const persona = await getPersonaById(id);
   if (!persona) {
     return new NextResponse("Image not found", {
       status: HttpStatus.NOT_FOUND,

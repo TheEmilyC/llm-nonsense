@@ -7,7 +7,7 @@ import path, { join } from "path";
 import {
   PERSONA_CACHE_KEY,
   PersonaDto,
-  PersonaImageFileDto,
+  PersonaEntity,
   PersonaListDto,
 } from "@/app/persona/_lib/schema";
 import { Persona } from "@/generated/client";
@@ -45,12 +45,12 @@ interface UpdatePersonaParams {
 export async function createPersona({
   image,
   persona,
-}: CreatePersonaParams): Promise<PersonaDto> {
+}: CreatePersonaParams): Promise<PersonaEntity> {
   const { fileName, filePath, imageHash } = await savePersonaImage({
     image,
     personaName: persona.name,
   });
-  const result = await prisma.persona
+  const newPersona = await prisma.persona
     .create({
       data: {
         description: persona.description,
@@ -65,13 +65,11 @@ export async function createPersona({
       throw err;
     });
 
-  const personaDto = toPersonaDto(result);
-
-  return personaDto;
+  return newPersona;
 }
 
 export async function deletePersona(id: string) {
-  const persona = await getPersonaEntityById(id);
+  const persona = await getPersonaById(id);
   if (!persona) throw new NotFoundError("Persona", id);
   // remove entity
   await prisma.persona.delete({ where: { id } });
@@ -79,21 +77,21 @@ export async function deletePersona(id: string) {
   await fs.rm(join(WORKING_DIRECTORY, persona.image));
 }
 
-export async function getPersonaById(id: string): Promise<null | PersonaDto> {
-  const result = await getPersonaEntityById(id);
+export async function getPersonaById(
+  id: string,
+): Promise<null | PersonaEntity> {
+  "use cache";
+  cacheTag(`${PERSONA_CACHE_KEY}-${id}`);
+  return prisma.persona.findUnique({ where: { id } });
+}
+
+export async function getPersonaDto(id: string): Promise<null | PersonaDto> {
+  const result = await getPersonaById(id);
   if (!result) return null;
   return toPersonaDto(result);
 }
 
-export async function getPersonaImageFile(
-  id: string,
-): Promise<null | PersonaImageFileDto> {
-  const result = await getPersonaEntityById(id);
-  if (!result) return null;
-  return toPersonaImageFileDto(result);
-}
-
-export async function getPersonaList(): Promise<PersonaListDto[]> {
+export async function getPersonaListDto(): Promise<PersonaListDto[]> {
   "use cache";
   cacheTag(PERSONA_CACHE_KEY);
 
@@ -106,7 +104,7 @@ export async function updatePersona({
   id,
   update,
 }: UpdatePersonaParams): Promise<PersonaDto> {
-  const orgPersona = await getPersonaEntityById(id);
+  const orgPersona = await getPersonaById(id);
   if (!orgPersona) throw new NotFoundError("Persona", id);
   const { image, ...data } = update;
 
@@ -126,12 +124,6 @@ export async function updatePersona({
   const personaDto = toPersonaDto(personaEntity);
 
   return personaDto;
-}
-
-async function getPersonaEntityById(id: string): Promise<null | Persona> {
-  "use cache";
-  cacheTag(`${PERSONA_CACHE_KEY}-${id}`);
-  return prisma.persona.findUnique({ where: { id } });
 }
 
 async function savePersonaImage(
@@ -176,12 +168,6 @@ function toPersonaDto(persona: Persona): PersonaDto {
     modifiedAt: persona.modifiedAt,
     name: persona.name,
   };
-}
-
-function toPersonaImageFileDto(
-  persona: Pick<Persona, "id" | "image">,
-): PersonaImageFileDto {
-  return { id: persona.id, image: persona.image };
 }
 
 function toPersonaListDto(personas: Persona[]): PersonaListDto[] {

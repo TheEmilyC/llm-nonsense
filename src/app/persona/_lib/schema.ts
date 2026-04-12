@@ -14,6 +14,7 @@ const personaEntitySchema = z.object({
   modifiedAt: z.date(),
   name: z.string().min(1, "Name is required"),
 });
+export type PersonaEntity = z.infer<typeof personaEntitySchema>;
 
 const personaImageValidator = z
   .instanceof(File)
@@ -67,9 +68,3 @@ export const personaDtoSchema = personaEntitySchema
     imageUrl: z.string().min(1),
   });
 export type PersonaDto = z.infer<typeof personaDtoSchema>;
-
-export const personaImageFileDtoSchema = personaEntitySchema.pick({
-  id: true,
-  image: true,
-});
-export type PersonaImageFileDto = z.infer<typeof personaImageFileDtoSchema>;

@@ -4,7 +4,7 @@ import z from "zod";
 import { dbIdValidator } from "@/app/_shared/schema";
 import { getCharacterListDto } from "@/app/character/_lib/data";
 import { getLorebookEntityDtoList } from "@/app/lorebook/_lib/data";
-import { getPersonaList } from "@/app/persona/_lib/data";
+import { getPersonaListDto } from "@/app/persona/_lib/data";
 import { getPromptList } from "@/app/prompt/_lib/data";
 import { StoryNew } from "@/app/story/_components/story-new";
 import { getWorldList } from "@/app/world/_lib/data";
@@ -35,7 +35,7 @@ async function NewStoryPageContent({ searchParams }: NewStoryPageParams) {
   const [characters, personas, worlds, lorebookResult, promptResult, params] =
     await Promise.all([
       getCharacterListDto(),
-      getPersonaList(),
+      getPersonaListDto(),
       getWorldList(),
       getLorebookEntityDtoList(),
       getPromptList(),

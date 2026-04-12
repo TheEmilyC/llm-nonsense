@@ -1,7 +1,7 @@
 import { PersonaList } from "@/app/persona/_components/persona-list";
-import { getPersonaList } from "@/app/persona/_lib/data";
+import { getPersonaListDto } from "@/app/persona/_lib/data";
 
 export default async function PersonaPage() {
-  const personas = await getPersonaList();
+  const personas = await getPersonaListDto();
   return <PersonaList personas={personas} />;
 }
