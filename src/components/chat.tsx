@@ -7,6 +7,8 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Eye,
+  EyeOff,
   Pencil,
   Square,
   Trash2,
@@ -62,18 +64,22 @@ interface ChatInputParams {
 
 interface ChatMessageProps {
   character: EntityProfile;
+  isHidden: boolean;
   isStreaming: boolean;
   message: UIMessage;
   onDelete?: () => void;
   onEdit?: (newText: string) => void;
+  onHide?: () => void;
   persona: EntityProfile;
 }
 
 interface ChatMessagesProps {
   character: EntityProfile;
+  hiddenMessages: Record<string, boolean>;
   messages: UIMessage[];
   onDelete?: (messageId: string) => void;
   onEdit?: (messageId: string, newText: string) => void;
+  onHide?: (messageId: string) => void;
   persona: EntityProfile;
   status: "error" | "ready" | "streaming" | "submitted";
 }
@@ -156,10 +162,12 @@ export function ChatInput({
 
 export function ChatMessage({
   character,
+  isHidden,
   isStreaming,
   message,
   onDelete,
   onEdit,
+  onHide,
   persona,
 }: ChatMessageProps) {
   const isUser = message.role === "user";
@@ -285,6 +293,9 @@ export function ChatMessage({
                         <Pencil className="h-3.5 w-3.5" />
                       </button>
                     </MessageAction>
+                    <MessageAction tooltip={isHidden ? "Unhide" : "Hide"}>
+                      <HideButton isHidden={isHidden} onClick={onHide} />
+                    </MessageAction>
                     <MessageAction tooltip="Delete">
                       <ConfirmDialog
                         description="This will permanently delete this message and all its swipes."
@@ -311,9 +322,11 @@ export function ChatMessage({
 
 export function ChatMessages({
   character,
+  hiddenMessages,
   messages,
   onDelete,
   onEdit,
+  onHide,
   persona,
   status,
 }: ChatMessagesProps) {
@@ -322,11 +335,13 @@ export function ChatMessages({
       {messages.map((message, i) => (
         <ChatMessage
           character={character}
+          isHidden={hiddenMessages[message.id] ?? false}
           isStreaming={status === "streaming" && i === messages.length - 1}
           key={message.id}
           message={message}
           onDelete={onDelete ? () => onDelete(message.id) : undefined}
           onEdit={onEdit ? (newText) => onEdit(message.id, newText) : undefined}
+          onHide={onHide ? () => onHide(message.id) : undefined}
           persona={persona}
         />
       ))}
@@ -398,5 +413,27 @@ function ChatAvatar({
         )}
       />
     </div>
+  );
+}
+
+function HideButton({
+  isHidden,
+  onClick,
+}: {
+  isHidden: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      aria-label={isHidden ? "Unhide message" : "Hide message"}
+      className="p-1 hover:text-foreground transition-colors text-muted-foreground"
+      onClick={onClick}
+    >
+      {isHidden ? (
+        <Eye className="h-3.5 w-3.5" />
+      ) : (
+        <EyeOff className="h-3.5 w-3.5" />
+      )}
+    </button>
   );
 }

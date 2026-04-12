@@ -8,6 +8,7 @@ import {
   chatDtoSchema,
   ChatListDto,
   ChatMessageDto,
+  ChatMessageEntity,
   ChatSession,
   ChatSessionDto,
   chatSessionSchema,
@@ -47,6 +48,11 @@ export interface GetChatSessionViewParams {
   id: string;
   skip?: number;
   take?: number;
+}
+
+export interface UpdateChatMessageParams {
+  id: string;
+  update: Partial<Pick<ChatMessage, "isHidden">>;
 }
 
 export interface UpdateMessageContentParams {
@@ -164,6 +170,7 @@ export async function getChatSession({
         orderBy: { createdAt: "desc" },
         skip,
         take,
+        where: { isHidden: false },
       },
       story: {
         include: {
@@ -261,6 +268,7 @@ export async function getChatSessionDto({
         role: con.role,
       })),
       id: msg.id,
+      isHidden: msg.isHidden,
     })),
     name: chat.name,
     persona: {
@@ -287,6 +295,18 @@ export async function getChatsForStory(
   });
 
   return toChatListDto(result);
+}
+
+export async function updateChatMessage({
+  id,
+  update,
+}: UpdateChatMessageParams): Promise<ChatMessageEntity> {
+  const result = await prisma.chatMessage.update({
+    data: { isHidden: update.isHidden },
+    where: { id },
+  });
+
+  return result;
 }
 
 export async function updateMessageContent({

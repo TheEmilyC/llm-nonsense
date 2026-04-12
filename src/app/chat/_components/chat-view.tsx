@@ -19,8 +19,10 @@ export interface ChatViewParams {
 export function ChatView({ chatSession }: ChatViewParams) {
   const {
     deleteMessage,
-    editMessage,
+    editContent,
     handleSubmit,
+    hiddenMessages,
+    hideMessage,
     input,
     messages,
     setInput,
@@ -43,9 +45,11 @@ export function ChatView({ chatSession }: ChatViewParams) {
           <ChatHistory>
             <ChatMessages
               character={chatSession.character}
+              hiddenMessages={hiddenMessages}
               messages={messages}
               onDelete={deleteMessage}
-              onEdit={editMessage}
+              onEdit={editContent}
+              onHide={hideMessage}
               persona={chatSession.persona}
               status={status}
             />

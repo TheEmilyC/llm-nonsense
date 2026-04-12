@@ -13,12 +13,16 @@ import {
   deleteChatMessage,
   getChatById,
   getChatMessageById,
+  updateChatMessage,
   updateMessageContent,
 } from "@/app/chat/_lib/data";
 import {
   CHAT_CACHE_KEY,
   ChatDto,
   ChatMessageDto,
+  ChatMessageEntity,
+  UpdateChatMessageActionParams,
+  updateChatMessageActionParamsSchema,
   UpdateContentActionParams,
   updateContentActionParamsSchema,
 } from "@/app/chat/_lib/schema";
@@ -33,9 +37,7 @@ export async function createChatFromStoryAction(
   storyId: string,
 ): Promise<ActionResponse> {
   const idParseResult = dbIdValidator.safeParse(storyId);
-  if (!idParseResult.success) {
-    toActionResponseError(idParseResult.error);
-  }
+  if (!idParseResult.success) toActionResponseError(idParseResult.error);
 
   let story;
   try {
@@ -97,9 +99,7 @@ export async function createChatFromStoryAction(
 
 export async function deleteChatAction(id: string): Promise<ActionResponse> {
   const parseResult = dbIdValidator.safeParse(id);
-  if (!parseResult.success) {
-    return toActionResponseError(parseResult.error);
-  }
+  if (!parseResult.success) return toActionResponseError(parseResult.error);
 
   let chat: ChatDto | null;
   try {
@@ -121,20 +121,42 @@ export async function deleteMessageAction(
   messageId: string,
 ): Promise<ActionResponse> {
   const parseResult = dbIdValidator.safeParse(messageId);
-  if (!parseResult.success) {
-    return toActionResponseError(parseResult.error);
-  }
+  if (!parseResult.success) return toActionResponseError(parseResult.error);
+  const id = parseResult.data;
 
   let deletedMessage: ChatMessageDto;
   try {
-    deletedMessage = await deleteChatMessage(messageId);
+    deletedMessage = await deleteChatMessage(id);
   } catch (err) {
-    logger.error("Failed to delete message", { messageId, ...parseError(err) });
+    logger.error("Failed to delete message", { id, ...parseError(err) });
     return toActionResponseError(err);
   }
-  logger.info("Message deleted", { id: messageId });
+  logger.info("Message deleted", { id });
 
   updateTag(`${CHAT_CACHE_KEY}-${deletedMessage.chatId}`);
+  return { success: true };
+}
+
+export async function updateChatMessageAction(
+  params: UpdateChatMessageActionParams,
+): Promise<ActionResponse> {
+  const parseResult = updateChatMessageActionParamsSchema.safeParse(params);
+  if (!parseResult.success) return toActionResponseError(parseResult.error);
+  const { id, update } = parseResult.data;
+
+  let message: ChatMessageEntity | undefined;
+  try {
+    message = await updateChatMessage({ id, update });
+  } catch (err) {
+    logger.error("Failed to update chat message", {
+      id,
+      update,
+      ...parseError(err),
+    });
+    toActionResponseError(err);
+  }
+  logger.info("Chat message updated", { id });
+  if (message) updateTag(`${CHAT_CACHE_KEY}-${message.chatId}`);
   return { success: true };
 }
 
@@ -142,9 +164,8 @@ export async function updateMessageContentAction(
   params: UpdateContentActionParams,
 ): Promise<ActionResponse> {
   const parseResult = updateContentActionParamsSchema.safeParse(params);
-  if (!parseResult.success) {
-    return toActionResponseError(parseResult.error);
-  }
+  if (!parseResult.success) return toActionResponseError(parseResult.error);
+
   const { id, update } = parseResult.data;
 
   let message: ChatMessageDto | null = null;
@@ -160,6 +181,7 @@ export async function updateMessageContentAction(
       update,
       ...parseError(err),
     });
+    return toActionResponseError(err);
   }
   logger.info("Message content update", { id });
   if (message) updateTag(`${CHAT_CACHE_KEY}-${message.chatId}`);

@@ -16,23 +16,25 @@ export const CHAT_CACHE_KEY = "chat";
 export const messagePartSchema = z.custom<MessagePart>();
 export type MessagePart = UIMessagePart<UIDataTypes, UITools>;
 
-const baseChatSchema = z.object({
+export const chatEntitySchema = z.object({
   createdAt: z.date(),
   id: dbIdValidator,
   modifiedAt: z.date(),
   name: z.string().min(1),
   storyId: dbIdValidator,
 });
+export type ChatEntity = z.infer<typeof chatEntitySchema>;
 
-const baseChatMessageSchema = z.object({
+export const chatMessageEntitySchema = z.object({
   chatId: dbIdValidator,
   createdAt: z.date(),
   id: dbIdValidator,
   isHidden: z.boolean(),
   modifiedAt: z.date(),
 });
+export type ChatMessageEntity = z.infer<typeof chatMessageEntitySchema>;
 
-const baseMessageContentSchema = z.object({
+const messageContentEntitySchema = z.object({
   createdAt: z.date(),
   id: z.string().min(1, "id is required"), // created by Vercel AI SDK so doesn't match dbIdValidator pattern
   isActive: z.boolean(),
@@ -42,12 +44,13 @@ const baseMessageContentSchema = z.object({
   parts: z.custom<MessagePart>().array(),
   role: messageRoleSchema,
 });
+export type MessageContentEntity = z.infer<typeof messageContentEntitySchema>;
 
 // -- Schemas
 
 export const updateContentActionParamsSchema = z.object({
   id: z.string().min(1),
-  update: baseMessageContentSchema
+  update: messageContentEntitySchema
     .pick({
       isActive: true,
       metadata: true,
@@ -58,6 +61,18 @@ export const updateContentActionParamsSchema = z.object({
 });
 export type UpdateContentActionParams = z.infer<
   typeof updateContentActionParamsSchema
+>;
+
+export const updateChatMessageActionParamsSchema = z.object({
+  id: dbIdValidator,
+  update: chatMessageEntitySchema
+    .pick({
+      isHidden: true,
+    })
+    .partial(),
+});
+export type UpdateChatMessageActionParams = z.infer<
+  typeof updateChatMessageActionParamsSchema
 >;
 
 export const chatPostRequestBodySchema = z.object({
@@ -73,13 +88,13 @@ export type ChatPostRequestBody = z.infer<typeof chatPostRequestBodySchema>;
 
 // -- DTOs
 
-export const chatListDtoSchema = baseChatSchema.pick({
+export const chatListDtoSchema = chatEntitySchema.pick({
   id: true,
   name: true,
 });
 export type ChatListDto = z.infer<typeof chatListDtoSchema>;
 
-export const chatDtoSchema = baseChatSchema.pick({
+export const chatDtoSchema = chatEntitySchema.pick({
   createdAt: true,
   id: true,
   modifiedAt: true,
@@ -88,7 +103,7 @@ export const chatDtoSchema = baseChatSchema.pick({
 });
 export type ChatDto = z.infer<typeof chatDtoSchema>;
 
-export const messageContentDtoSchema = baseMessageContentSchema.pick({
+export const messageContentDtoSchema = messageContentEntitySchema.pick({
   id: true,
   isActive: true,
   messageId: true,
@@ -98,18 +113,19 @@ export const messageContentDtoSchema = baseMessageContentSchema.pick({
 });
 export type MessageContentDto = z.infer<typeof messageContentDtoSchema>;
 
-export const chatMessageDtoSchema = baseChatMessageSchema.pick({
+export const chatMessageDtoSchema = chatMessageEntitySchema.pick({
   chatId: true,
   id: true,
 });
 export type ChatMessageDto = z.infer<typeof chatMessageDtoSchema>;
 
-export const chatMessageWithContentDtoSchema = baseChatMessageSchema
+export const chatMessageWithContentDtoSchema = chatMessageEntitySchema
   .pick({
     id: true,
+    isHidden: true,
   })
   .extend({
-    contents: baseMessageContentSchema
+    contents: messageContentEntitySchema
       .pick({
         id: true,
         isActive: true,
@@ -123,7 +139,7 @@ export type ChatMessageWithContentDto = z.infer<
   typeof chatMessageWithContentDtoSchema
 >;
 
-export const chatSessionDtoSchema = baseChatSchema
+export const chatSessionDtoSchema = chatEntitySchema
   .pick({
     id: true,
     name: true,
@@ -139,7 +155,7 @@ export const chatSessionDtoSchema = baseChatSchema
   });
 export type ChatSessionDto = z.infer<typeof chatSessionDtoSchema>;
 
-export const chatSessionSchema = baseChatSchema
+export const chatSessionSchema = chatEntitySchema
   .pick({
     id: true,
     name: true,
@@ -151,10 +167,10 @@ export const chatSessionSchema = baseChatSchema
       pngHash: z.string().min(1),
     }),
     lorebookId: dbIdValidator.optional(),
-    messages: baseChatMessageSchema
+    messages: chatMessageEntitySchema
       .pick({ id: true })
       .extend(
-        baseMessageContentSchema.pick({
+        messageContentEntitySchema.pick({
           metadata: true,
           role: true,
         }).shape,
