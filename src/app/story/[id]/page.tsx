@@ -3,14 +3,14 @@ import { Suspense } from "react";
 import z from "zod";
 
 import { dbIdValidator } from "@/app/_shared/schema";
-import { getCharacterList } from "@/app/character/_lib/data";
-import { getChatsForStory } from "@/app/chat/_lib/data";
-import { getLorebookEntityList } from "@/app/lorebook/_lib/data";
-import { getPersonaList } from "@/app/persona/_lib/data";
-import { getPromptList } from "@/app/prompt/_lib/data";
+import { getCharacterListDto } from "@/app/character/_lib/data";
+import { getChatsForStoryDto } from "@/app/chat/_lib/data";
+import { getLorebookEntityDtoList } from "@/app/lorebook/_lib/data";
+import { getPersonaListDto } from "@/app/persona/_lib/data";
+import { getPromptListDto } from "@/app/prompt/_lib/data";
 import { StoryEdit } from "@/app/story/_components/story-edit";
-import { getStoryById } from "@/app/story/_lib/data";
-import { getWorldList } from "@/app/world/_lib/data";
+import { getStoryDto } from "@/app/story/_lib/data";
+import { getWorldListDto } from "@/app/world/_lib/data";
 
 interface StoryPageParams {
   params: Promise<{ id: string }>;
@@ -37,17 +37,17 @@ async function StoryPageContent({ params }: StoryPageParams) {
     promptResult,
     routeParams,
   ] = await Promise.all([
-    getCharacterList(),
-    getPersonaList(),
-    getWorldList(),
-    getLorebookEntityList(),
-    getPromptList(),
+    getCharacterListDto(),
+    getPersonaListDto(),
+    getWorldListDto(),
+    getLorebookEntityDtoList(),
+    getPromptListDto(),
     params,
   ]);
   const { id } = storyPageParamsSchema.parse(routeParams);
   const [story, chats] = await Promise.all([
-    getStoryById(id),
-    getChatsForStory(id),
+    getStoryDto(id),
+    getChatsForStoryDto(id),
   ]);
   if (!story) notFound();
 

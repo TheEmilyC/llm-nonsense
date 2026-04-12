@@ -1,7 +1,7 @@
 import { LorebookList } from "@/app/lorebook/_components/lorebook-list";
-import { getLorebookEntityList } from "@/app/lorebook/_lib/data";
+import { getLorebookEntityDtoList } from "@/app/lorebook/_lib/data";
 
 export default async function LorebookPage() {
-  const lorebooks = await getLorebookEntityList();
+  const lorebooks = await getLorebookEntityDtoList();
   return <LorebookList lorebooks={lorebooks} />;
 }

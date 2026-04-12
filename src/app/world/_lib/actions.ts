@@ -9,6 +9,7 @@ import {
   UpdateWorldActionParams,
   updateWorldActionParamsSchema,
   WORLD_CACHE_KEY,
+  WorldEntity,
   worldFormSchema,
   WorldFormValues,
 } from "@/app/world/_lib/schema";
@@ -19,12 +20,12 @@ export async function createWorldAction(
   data: WorldFormValues,
 ): Promise<ActionResponse> {
   const formParseResult = worldFormSchema.safeParse(data);
-  if (!formParseResult.success) {
+  if (!formParseResult.success)
     return toActionResponseError(formParseResult.error);
-  }
+
   const { image, ...world } = formParseResult.data;
 
-  let newWorld;
+  let newWorld: WorldEntity;
   try {
     newWorld = await createWorld({ image, world });
   } catch (err) {
@@ -41,9 +42,8 @@ export async function deleteWorldAction(
   worldId: string,
 ): Promise<ActionResponse> {
   const idParseResult = dbIdValidator.safeParse(worldId);
-  if (!idParseResult.success) {
-    return toActionResponseError(idParseResult.error);
-  }
+  if (!idParseResult.success) return toActionResponseError(idParseResult.error);
+
   const id = idParseResult.data;
 
   try {

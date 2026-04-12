@@ -38,6 +38,7 @@ export const characterEntitySchema = z.object({
   png: z.string().min(1),
   pngHash: z.string().min(1),
 });
+export type CharacterEntity = z.infer<typeof characterEntitySchema>;
 
 export const characterRecordSchema = z.object({
   card: characterCardSchema,

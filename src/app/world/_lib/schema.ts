@@ -5,7 +5,7 @@ import { dbIdValidator } from "@/app/_shared/schema";
 export const WORLD_CACHE_KEY = "world";
 
 // -- Base
-const baseWorldSchema = z.object({
+const worldEntitySchema = z.object({
   createdAt: z.date(),
   description: z.string(),
   id: dbIdValidator,
@@ -14,6 +14,7 @@ const baseWorldSchema = z.object({
   modifiedAt: z.date(),
   name: z.string().min(1, "Name is required"),
 });
+export type WorldEntity = z.infer<typeof worldEntitySchema>;
 
 export const worldImageValidator = z
   .instanceof(File)
@@ -22,7 +23,7 @@ export const worldImageValidator = z
 
 // -- Schemas
 
-export const worldFormSchema = baseWorldSchema
+export const worldFormSchema = worldEntitySchema
   .pick({
     description: true,
     name: true,
@@ -32,7 +33,7 @@ export const worldFormSchema = baseWorldSchema
   });
 export type WorldFormValues = z.infer<typeof worldFormSchema>;
 
-export const updateWorldActionParamsSchema = baseWorldSchema
+export const updateWorldActionParamsSchema = worldEntitySchema
   .pick({
     id: true,
   })
@@ -45,7 +46,7 @@ export type UpdateWorldActionParams = z.infer<
 
 // -- DTOs
 
-export const worldListDtoSchema = baseWorldSchema
+export const worldListDtoSchema = worldEntitySchema
   .pick({
     id: true,
     name: true,
@@ -55,7 +56,7 @@ export const worldListDtoSchema = baseWorldSchema
   });
 export type WorldListDto = z.infer<typeof worldListDtoSchema>;
 
-export const worldDtoSchema = baseWorldSchema
+export const worldDtoSchema = worldEntitySchema
   .pick({
     description: true,
     id: true,
@@ -65,9 +66,3 @@ export const worldDtoSchema = baseWorldSchema
     imageUrl: z.string().min(1),
   });
 export type WorldDto = z.infer<typeof worldDtoSchema>;
-
-export const worldImageFileDtoSchema = baseWorldSchema.pick({
-  id: true,
-  image: true,
-});
-export type WorldImageFileDto = z.infer<typeof worldImageFileDtoSchema>;

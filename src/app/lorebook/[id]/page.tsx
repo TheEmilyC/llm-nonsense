@@ -4,7 +4,7 @@ import z from "zod";
 
 import { dbIdValidator } from "@/app/_shared/schema";
 import { LorebookEdit } from "@/app/lorebook/_components/lorebook-edit";
-import { getLorebookEntityById } from "@/app/lorebook/_lib/data";
+import { getLorebookEntityDto } from "@/app/lorebook/_lib/data";
 
 interface LorebookEditPageParams {
   params: Promise<{ id: string }>;
@@ -24,7 +24,7 @@ export default function LorebookEditPage({ params }: LorebookEditPageParams) {
 
 async function LorebookEditPageContent({ params }: LorebookEditPageParams) {
   const { id } = lorebookEditPageParamsSchema.parse(await params);
-  const lorebook = await getLorebookEntityById(id);
+  const lorebook = await getLorebookEntityDto(id);
   if (!lorebook) notFound();
 
   return <LorebookEdit lorebook={lorebook} />;

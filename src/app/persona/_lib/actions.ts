@@ -11,7 +11,7 @@ import {
 } from "@/app/persona/_lib/data";
 import {
   PERSONA_CACHE_KEY,
-  PersonaDto,
+  PersonaEntity,
   personaFormSchema,
   PersonaFormValues,
   UpdatePersonaActionParams,
@@ -29,7 +29,7 @@ export async function createPersonaAction(
 
   const { image, ...persona } = formParseResult.data;
 
-  let newPersona: PersonaDto;
+  let newPersona: PersonaEntity;
   try {
     newPersona = await createPersona({ image, persona });
   } catch (err) {

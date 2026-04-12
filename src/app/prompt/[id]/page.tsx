@@ -4,7 +4,7 @@ import z from "zod";
 
 import { dbIdValidator } from "@/app/_shared/schema";
 import { PromptEdit } from "@/app/prompt/_component/prompt-edit";
-import { getPromptById } from "@/app/prompt/_lib/data";
+import { getPromptDto } from "@/app/prompt/_lib/data";
 
 interface PromptEditPageParams {
   params: Promise<{ id: string }>;
@@ -24,7 +24,7 @@ export default function PromptEditPage({ params }: PromptEditPageParams) {
 
 async function PromptEditPageContent({ params }: PromptEditPageParams) {
   const { id } = promptEditPageParamsSchema.parse(await params);
-  const prompt = await getPromptById(id);
+  const prompt = await getPromptDto(id);
   if (!prompt) notFound();
 
   return <PromptEdit prompt={prompt} />;

@@ -13,6 +13,7 @@ import {
   CHARACTER_CACHE_KEY,
   CharacterCard,
   CharacterDto,
+  CharacterEntity,
   CharacterImageFileDto,
   CharacterListDto,
   CharacterRecord,
@@ -47,7 +48,7 @@ interface SaveCharacterImageParams {
 export async function createCharacter({
   characterCard,
   image,
-}: CreateCharacterParams): Promise<CharacterDto> {
+}: CreateCharacterParams): Promise<CharacterRecord> {
   const { fileName, filePath, pngHash } = await saveCharacterImage({
     characterCard,
     image,
@@ -67,7 +68,7 @@ export async function createCharacter({
       throw err;
     });
 
-  return toCharacterDto({ card: characterCard, entity: characterEntity });
+  return { card: characterCard, entity: characterEntity };
 }
 
 export async function deleteCharacter(id: string) {
@@ -79,7 +80,7 @@ export async function deleteCharacter(id: string) {
   await fs.rm(join(WORKING_DIRECTORY, entity.png));
 }
 
-export async function getCharacterById(
+export async function getCharacterDto(
   id: string,
 ): Promise<CharacterDto | null> {
   const record = await getCharacterRecord(id);
@@ -87,21 +88,38 @@ export async function getCharacterById(
   return toCharacterDto(record);
 }
 
+export async function getCharacterEntityById(
+  id: string,
+): Promise<CharacterEntity | null> {
+  "use cache";
+  cacheTag(`${CHARACTER_CACHE_KEY}-${id}`);
+  return prisma.character.findUnique({ where: { id } });
+}
+
 export async function getCharacterImageFile(
   id: string,
 ): Promise<CharacterImageFileDto | null> {
-  "use cache";
-  cacheTag(`${CHARACTER_CACHE_KEY}-${id}`);
   const entity = await getCharacterEntityById(id);
   if (!entity) return null;
   return toCharacterImageFileDto(entity);
 }
 
-export async function getCharacterList(): Promise<CharacterListDto[]> {
+export async function getCharacterListDto(): Promise<CharacterListDto[]> {
   "use cache";
   cacheTag(CHARACTER_CACHE_KEY);
   const characterList = await prisma.character.findMany();
   return toCharacterListDto(characterList);
+}
+
+export async function getCharacterRecord(
+  id: string,
+): Promise<CharacterRecord | null> {
+  "use cache";
+  cacheTag(`${CHARACTER_CACHE_KEY}-${id}`);
+  const entity = await getCharacterEntityById(id);
+  if (!entity) return null;
+  const card = await parseCharacterCard(join(WORKING_DIRECTORY, entity.png));
+  return { card, entity };
 }
 
 export async function updateCharacter({
@@ -147,21 +165,6 @@ export async function updateCharacter({
     characterEntity = orgRecord.entity;
   }
   return toCharacterDto({ card: updatedCard, entity: characterEntity });
-}
-
-async function getCharacterEntityById(id: string): Promise<Character | null> {
-  "use cache";
-  cacheTag(`${CHARACTER_CACHE_KEY}-${id}`);
-  return prisma.character.findUnique({ where: { id } });
-}
-
-async function getCharacterRecord(id: string): Promise<CharacterRecord | null> {
-  "use cache";
-  cacheTag(`${CHARACTER_CACHE_KEY}-${id}`);
-  const entity = await getCharacterEntityById(id);
-  if (!entity) return null;
-  const card = await parseCharacterCard(join(WORKING_DIRECTORY, entity.png));
-  return { card, entity };
 }
 
 async function saveCharacterImage({

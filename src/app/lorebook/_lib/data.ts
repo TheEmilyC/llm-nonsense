@@ -49,15 +49,14 @@ interface GetLorebookEntryParams {
 
 export async function createLorebookEntity({
   newLorebook,
-}: CreateLorebookEntityParams): Promise<LorebookEntityDto> {
-  const entity = await prisma.lorebook.create({
+}: CreateLorebookEntityParams): Promise<LorebookEntity> {
+  const lorebook = await prisma.lorebook.create({
     data: {
       apiKey: newLorebook.apiKey,
       name: newLorebook.name,
       port: newLorebook.port,
     },
   });
-  const lorebook = toLorebookEntityDto(entity);
 
   return lorebook;
 }
@@ -132,15 +131,22 @@ export async function getLorebookById(id: string): Promise<Lorebook | null> {
 
 export async function getLorebookEntityById(
   id: string,
-): Promise<LorebookEntityDto | null> {
+): Promise<LorebookEntity | null> {
   "use cache";
   cacheTag(`${LOREBOOK_CACHE_KEY}-${id}`);
-  const result = await prisma.lorebook.findUnique({ where: { id } });
-  if (!result) return null;
-  return toLorebookEntityDto(result);
+  const lorebook = await prisma.lorebook.findUnique({ where: { id } });
+  return lorebook;
 }
 
-export async function getLorebookEntityList(): Promise<
+export async function getLorebookEntityDto(
+  id: string,
+): Promise<LorebookEntityDto | null> {
+  const lorebook = await getLorebookEntityById(id);
+  if (!lorebook) return null;
+  return toLorebookEntityDto(lorebook);
+}
+
+export async function getLorebookEntityDtoList(): Promise<
   LorebookEntityListDto[]
 > {
   "use cache";

@@ -6,7 +6,7 @@ import {
   entityProfileSchema,
   messageRoleSchema,
 } from "@/app/_shared/schema";
-import { promptFragmentDtoSchema } from "@/app/prompt/_lib/schema";
+import { promptFragmentSchema } from "@/app/prompt/_lib/schema";
 
 export const CHAT_CACHE_KEY = "chat";
 
@@ -158,7 +158,7 @@ export const chatSessionSchema = chatEntitySchema
       maxOutputTokens: z.number().int().positive(),
       maxSteps: z.number().int().positive(),
       maxTokens: z.number(),
-      promptFragments: promptFragmentDtoSchema.array(),
+      promptFragments: promptFragmentSchema.array(),
       temperature: z.number(),
       topK: z.number().int().positive(),
       topP: z.number(),
