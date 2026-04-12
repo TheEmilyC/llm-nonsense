@@ -5,7 +5,7 @@ import { dbIdValidator } from "@/app/_shared/schema";
 import { getCharacterListDto } from "@/app/character/_lib/data";
 import { getLorebookEntityDtoList } from "@/app/lorebook/_lib/data";
 import { getPersonaListDto } from "@/app/persona/_lib/data";
-import { getPromptList } from "@/app/prompt/_lib/data";
+import { getPromptListDto } from "@/app/prompt/_lib/data";
 import { StoryNew } from "@/app/story/_components/story-new";
 import { getWorldList } from "@/app/world/_lib/data";
 
@@ -38,7 +38,7 @@ async function NewStoryPageContent({ searchParams }: NewStoryPageParams) {
       getPersonaListDto(),
       getWorldList(),
       getLorebookEntityDtoList(),
-      getPromptList(),
+      getPromptListDto(),
       searchParams,
     ]);
 

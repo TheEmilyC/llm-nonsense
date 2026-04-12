@@ -7,6 +7,7 @@ import {
   PROMPT_CACHE_KEY,
   PromptDto,
   promptDtoSchema,
+  PromptEntity,
   PromptListItemDto,
   UpdatePromptParams,
 } from "@/app/prompt/_lib/schema";
@@ -22,7 +23,7 @@ export async function createPrompt({
   temperature,
   topK,
   topP,
-}: CreatePromptParams): Promise<PromptDto> {
+}: CreatePromptParams): Promise<PromptEntity> {
   const prompt = await prisma.prompt.create({
     data: {
       maxOutputTokens,
@@ -40,17 +41,24 @@ export async function createPrompt({
       topK,
       topP,
     },
-    include: { promptFragments: { orderBy: { order: "asc" } } },
   });
-  const promptDto = toPromptDto(prompt);
-  return promptDto;
+  return prompt;
 }
 
-export async function deletePrompt(id: string): Promise<void> {
+export async function deletePrompt(id: string) {
   await prisma.prompt.delete({ where: { id } });
 }
 
-export async function getPromptById(id: string): Promise<null | PromptDto> {
+export async function getPromptById(id: string): Promise<PromptEntity> {
+  "use cache";
+  cacheTag(`${PROMPT_CACHE_KEY}-${id}`);
+
+  const prompt = await prisma.prompt.findUnique({ where: { id } });
+  if (!prompt) throw new Error(`Prompt ID:${id} does not exist`);
+  return prompt;
+}
+
+export async function getPromptDto(id: string): Promise<null | PromptDto> {
   "use cache";
   cacheTag(`${PROMPT_CACHE_KEY}-${id}`);
 
@@ -64,13 +72,7 @@ export async function getPromptById(id: string): Promise<null | PromptDto> {
   return promptDto;
 }
 
-export async function getPromptByIdOrFail(id: string): Promise<PromptDto> {
-  const prompt = await getPromptById(id);
-  if (!prompt) throw new Error(`Prompt ID:${id} does not exist`);
-  return prompt;
-}
-
-export async function getPromptList(): Promise<PromptListItemDto[]> {
+export async function getPromptListDto(): Promise<PromptListItemDto[]> {
   "use cache";
   cacheTag(PROMPT_CACHE_KEY);
   const promptList = await prisma.prompt.findMany({
@@ -86,8 +88,8 @@ export async function getPromptList(): Promise<PromptListItemDto[]> {
 export async function updatePrompt({
   id,
   update,
-}: UpdatePromptParams): Promise<PromptDto> {
-  const result = await prisma.prompt.update({
+}: UpdatePromptParams): Promise<Prompt> {
+  const prompt = await prisma.prompt.update({
     data: {
       maxOutputTokens: update.maxOutputTokens,
       maxSteps: update.maxSteps,
@@ -116,7 +118,7 @@ export async function updatePrompt({
     include: { promptFragments: { orderBy: { order: "asc" } } },
     where: { id },
   });
-  return toPromptDto(result);
+  return prompt;
 }
 
 function toPromptDto(

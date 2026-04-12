@@ -12,7 +12,7 @@ import {
 import {
   CreatePromptParams,
   PROMPT_CACHE_KEY,
-  PromptDto,
+  PromptEntity,
   promptFormSchema,
   PromptFormValues,
   promptFragmentCreateSchema,
@@ -53,7 +53,7 @@ export async function createPromptAction(
     topK,
     topP,
   };
-  let prompt: PromptDto;
+  let prompt: PromptEntity;
   try {
     prompt = await createPrompt(newPrompt);
   } catch (err) {

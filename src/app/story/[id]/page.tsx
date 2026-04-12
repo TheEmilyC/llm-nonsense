@@ -7,7 +7,7 @@ import { getCharacterListDto } from "@/app/character/_lib/data";
 import { getChatsForStory } from "@/app/chat/_lib/data";
 import { getLorebookEntityDtoList } from "@/app/lorebook/_lib/data";
 import { getPersonaListDto } from "@/app/persona/_lib/data";
-import { getPromptList } from "@/app/prompt/_lib/data";
+import { getPromptListDto } from "@/app/prompt/_lib/data";
 import { StoryEdit } from "@/app/story/_components/story-edit";
 import { getStoryById } from "@/app/story/_lib/data";
 import { getWorldList } from "@/app/world/_lib/data";
@@ -41,7 +41,7 @@ async function StoryPageContent({ params }: StoryPageParams) {
     getPersonaListDto(),
     getWorldList(),
     getLorebookEntityDtoList(),
-    getPromptList(),
+    getPromptListDto(),
     params,
   ]);
   const { id } = storyPageParamsSchema.parse(routeParams);
