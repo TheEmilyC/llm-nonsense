@@ -211,10 +211,10 @@ function toCharacterDto(character: CharacterRecord): CharacterDto {
     description: character.card.description,
     first_mes: character.card.first_mes,
     id: character.entity.id,
-    imageUrl: buildCharacterImageUrl({
-      id: character.entity.id,
-      pngHash: character.entity.pngHash,
-    }),
+    imageUrl: buildCharacterImageUrl(
+      character.entity.id,
+      character.entity.pngHash,
+    ),
     mes_example: character.card.mes_example,
     modifiedAt: character.entity.modifiedAt,
     name: character.card.name,
@@ -234,7 +234,7 @@ function toCharacterImageFileDto(character: Character): CharacterImageFileDto {
 function toCharacterListDto(characters: Character[]): CharacterListDto[] {
   return characters.map(({ id, name, pngHash }) => ({
     id,
-    imageUrl: buildCharacterImageUrl({ id, pngHash }),
+    imageUrl: buildCharacterImageUrl(id, pngHash),
     name,
   }));
 }

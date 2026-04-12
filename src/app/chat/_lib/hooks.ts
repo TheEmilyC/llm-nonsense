@@ -38,7 +38,7 @@ export function useChatMessages(
   const { updateMessageContent } = useUpdateMessageContent();
   const { deleteMessage: deleteMessageMutation } = useDeleteMessage();
 
-  // Map from UIMessage id (group id) to active content id for DB persistence
+  // Map from UIMessage id (message id) to active content id for DB persistence
   const contentIdMapRef = useRef(
     new Map<string, string>(
       initialMessages.flatMap((msg) => {

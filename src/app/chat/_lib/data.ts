@@ -8,12 +8,14 @@ import {
   chatDtoSchema,
   ChatListDto,
   ChatMessageDto,
+  ChatSession,
   ChatSessionDto,
-  chatSessionDtoSchema,
+  chatSessionSchema,
   MessageContentDto,
 } from "@/app/chat/_lib/schema";
 import { Chat, ChatMessage, MessageContent } from "@/generated/client";
 import { NotFoundError } from "@/lib/error";
+import { buildCharacterImageUrl, buildPersonaImageUrl } from "@/lib/image";
 import { prisma } from "@/lib/prisma";
 
 export interface CreateChatMessageContentParams {
@@ -36,6 +38,12 @@ export interface CreateChatParams {
 }
 
 export interface GetChatSessionParams {
+  id: string;
+  skip?: number;
+  take?: number;
+}
+
+export interface GetChatSessionViewParams {
   id: string;
   skip?: number;
   take?: number;
@@ -146,8 +154,8 @@ export async function getChatSession({
   id,
   skip = 0,
   take = 50,
-}: GetChatSessionParams): Promise<ChatSessionDto | null> {
-  // Itentionally not cached, serves old messages to the chat if it is
+}: GetChatSessionParams) {
+  // Itentionally not cached, serves old messages to the chat service if it is
 
   const chat = await prisma.chat.findUnique({
     include: {
@@ -177,6 +185,56 @@ export async function getChatSession({
   });
   if (!chat) return null;
 
+  // Prompt fragment parsing gets complicated, letting zod handle it
+  return chatSessionSchema.parse({
+    character: chat.story.character,
+    id: chat.id,
+    lorebookId: chat.story.lorebookId ?? undefined,
+    messages: chat.messages.map((msg) => ({
+      content: msg.contents[0].parts
+        .filter((part) => part.type === "text")
+        .map((part) => part.text)
+        .join("\n"),
+      id: msg.id,
+      metadata: msg.contents[0].metadata,
+      role: msg.contents[0].role,
+    })),
+    name: chat.name,
+    persona: chat.story.persona,
+    prompt: chat.story.prompt,
+    story: {
+      id: chat.storyId,
+      name: chat.story.name,
+    },
+  } as ChatSession);
+}
+
+export async function getChatSessionDto({
+  id,
+  skip,
+  take,
+}: GetChatSessionViewParams): Promise<ChatSessionDto | null> {
+  "use cache";
+  cacheTag(`${CHAT_CACHE_KEY}-${id}`);
+  const chat = await prisma.chat.findUnique({
+    include: {
+      messages: {
+        include: { contents: { where: { isActive: true } } },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take,
+      },
+      story: {
+        include: {
+          character: true,
+          persona: true,
+        },
+      },
+    },
+    where: { id },
+  });
+  if (!chat) return null;
+
   if (chat.messages.length > 0) {
     // fetch all content for last message
     const lastMessage = chat.messages[0];
@@ -185,13 +243,17 @@ export async function getChatSession({
     });
     lastMessage.contents = fullContents;
   }
+  const character = chat.story.character;
+  const persona = chat.story.persona;
 
-  // Prompt fragment parsing gets complicated, letting zod handle it
-  return chatSessionDtoSchema.parse({
-    character: chat.story.character,
+  return {
+    character: {
+      id: character.id,
+      imageSrc: buildCharacterImageUrl(character.id, character.pngHash),
+      name: character.name,
+    },
     id: chat.id,
-    lorebookId: chat.story.lorebookId ?? undefined,
-    messages: chat.messages.map((msg) => ({
+    messages: chat.messages.reverse().map((msg) => ({
       contents: msg.contents.map((con) => ({
         id: con.id,
         isActive: con.isActive,
@@ -201,13 +263,16 @@ export async function getChatSession({
       id: msg.id,
     })),
     name: chat.name,
-    persona: chat.story.persona,
-    prompt: chat.story.prompt,
+    persona: {
+      id: persona.id,
+      imageSrc: buildPersonaImageUrl(persona.id, persona.imageHash),
+      name: persona.name,
+    },
     story: {
-      id: chat.storyId,
+      id: chat.story.id,
       name: chat.story.name,
     },
-  } as ChatSessionDto);
+  };
 }
 
 export async function getChatsForStory(

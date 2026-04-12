@@ -1,7 +1,11 @@
 import { UIDataTypes, UIMessagePart, UITools } from "ai";
 import z from "zod";
 
-import { dbIdValidator, messageRoleSchema } from "@/app/_shared/schema";
+import {
+  dbIdValidator,
+  entityProfileSchema,
+  messageRoleSchema,
+} from "@/app/_shared/schema";
 import { promptFragmentDtoSchema } from "@/app/prompt/_lib/schema";
 
 export const CHAT_CACHE_KEY = "chat";
@@ -125,13 +129,40 @@ export const chatSessionDtoSchema = baseChatSchema
     name: true,
   })
   .extend({
+    character: entityProfileSchema,
+    messages: chatMessageWithContentDtoSchema.array(),
+    persona: entityProfileSchema,
+    story: z.object({
+      id: dbIdValidator,
+      name: z.string().min(1),
+    }),
+  });
+export type ChatSessionDto = z.infer<typeof chatSessionDtoSchema>;
+
+export const chatSessionSchema = baseChatSchema
+  .pick({
+    id: true,
+    name: true,
+  })
+  .extend({
     character: z.object({
       id: dbIdValidator,
       name: z.string().min(1),
       pngHash: z.string().min(1),
     }),
     lorebookId: dbIdValidator.optional(),
-    messages: chatMessageWithContentDtoSchema.array(),
+    messages: baseChatMessageSchema
+      .pick({ id: true })
+      .extend(
+        baseMessageContentSchema.pick({
+          metadata: true,
+          role: true,
+        }).shape,
+      )
+      .extend({
+        content: z.string(),
+      })
+      .array(),
     persona: z.object({
       id: dbIdValidator,
       imageHash: z.string().min(1),
@@ -153,4 +184,4 @@ export const chatSessionDtoSchema = baseChatSchema
     }),
     world: z.object({ id: dbIdValidator }).optional(),
   });
-export type ChatSessionDto = z.infer<typeof chatSessionDtoSchema>;
+export type ChatSession = z.infer<typeof chatSessionSchema>;

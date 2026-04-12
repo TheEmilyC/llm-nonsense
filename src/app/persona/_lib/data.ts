@@ -172,10 +172,7 @@ function toPersonaDto(persona: Persona): PersonaDto {
     createdAt: persona.createdAt,
     description: persona.description,
     id: persona.id,
-    imageUrl: buildPersonaImageUrl({
-      id: persona.id,
-      imageHash: persona.imageHash,
-    }),
+    imageUrl: buildPersonaImageUrl(persona.id, persona.imageHash),
     modifiedAt: persona.modifiedAt,
     name: persona.name,
   };
@@ -190,7 +187,7 @@ function toPersonaImageFileDto(
 function toPersonaListDto(personas: Persona[]): PersonaListDto[] {
   return personas.map(({ id, imageHash, name }) => ({
     id,
-    imageUrl: buildPersonaImageUrl({ id, imageHash }),
+    imageUrl: buildPersonaImageUrl(id, imageHash),
     name,
   }));
 }

@@ -169,7 +169,7 @@ function toWorldDto({ description, id, imageHash, name }: World): WorldDto {
   return {
     description: description,
     id: id,
-    imageUrl: buildWorldImageUrl({ id, imageHash }),
+    imageUrl: buildWorldImageUrl(id, imageHash),
     name: name,
   };
 }
@@ -183,7 +183,7 @@ function toWorldImageFileDto(
 function toWorldListDto(worlds: Pick<World, "id" | "imageHash" | "name">[]) {
   return worlds.map(({ id, imageHash, name }) => ({
     id,
-    imageUrl: buildWorldImageUrl({ id, imageHash }),
+    imageUrl: buildWorldImageUrl(id, imageHash),
     name,
   }));
 }
