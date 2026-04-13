@@ -1,7 +1,5 @@
 "use client";
 
-import { RefreshCw } from "lucide-react";
-
 import { useLorebook } from "@/app/lorebook/_lib/hooks";
 import { LorebookStatus, LorebookStatusDto } from "@/app/lorebook/_lib/schema";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +9,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { RefreshIcon } from "@/lib/icons";
 
 interface CurrentLorebookProps {
   initialLorebook?: LorebookStatusDto;
@@ -42,7 +41,7 @@ export function CurrentLorebook({
           type="button"
           variant="ghost"
         >
-          <RefreshCw className={isPending ? "animate-spin" : undefined} />
+          <RefreshIcon className={isPending ? "animate-spin" : undefined} />
         </Button>
       </span>
       <div className="mt-1">

@@ -1,9 +1,9 @@
 "use client";
 
-import { X } from "lucide-react";
 import * as React from "react";
 
 import { Badge } from "@/components/ui/badge";
+import { CloseIcon } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 
 interface TagListProps {
@@ -93,9 +93,10 @@ export function TagList({
 
   return (
     <div className={cn("relative", className)} ref={containerRef}>
-      {name && value.map((tag) => (
-        <input key={tag} name={name} type="hidden" value={tag} />
-      ))}
+      {name &&
+        value.map((tag) => (
+          <input key={tag} name={name} type="hidden" value={tag} />
+        ))}
       <div
         className="flex flex-wrap gap-1.5 min-h-9 w-full rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-xs focus-within:ring-[3px] focus-within:ring-ring/50 focus-within:border-ring cursor-text"
         onClick={() => inputRef.current?.focus()}
@@ -112,7 +113,7 @@ export function TagList({
               }}
               type="button"
             >
-              <X className="size-3" />
+              <CloseIcon className="size-3" />
             </button>
           </Badge>
         ))}

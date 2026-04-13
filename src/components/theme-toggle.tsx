@@ -1,6 +1,5 @@
 "use client";
 
-import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
@@ -9,6 +8,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { DarkModeIcon, LightModeIcon } from "@/lib/icons";
 
 export function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
@@ -29,9 +29,9 @@ export function ThemeToggle() {
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
         >
           {theme === "dark" ? (
-            <Sun className="h-5 w-5" />
+            <LightModeIcon className="h-5 w-5" />
           ) : (
-            <Moon className="h-5 w-5" />
+            <DarkModeIcon className="h-5 w-5" />
           )}
         </button>
       </TooltipTrigger>

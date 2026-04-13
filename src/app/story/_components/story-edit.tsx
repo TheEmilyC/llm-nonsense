@@ -1,6 +1,5 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
 import Link from "next/link";
 import { UseFormSetError } from "react-hook-form";
 import { toast } from "sonner";
@@ -14,6 +13,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Content } from "@/components/content";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
+import { DeleteIcon } from "@/lib/icons";
 
 const FORM_ID = "form-edit-story";
 
@@ -152,7 +152,7 @@ export function StoryEdit({
                   size="icon"
                   variant="destructive"
                 >
-                  <Trash2 className="size-4" />
+                  <DeleteIcon className="size-4" />
                 </Button>
               </ConfirmDialog>
             </div>

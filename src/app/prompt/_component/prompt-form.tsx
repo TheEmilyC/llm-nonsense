@@ -1,7 +1,8 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
+
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Bot, Clock, Cpu, Lock, Trash2, User } from "lucide-react";
 import { useState } from "react";
 import {
   Controller,
@@ -45,6 +46,14 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AssistantIcon,
+  DeleteIcon,
+  HistoryIcon,
+  LockedIcon,
+  SystemIcon,
+  UserIcon,
+} from "@/lib/icons";
 import { cn } from "@/lib/utils";
 
 const ROLE_OPTIONS = [
@@ -53,11 +62,11 @@ const ROLE_OPTIONS = [
   { label: "Assistant", value: "assistant" },
 ];
 
-const ROLE_ICONS: Record<string, typeof User> = {
-  ["assistant"]: Bot,
-  ["history"]: Clock,
-  ["system"]: Cpu,
-  ["user"]: User,
+const ROLE_ICONS: Record<string, LucideIcon> = {
+  ["assistant"]: AssistantIcon,
+  ["history"]: HistoryIcon,
+  ["system"]: SystemIcon,
+  ["user"]: UserIcon,
 };
 
 interface PromptFormProps {
@@ -228,11 +237,11 @@ export function PromptForm({
                       type="button"
                       variant="destructive"
                     >
-                      <Trash2 className="text-muted-foreground" />
+                      <DeleteIcon className="text-muted-foreground" />
                     </Button>
                   ) : (
                     <div className="flex size-7 shrink-0 items-center justify-center">
-                      <Lock className="h-3.5 w-3.5 text-muted-foreground/50" />
+                      <LockedIcon className="h-3.5 w-3.5 text-muted-foreground/50" />
                     </div>
                   )}
                 </div>
