@@ -1,6 +1,13 @@
 "use server";
 
-import { createIdGenerator, generateText, stepCountIs, streamText } from "ai";
+import {
+  createIdGenerator,
+  generateText,
+  Output,
+  stepCountIs,
+  streamText,
+} from "ai";
+import z from "zod";
 
 import { createChatMessageContent, getChatSession } from "@/app/chat/_lib/data";
 import { ChatForMemoryGen, MessagePart } from "@/app/chat/_lib/schema";
@@ -13,6 +20,7 @@ import {
 } from "@/app/prompt/_lib/prompt-builder";
 import { models } from "@/lib/ai-registry";
 import { NotFoundError } from "@/lib/error";
+import { logger } from "@/lib/logger";
 
 interface ConstructChatResponseParams {
   chatId: string;
@@ -102,11 +110,42 @@ export async function generateMemorySummary(
   lorebook?: LorebookReady,
 ) {
   const prompt = buildSummaryPrompt(chat.messages, lorebook);
-  const { finishReason, text } = await generateText({
+  logger.info("Memory Generation Request", { prompt });
+  const { output } = await generateText({
     model: models.summary,
-    onStepFinish: (stepResult) => {
-      console.log("Step Result", stepResult.content);
+    onFinish: (result) => {
+      logger.info("Memory Generation Result", {
+        finishReason: result.finishReason,
+        result: result.content,
+      });
     },
+    output: Output.object({
+      schema: z.object({
+        lorebookUpdates: z
+          .object({
+            content: z.string().describe("New or Updated lorebook content"),
+            file: z
+              .string()
+              .optional()
+              .describe("The path to an existing lorebook entry if updating"),
+            synopsis: z
+              .string()
+              .optional()
+              .describe(
+                "One or two scentences to describe the entry if it is new or should change",
+              ),
+          })
+          .array(),
+        summary: z.object({
+          content: z.string(),
+          synopsis: z
+            .string()
+            .describe(
+              "One or two scentences to describe the scene in an index ",
+            ),
+        }),
+      }),
+    }),
     prompt,
     stopWhen: stepCountIs(20),
     tools: {
@@ -115,6 +154,5 @@ export async function generateMemorySummary(
       }),
     },
   });
-  console.log("finishReason", finishReason);
-  return text;
+  return JSON.stringify(output, null, 2);
 }

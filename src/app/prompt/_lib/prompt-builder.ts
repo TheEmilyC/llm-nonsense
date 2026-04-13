@@ -216,7 +216,8 @@ export function buildSummaryPrompt(
     promptSkeleton: [
       {
         content: `<instructions>
-        Your job is to create a summary of this creative fiction scene. Create a beat-by-beat summary of the scene that *replaces reading the full scene* while preserving all plot-relevant nuance and reads like a clean, structured scene log — concise yet complete. This summary will be your memory of this scene in the future. Be token-efficient: exercise judgment as to whether or not an interaction is flavor-only or truly affects the plot. Flavor scenes (interaction detail that does not advance plot)
+        <summary_creation>
+        Your first job is to create a summary of this creative fiction scene. Create a beat-by-beat summary of the scene that *replaces reading the full scene* while preserving all plot-relevant nuance and reads like a clean, structured scene log — concise yet complete. This summary will be your memory of this scene in the future. Be token-efficient: exercise judgment as to whether or not an interaction is flavor-only or truly affects the plot. Flavor scenes (interaction detail that does not advance plot)
         
         Write in **past tense**, **third-person**, and exclude all [OOC] or meta discussion. Use concrete nouns (e.g., "rice cooker” > "appliance"). Only use adjectives/adverbs when they materially affect tone, emotion, or characterization. Focus on **cause → intention → reaction → consequence** chains for clarity and compression. The summary should be formatted like:
         # [Scene Title]
@@ -234,6 +235,10 @@ export function buildSummaryPrompt(
           
         Write compactly but completely — every line should add new information or insight. Synthesize redundant actions or dialogue into unified cause-effect-emotion beats.
         Favor compression over coverage whenever the two conflict; omit anything that can be inferred from context or established characterization.
+        </summary_creation>
+        <lore_update>
+        Your second job is to examine the text and produce update suggestions to existing lorebook files or new lorebook suggestions if the revelation is significant. 
+        </lore_update>
         </instructions>
         <lore>`,
         role: "system",
