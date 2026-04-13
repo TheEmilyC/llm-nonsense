@@ -1,26 +1,18 @@
 "use server";
 
-import { createIdGenerator, stepCountIs, streamText, tool } from "ai";
-import z from "zod";
+import { createIdGenerator, generateText, stepCountIs, streamText } from "ai";
 
-import { getCharacterRecord } from "@/app/character/_lib/data";
 import { createChatMessageContent, getChatSession } from "@/app/chat/_lib/data";
-import { ChatSession, MessagePart } from "@/app/chat/_lib/schema";
+import { ChatForMemoryGen, MessagePart } from "@/app/chat/_lib/schema";
+import { getLorebookById } from "@/app/lorebook/_lib/data";
+import { LorebookReady, LorebookStatus } from "@/app/lorebook/_lib/schema";
+import { makeGetLorebookEntriesTool } from "@/app/lorebook/_lib/tools";
 import {
-  getLorebookById,
-  getLorebookEntryList,
-} from "@/app/lorebook/_lib/data";
-import { convertFilesToPrompt } from "@/app/lorebook/_lib/lorebook-scanning";
-import { LorebookStatus } from "@/app/lorebook/_lib/schema";
-import { PromptBuilder } from "@/app/prompt/_lib/prompt-builder";
-import { PromptFragmentType, PromptInjectTag } from "@/app/prompt/_lib/schema";
+  buildPromptFromChat,
+  buildSummaryPrompt,
+} from "@/app/prompt/_lib/prompt-builder";
 import { models } from "@/lib/ai-registry";
 import { NotFoundError } from "@/lib/error";
-
-interface BuildPromptFromChatParams {
-  chat: ChatSession;
-  regenerate?: boolean;
-}
 
 interface ConstructChatResponseParams {
   chatId: string;
@@ -76,23 +68,7 @@ export async function constructChatResponse({
     temperature,
     tools: {
       ...(lorebook?.status === LorebookStatus.Ready && {
-        getLorebookEntries: tool({
-          description:
-            "Retrive lore and character information from the lorebook",
-          execute: async ({ entries }) => {
-            const files = await getLorebookEntryList({
-              files: entries,
-              lorebookId: lorebook.id,
-            });
-            return convertFilesToPrompt({ files });
-          },
-          inputSchema: z.object({
-            entries: z
-              .string()
-              .array()
-              .describe("A list of lorebook entry paths to retrive"),
-          }),
-        }),
+        getLorebookEntries: makeGetLorebookEntriesTool(lorebook),
       }),
     },
     topK,
@@ -121,74 +97,24 @@ export async function constructChatResponse({
   });
 }
 
-async function buildPromptFromChat({
-  chat,
-  regenerate,
-}: BuildPromptFromChatParams) {
-  const character = await getCharacterRecord(chat.character.id);
-  if (!character) throw new NotFoundError("Character", chat.character.id);
-  const lorebook = chat.lorebookId
-    ? await getLorebookById(chat.lorebookId)
-    : null;
-
-  const promptBuilder = new PromptBuilder({
-    characterName: character.card.name,
-    maxTokens: chat.prompt.maxTokens,
-    personaName: chat.persona?.name ?? "",
-    promptSkeleton: chat.prompt.promptFragments.map((frag) =>
-      frag.type === PromptFragmentType.chatHistory
-        ? { type: PromptFragmentType.chatHistory }
-        : frag.type === PromptFragmentType.content
-          ? frag
-          : {
-              content: "",
-              injectTag: frag.injectTag,
-              role: frag.role,
-              type: PromptFragmentType.inject,
-            },
-    ),
-    worldName: chat.world?.name,
+export async function generateMemorySummary(
+  chat: ChatForMemoryGen,
+  lorebook?: LorebookReady,
+) {
+  const prompt = buildSummaryPrompt(chat.messages, lorebook);
+  const { finishReason, text } = await generateText({
+    model: models.summary,
+    onStepFinish: (stepResult) => {
+      console.log("Step Result", stepResult.content);
+    },
+    prompt,
+    stopWhen: stepCountIs(20),
+    tools: {
+      ...(lorebook && {
+        getLorebookEntries: makeGetLorebookEntriesTool(lorebook),
+      }),
+    },
   });
-
-  const lastMessage = regenerate ? chat.messages[1] : chat.messages[0];
-
-  const chatHistory = regenerate
-    ? chat.messages.slice(2)
-    : chat.messages.slice(1);
-
-  promptBuilder.addToPrompt(PromptInjectTag.lastMessage, lastMessage.content);
-  promptBuilder.addToPrompt(
-    PromptInjectTag.characterDescription,
-    character.card.description,
-  );
-  promptBuilder.addToPrompt(
-    PromptInjectTag.characterPersonality,
-    character.card.personality,
-  );
-  promptBuilder.addToPrompt(
-    PromptInjectTag.characterScenario,
-    character.card.scenario,
-  );
-
-  if (chat.persona) {
-    promptBuilder.addToPrompt(
-      PromptInjectTag.personaDescription,
-      chat.persona.description,
-    );
-  }
-  if (chat.world) {
-    promptBuilder.addToPrompt(
-      PromptInjectTag.worldDescription,
-      chat.world.description,
-    );
-  }
-  if (lorebook && lorebook.status === LorebookStatus.Ready) {
-    const lorebookPrompt = lorebook.index
-      .map((idx) => `${idx.filename}  -  ${idx.summary}`)
-      .join("\n");
-    promptBuilder.addToPrompt(PromptInjectTag.lorebook, lorebookPrompt);
-  }
-  promptBuilder.injectChatHistory(chatHistory);
-
-  return promptBuilder.build();
+  console.log("finishReason", finishReason);
+  return text;
 }

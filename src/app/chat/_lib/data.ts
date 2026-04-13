@@ -5,6 +5,7 @@ import { cacheTag } from "next/cache";
 import {
   CHAT_CACHE_KEY,
   ChatEntity,
+  ChatForMemoryGen,
   ChatListDto,
   ChatMessageEntity,
   ChatSession,
@@ -130,6 +131,40 @@ export async function getChatById(id: string): Promise<ChatEntity | null> {
   const chat = await prisma.chat.findUnique({ where: { id } });
   if (!chat) return null;
   return chat;
+}
+
+export async function getChatForMemoryGen(
+  id: string,
+  messageIds: string[],
+): Promise<ChatForMemoryGen | null> {
+  "use cache";
+  cacheTag(`${CHAT_CACHE_KEY}-${id}`);
+
+  const chat = await prisma.chat.findUnique({
+    include: {
+      messages: {
+        include: { contents: { where: { isActive: true } } },
+        orderBy: { createdAt: "desc" },
+        where: { id: { in: messageIds }, isHidden: false },
+      },
+      story: true,
+    },
+    where: { id },
+  });
+  if (!chat) return null;
+
+  return {
+    id: chat.id,
+    lorebookId: chat.story.lorebookId ?? undefined,
+    messages: chat.messages.map((msg) => ({
+      content: msg.contents[0].parts
+        .filter((part) => part.type === "text")
+        .map((part) => part.text)
+        .join("\n"),
+      id: msg.id,
+      role: msg.contents[0].role,
+    })),
+  };
 }
 
 export async function getChatMessageById(
@@ -280,6 +315,21 @@ export async function getChatsForStoryDto(
   });
 
   return toChatListDto(result);
+}
+
+export async function getMessagesByIdList(
+  chatId: string,
+  idList: string[],
+  options?: {
+    isHidden: boolean;
+  },
+): Promise<ChatMessageEntity[]> {
+  "use cache";
+  cacheTag(`${CHAT_CACHE_KEY}-${chatId}`);
+
+  return prisma.chatMessage.findMany({
+    where: { chatId, id: { in: idList }, isHidden: options?.isHidden },
+  });
 }
 
 export async function updateChatMessage({

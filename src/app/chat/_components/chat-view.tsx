@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 
-import { useChatMessages } from "@/app/chat/_lib/hooks";
+import { useChatMessages, useGenerateMemories } from "@/app/chat/_lib/hooks";
 import { ChatSessionDto } from "@/app/chat/_lib/schema";
 import {
   ChatContainer,
@@ -30,13 +31,58 @@ export function ChatView({ chatSession }: ChatViewParams) {
     stop,
     swipe,
   } = useChatMessages(chatSession);
-  const [memoryStartIndex, setMemoryStartIndex] = useState<
+  const { generateMemories, isPending } = useGenerateMemories();
+  const [memoryStartIndex, _setMemoryStartIndex] = useState<
     number | undefined
   >();
-  const [memoryEndIndex, setMemoryEndIndex] = useState<number | undefined>();
+  const [memoryEndIndex, _setMemoryEndIndex] = useState<number | undefined>();
+
+  function setMemoryStartIndex(i: number | undefined) {
+    _setMemoryStartIndex(i);
+    if (
+      i !== undefined &&
+      memoryEndIndex !== undefined &&
+      i >= memoryEndIndex
+    ) {
+      _setMemoryEndIndex(undefined);
+    }
+  }
+
+  function setMemoryEndIndex(i: number | undefined) {
+    _setMemoryEndIndex(i);
+    if (
+      i !== undefined &&
+      memoryStartIndex !== undefined &&
+      i <= memoryStartIndex
+    ) {
+      _setMemoryStartIndex(undefined);
+    }
+  }
 
   const lastMessage =
     messages.length > 0 ? messages[messages.length - 1] : null;
+
+  async function onGenerateMemory() {
+    const memoryMessages =
+      !memoryEndIndex && memoryStartIndex
+        ? [messages[memoryStartIndex].id]
+        : messages
+            .slice(
+              memoryStartIndex,
+              memoryEndIndex ? memoryEndIndex + 1 : undefined,
+            )
+            .map((msg) => msg.id);
+    const res = await generateMemories({
+      chatId: chatSession.id,
+      messageIds: memoryMessages,
+    });
+    if (!res.success) {
+      toast.error(res.error.message);
+      return;
+    }
+    // TODO: show text to user
+    console.log("text", res.data);
+  }
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -86,7 +132,9 @@ export function ChatView({ chatSession }: ChatViewParams) {
           </ChatHistory>
           <ChatInput
             isLoading={status !== "ready"}
-            memoryDisable={!memoryStartIndex}
+            isMemoryGenerating={isPending}
+            memoryDisable={memoryStartIndex === undefined || isPending}
+            onMemoryGenerate={onGenerateMemory}
             onStop={stop}
             onSubmit={handleSubmit}
           />

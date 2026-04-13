@@ -1,5 +1,15 @@
 import { MessageRole } from "@/app/_shared/schema";
+import { getCharacterRecord } from "@/app/character/_lib/data";
+import { ChatSession } from "@/app/chat/_lib/schema";
+import { getLorebookById } from "@/app/lorebook/_lib/data";
+import { Lorebook, LorebookStatus } from "@/app/lorebook/_lib/schema";
 import { PromptFragmentType, PromptInjectTag } from "@/app/prompt/_lib/schema";
+import { NotFoundError } from "@/lib/error";
+
+interface BuildPromptFromChatParams {
+  chat: ChatSession;
+  regenerate?: boolean;
+}
 
 type ChatHistoryFragment = {
   type: PromptFragmentType.chatHistory;
@@ -16,7 +26,6 @@ type ContentFragment = {
 type Fragment = ChatHistoryFragment | ContentFragment | InjectFragment;
 
 type FragmentTokenCount = Fragment & { tokens: number };
-
 type InjectFragment = {
   content: string;
   injectTag: PromptInjectTag;
@@ -32,22 +41,16 @@ export class PromptBuilder {
   variables: Record<string, string> = {};
 
   constructor({
-    characterName,
     maxTokens,
-    personaName,
     promptSkeleton,
-    worldName,
+    variables,
   }: {
-    characterName?: string;
     maxTokens: number;
-    personaName?: string;
     promptSkeleton: Fragment[];
-    worldName?: string;
+    variables: Record<string, string>;
   }) {
     this.maxTokens = maxTokens;
-    this.variables["char"] = characterName ?? "";
-    this.variables["user"] = personaName ?? "";
-    this.variables["world"] = worldName ?? "";
+    this.variables = variables;
     for (const fragment of promptSkeleton) {
       if (fragment.type === PromptFragmentType.chatHistory) {
         this.prompt.push({ ...fragment, tokens: 0 });
@@ -127,6 +130,147 @@ export class PromptBuilder {
       this.currentTokens += tokens;
     }
   }
+}
+
+export async function buildPromptFromChat({
+  chat,
+  regenerate,
+}: BuildPromptFromChatParams): Promise<ChatMessage[]> {
+  const character = await getCharacterRecord(chat.character.id);
+  if (!character) throw new NotFoundError("Character", chat.character.id);
+  const lorebook = chat.lorebookId
+    ? await getLorebookById(chat.lorebookId)
+    : null;
+
+  const promptBuilder = new PromptBuilder({
+    maxTokens: chat.prompt.maxTokens,
+    promptSkeleton: chat.prompt.promptFragments.map((frag) =>
+      frag.type === PromptFragmentType.chatHistory
+        ? { type: PromptFragmentType.chatHistory }
+        : frag.type === PromptFragmentType.content
+          ? frag
+          : {
+              content: "",
+              injectTag: frag.injectTag,
+              role: frag.role,
+              type: PromptFragmentType.inject,
+            },
+    ),
+    variables: {
+      char: character.card.name,
+      user: chat.persona?.name ?? "",
+      world: chat.world?.name ?? "",
+    },
+  });
+
+  const lastMessage = regenerate ? chat.messages[1] : chat.messages[0];
+
+  const chatHistory = regenerate
+    ? chat.messages.slice(2)
+    : chat.messages.slice(1);
+
+  promptBuilder.addToPrompt(PromptInjectTag.lastMessage, lastMessage.content);
+  promptBuilder.addToPrompt(
+    PromptInjectTag.characterDescription,
+    character.card.description,
+  );
+  promptBuilder.addToPrompt(
+    PromptInjectTag.characterPersonality,
+    character.card.personality,
+  );
+  promptBuilder.addToPrompt(
+    PromptInjectTag.characterScenario,
+    character.card.scenario,
+  );
+
+  if (chat.persona) {
+    promptBuilder.addToPrompt(
+      PromptInjectTag.personaDescription,
+      chat.persona.description,
+    );
+  }
+  if (chat.world) {
+    promptBuilder.addToPrompt(
+      PromptInjectTag.worldDescription,
+      chat.world.description,
+    );
+  }
+  if (lorebook && lorebook.status === LorebookStatus.Ready) {
+    const lorebookPrompt = lorebook.index
+      .map((idx) => `${idx.filename}  -  ${idx.summary}`)
+      .join("\n");
+    promptBuilder.addToPrompt(PromptInjectTag.lorebook, lorebookPrompt);
+  }
+  promptBuilder.injectChatHistory(chatHistory);
+
+  return promptBuilder.build();
+}
+
+export function buildSummaryPrompt(
+  messages: ChatMessage[],
+  lorebook?: Lorebook,
+): ChatMessage[] {
+  // TODO: Remove hardcoded prompt
+  const promptBuilder = new PromptBuilder({
+    maxTokens: 20000,
+    promptSkeleton: [
+      {
+        content: `<instructions>
+        Your job is to create a summary of this creative fiction scene. Create a beat-by-beat summary of the scene that *replaces reading the full scene* while preserving all plot-relevant nuance and reads like a clean, structured scene log — concise yet complete. This summary will be your memory of this scene in the future. Be token-efficient: exercise judgment as to whether or not an interaction is flavor-only or truly affects the plot. Flavor scenes (interaction detail that does not advance plot)
+        
+        Write in **past tense**, **third-person**, and exclude all [OOC] or meta discussion. Use concrete nouns (e.g., "rice cooker” > "appliance"). Only use adjectives/adverbs when they materially affect tone, emotion, or characterization. Focus on **cause → intention → reaction → consequence** chains for clarity and compression. The summary should be formatted like:
+        # [Scene Title]
+        **Timeline**: (day/time)
+          
+        ## Story Beats
+        - Present all major actions, revelations, and emotional or magical shifts in order.
+        - Capture clear cause-effect logic: what triggered what, and why it mattered.
+        - Only include plot-affecting interactions and do not capture flavor-only beats.
+          
+        ## Character Dynamics
+        - Summarize how each character's **motives, emotions, and relationships** evolved.
+        - Include subtext, tension, or silent implications.
+        - Highlight key beats of conflict, vulnerability, trust, or power shifts.
+          
+        Write compactly but completely — every line should add new information or insight. Synthesize redundant actions or dialogue into unified cause-effect-emotion beats.
+        Favor compression over coverage whenever the two conflict; omit anything that can be inferred from context or established characterization.
+        </instructions>
+        <lore>`,
+        role: "system",
+        type: PromptFragmentType.content,
+      },
+      {
+        content: "",
+        injectTag: PromptInjectTag.lorebook,
+        role: "system",
+        type: PromptFragmentType.inject,
+      },
+      {
+        content: "</lore>\n<scene>",
+        role: "system",
+        type: PromptFragmentType.content,
+      },
+      {
+        type: PromptFragmentType.chatHistory,
+      },
+      {
+        content: "</scene>",
+        role: "user",
+        type: PromptFragmentType.content,
+      },
+    ],
+    variables: {},
+  });
+
+  if (lorebook && lorebook.status === LorebookStatus.Ready) {
+    const lorebookPrompt = lorebook.index
+      .map((idx) => `${idx.filename}  -  ${idx.summary}`)
+      .join("\n");
+    promptBuilder.addToPrompt(PromptInjectTag.lorebook, lorebookPrompt);
+  }
+
+  promptBuilder.injectChatHistory(messages);
+  return promptBuilder.build();
 }
 
 export function hydratePrompt(

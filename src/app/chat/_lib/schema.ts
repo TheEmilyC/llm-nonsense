@@ -49,6 +49,17 @@ const messageContentEntitySchema = z.object({
 });
 export type MessageContentEntity = z.infer<typeof messageContentEntitySchema>;
 
+const chatMessageForLLMSchema = chatMessageEntitySchema
+  .pick({ id: true })
+  .extend(
+    messageContentEntitySchema.pick({
+      role: true,
+    }).shape,
+  )
+  .extend({
+    content: z.string(),
+  });
+
 // -- Schemas
 
 export const updateContentActionParamsSchema = z.object({
@@ -87,6 +98,40 @@ export const chatPostRequestBodySchema = z.object({
   trigger: z.enum(["submit-message", "regenerate-message"]),
 });
 export type ChatPostRequestBody = z.infer<typeof chatPostRequestBodySchema>;
+
+export const generateMemoriesActionParamsSchema = z.object({
+  chatId: dbIdValidator,
+  messageIds: dbIdValidator.array(),
+});
+export type GenerateMemoriesActionParams = z.infer<
+  typeof generateMemoriesActionParamsSchema
+>;
+
+export const chatSessionSchema = chatEntitySchema
+  .pick({
+    id: true,
+    name: true,
+  })
+  .extend({
+    character: characterEntitySchema,
+    lorebookId: dbIdValidator.optional(),
+    messages: chatMessageForLLMSchema.array(),
+    persona: personaEntitySchema,
+    prompt: promptWithFragmentsSchema,
+    story: storyEntitySchema,
+    world: worldEntitySchema.optional(),
+  });
+export type ChatSession = z.infer<typeof chatSessionSchema>;
+
+export const chatForMemoryGenSchema = chatEntitySchema
+  .pick({
+    id: true,
+  })
+  .extend({
+    lorebookId: dbIdValidator.optional(),
+    messages: chatMessageForLLMSchema.array(),
+  });
+export type ChatForMemoryGen = z.infer<typeof chatForMemoryGenSchema>;
 
 // -- DTOs
 
@@ -128,29 +173,3 @@ export const chatSessionDtoSchema = chatEntitySchema
     }),
   });
 export type ChatSessionDto = z.infer<typeof chatSessionDtoSchema>;
-
-export const chatSessionSchema = chatEntitySchema
-  .pick({
-    id: true,
-    name: true,
-  })
-  .extend({
-    character: characterEntitySchema,
-    lorebookId: dbIdValidator.optional(),
-    messages: chatMessageEntitySchema
-      .pick({ id: true })
-      .extend(
-        messageContentEntitySchema.pick({
-          role: true,
-        }).shape,
-      )
-      .extend({
-        content: z.string(),
-      })
-      .array(),
-    persona: personaEntitySchema,
-    prompt: promptWithFragmentsSchema,
-    story: storyEntitySchema,
-    world: worldEntitySchema.optional(),
-  });
-export type ChatSession = z.infer<typeof chatSessionSchema>;

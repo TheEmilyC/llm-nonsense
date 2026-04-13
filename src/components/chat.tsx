@@ -64,7 +64,9 @@ interface ChatHistoryProps {
 
 interface ChatInputParams {
   isLoading: boolean;
+  isMemoryGenerating: boolean;
   memoryDisable: boolean;
+  onMemoryGenerate: () => void;
   onStop: () => void;
   onSubmit: (text: string) => void;
 }
@@ -123,7 +125,9 @@ export function ChatHistory({ children }: ChatHistoryProps) {
 
 export function ChatInput({
   isLoading,
+  isMemoryGenerating,
   memoryDisable,
+  onMemoryGenerate,
   onStop,
   onSubmit,
 }: ChatInputParams) {
@@ -149,9 +153,13 @@ export function ChatInput({
             <Button
               className="h-8 w-8 rounded-full"
               disabled={memoryDisable}
+              onClick={onMemoryGenerate}
               size="sm"
+              suppressHydrationWarning
             >
-              <MemoryIcon className="h-4 w-4" />
+              <MemoryIcon
+                className={cn("h-4 w-4", isMemoryGenerating && "animate-spin")}
+              />
             </Button>
           </PromptInputAction>
           <PromptInputAction tooltip={isLoading ? "Stop" : "Send"}>

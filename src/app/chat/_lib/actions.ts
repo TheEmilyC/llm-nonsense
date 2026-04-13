@@ -12,6 +12,7 @@ import {
   deleteChat,
   deleteChatMessage,
   getChatById,
+  getChatForMemoryGen,
   getChatMessageById,
   updateChatMessage,
   updateMessageContent,
@@ -20,11 +21,16 @@ import {
   CHAT_CACHE_KEY,
   ChatEntity,
   ChatMessageEntity,
+  GenerateMemoriesActionParams,
+  generateMemoriesActionParamsSchema,
   UpdateChatMessageActionParams,
   updateChatMessageActionParamsSchema,
   UpdateContentActionParams,
   updateContentActionParamsSchema,
 } from "@/app/chat/_lib/schema";
+import { generateMemorySummary } from "@/app/chat/_lib/service";
+import { getLorebookById } from "@/app/lorebook/_lib/data";
+import { Lorebook, LorebookStatus } from "@/app/lorebook/_lib/schema";
 import { getPersonaById } from "@/app/persona/_lib/data";
 import { hydratePrompt } from "@/app/prompt/_lib/prompt-builder";
 import { getStoryById } from "@/app/story/_lib/data";
@@ -134,6 +140,31 @@ export async function deleteMessageAction(
 
   updateTag(`${CHAT_CACHE_KEY}-${deletedMessage.chatId}`);
   return { success: true };
+}
+
+export async function generateMemoriesAction(
+  params: GenerateMemoriesActionParams,
+): Promise<ActionResponse<string>> {
+  const parseResult = generateMemoriesActionParamsSchema.safeParse(params);
+  if (!parseResult.success) return toActionResponseError(parseResult.error);
+  const { chatId, messageIds } = parseResult.data;
+
+  const chat = await getChatForMemoryGen(chatId, messageIds);
+  if (!chat) return toActionResponseError(new NotFoundError("Chat", chatId));
+  let lorebook: Lorebook | null = null;
+  if (chat.lorebookId) {
+    lorebook = await getLorebookById(chat.lorebookId);
+    if (!lorebook) {
+      return toActionResponseError(
+        new NotFoundError("Lorebook", chat.lorebookId),
+      );
+    }
+    if (lorebook.status !== LorebookStatus.Ready) {
+      lorebook = null;
+    }
+  }
+  const text = await generateMemorySummary(chat, lorebook ?? undefined);
+  return { data: text, success: true };
 }
 
 export async function updateChatMessageAction(
