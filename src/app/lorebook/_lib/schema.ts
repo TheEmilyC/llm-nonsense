@@ -57,6 +57,7 @@ const lorebookReadySchema = z.object({
   name: z.string(),
   status: z.literal(LorebookStatus.Ready),
 });
+export type LorebookReady = z.infer<typeof lorebookReadySchema>;
 
 export const lorebookSchema = z.discriminatedUnion("status", [
   lorebookUnavailableSchema,

@@ -6,7 +6,11 @@ import {
   entityProfileSchema,
   messageRoleSchema,
 } from "@/app/_shared/schema";
-import { promptFragmentSchema } from "@/app/prompt/_lib/schema";
+import { characterEntitySchema } from "@/app/character/_lib/schema";
+import { personaEntitySchema } from "@/app/persona/_lib/schema";
+import { promptWithFragmentsSchema } from "@/app/prompt/_lib/schema";
+import { storyEntitySchema } from "@/app/story/_lib/schema";
+import { worldEntitySchema } from "@/app/world/_lib/schema";
 
 export const CHAT_CACHE_KEY = "chat";
 
@@ -44,6 +48,17 @@ const messageContentEntitySchema = z.object({
   role: messageRoleSchema,
 });
 export type MessageContentEntity = z.infer<typeof messageContentEntitySchema>;
+
+const chatMessageForLLMSchema = chatMessageEntitySchema
+  .pick({ id: true })
+  .extend(
+    messageContentEntitySchema.pick({
+      role: true,
+    }).shape,
+  )
+  .extend({
+    content: z.string(),
+  });
 
 // -- Schemas
 
@@ -83,6 +98,57 @@ export const chatPostRequestBodySchema = z.object({
   trigger: z.enum(["submit-message", "regenerate-message"]),
 });
 export type ChatPostRequestBody = z.infer<typeof chatPostRequestBodySchema>;
+
+export const generateMemoriesActionParamsSchema = z.object({
+  chatId: dbIdValidator,
+  messageIds: dbIdValidator.array(),
+});
+export type GenerateMemoriesActionParams = z.infer<
+  typeof generateMemoriesActionParamsSchema
+>;
+
+export const chatSessionSchema = chatEntitySchema
+  .pick({
+    id: true,
+    name: true,
+  })
+  .extend({
+    character: characterEntitySchema,
+    lorebookId: dbIdValidator.optional(),
+    messages: chatMessageForLLMSchema.array(),
+    persona: personaEntitySchema,
+    prompt: promptWithFragmentsSchema,
+    story: storyEntitySchema,
+    world: worldEntitySchema.optional(),
+  });
+export type ChatSession = z.infer<typeof chatSessionSchema>;
+
+export const chatForMemoryGenSchema = chatEntitySchema
+  .pick({
+    id: true,
+  })
+  .extend({
+    lorebookId: dbIdValidator.optional(),
+    messages: chatMessageForLLMSchema.array(),
+  });
+export type ChatForMemoryGen = z.infer<typeof chatForMemoryGenSchema>;
+
+export const generateMemoriesActionResponseSchema = z.object({
+  content: z.string(),
+  lorebook: z
+    .object({
+      content: z.string(),
+      file: z.string().optional(),
+      originalContent: z.string().optional(),
+      summary: z.string().optional(),
+    })
+    .array()
+    .optional(),
+  summary: z.string(),
+});
+export type GenerateMemoriesActionResponse = z.infer<
+  typeof generateMemoriesActionResponseSchema
+>;
 
 // -- DTOs
 
@@ -124,49 +190,3 @@ export const chatSessionDtoSchema = chatEntitySchema
     }),
   });
 export type ChatSessionDto = z.infer<typeof chatSessionDtoSchema>;
-
-export const chatSessionSchema = chatEntitySchema
-  .pick({
-    id: true,
-    name: true,
-  })
-  .extend({
-    character: z.object({
-      id: dbIdValidator,
-      name: z.string().min(1),
-      pngHash: z.string().min(1),
-    }),
-    lorebookId: dbIdValidator.optional(),
-    messages: chatMessageEntitySchema
-      .pick({ id: true })
-      .extend(
-        messageContentEntitySchema.pick({
-          role: true,
-        }).shape,
-      )
-      .extend({
-        content: z.string(),
-      })
-      .array(),
-    persona: z.object({
-      id: dbIdValidator,
-      imageHash: z.string().min(1),
-      name: z.string().min(1),
-    }),
-    prompt: z.object({
-      id: dbIdValidator,
-      maxOutputTokens: z.number().int().positive(),
-      maxSteps: z.number().int().positive(),
-      maxTokens: z.number(),
-      promptFragments: promptFragmentSchema.array(),
-      temperature: z.number(),
-      topK: z.number().int().positive(),
-      topP: z.number(),
-    }),
-    story: z.object({
-      id: dbIdValidator,
-      name: z.string().min(1, "Story Name is required"),
-    }),
-    world: z.object({ id: dbIdValidator }).optional(),
-  });
-export type ChatSession = z.infer<typeof chatSessionSchema>;

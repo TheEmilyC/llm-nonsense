@@ -1,12 +1,16 @@
 "use client";
 
-import { useChatMessages } from "@/app/chat/_lib/hooks";
-import { ChatSessionDto } from "@/app/chat/_lib/schema";
+import { useState } from "react";
+import { toast } from "sonner";
+
+import { MemoryResultsDrawer } from "@/app/chat/_components/memory-results-drawer";
+import { useChatMessages, useGenerateMemories } from "@/app/chat/_lib/hooks";
+import { ChatSessionDto, GenerateMemoriesActionResponse } from "@/app/chat/_lib/schema";
 import {
   ChatContainer,
   ChatHistory,
   ChatInput,
-  ChatMessages,
+  ChatMessage,
   ChatMessageThinking,
   ChatSwipe,
 } from "@/components/chat";
@@ -28,8 +32,61 @@ export function ChatView({ chatSession }: ChatViewParams) {
     stop,
     swipe,
   } = useChatMessages(chatSession);
+  const { generateMemories, isPending } = useGenerateMemories();
+  const [memoryResults, setMemoryResults] =
+    useState<GenerateMemoriesActionResponse | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [memoryStartIndex, _setMemoryStartIndex] = useState<
+    number | undefined
+  >();
+  const [memoryEndIndex, _setMemoryEndIndex] = useState<number | undefined>();
+
+  function setMemoryStartIndex(i: number | undefined) {
+    _setMemoryStartIndex(i);
+    if (
+      i !== undefined &&
+      memoryEndIndex !== undefined &&
+      i >= memoryEndIndex
+    ) {
+      _setMemoryEndIndex(undefined);
+    }
+  }
+
+  function setMemoryEndIndex(i: number | undefined) {
+    _setMemoryEndIndex(i);
+    if (
+      i !== undefined &&
+      memoryStartIndex !== undefined &&
+      i <= memoryStartIndex
+    ) {
+      _setMemoryStartIndex(undefined);
+    }
+  }
+
   const lastMessage =
     messages.length > 0 ? messages[messages.length - 1] : null;
+
+  async function onGenerateMemory() {
+    const memoryMessages =
+      !memoryEndIndex && memoryStartIndex
+        ? [messages[memoryStartIndex].id]
+        : messages
+            .slice(
+              memoryStartIndex,
+              memoryEndIndex ? memoryEndIndex + 1 : undefined,
+            )
+            .map((msg) => msg.id);
+    const res = await generateMemories({
+      chatId: chatSession.id,
+      messageIds: memoryMessages,
+    });
+    if (!res.success) {
+      toast.error(res.error.message);
+      return;
+    }
+    setMemoryResults(res.data ?? null);
+    setDrawerOpen(true);
+  }
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -41,16 +98,35 @@ export function ChatView({ chatSession }: ChatViewParams) {
       <div className="w-full mx-auto max-w-6xl p-6 flex-1 flex flex-col min-h-0">
         <ChatContainer>
           <ChatHistory>
-            <ChatMessages
-              character={chatSession.character}
-              hiddenMessages={hiddenMessages}
-              messages={messages}
-              onDelete={deleteMessage}
-              onEdit={editContent}
-              onHide={hideMessage}
-              persona={chatSession.persona}
-              status={status}
-            />
+            <div className="flex flex-col gap-4">
+              {messages.map((message, i) => (
+                <ChatMessage
+                  character={chatSession.character}
+                  isHidden={hiddenMessages[message.id] ?? false}
+                  isStreaming={
+                    status === "streaming" && i === messages.length - 1
+                  }
+                  key={message.id}
+                  memory={{
+                    isMemoryEnd: memoryEndIndex === i,
+                    isMemoryStart: memoryStartIndex === i,
+                    onMemoryEnd: () =>
+                      memoryEndIndex === i
+                        ? setMemoryEndIndex(undefined)
+                        : setMemoryEndIndex(i),
+                    onMemoryStart: () =>
+                      memoryStartIndex === i
+                        ? setMemoryStartIndex(undefined)
+                        : setMemoryStartIndex(i),
+                  }}
+                  message={message}
+                  onDelete={() => deleteMessage(message.id)}
+                  onEdit={(newText) => editContent(message.id, newText)}
+                  onHide={() => hideMessage(message.id)}
+                  persona={chatSession.persona}
+                />
+              ))}
+            </div>
             {status === "submitted" && (
               <ChatMessageThinking character={chatSession.character} />
             )}
@@ -60,10 +136,18 @@ export function ChatView({ chatSession }: ChatViewParams) {
           </ChatHistory>
           <ChatInput
             isLoading={status !== "ready"}
+            isMemoryGenerating={isPending}
+            memoryDisable={memoryStartIndex === undefined || isPending}
+            onMemoryGenerate={onGenerateMemory}
             onStop={stop}
             onSubmit={handleSubmit}
           />
         </ChatContainer>
+        <MemoryResultsDrawer
+          data={memoryResults}
+          onOpenChange={setDrawerOpen}
+          open={drawerOpen}
+        />
       </div>
     </div>
   );

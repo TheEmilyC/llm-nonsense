@@ -1,14 +1,5 @@
 "use client";
 
-import {
-  BookOpen,
-  Globe,
-  Home,
-  Library,
-  MessageSquareCode,
-  UserCircle,
-  Users,
-} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -17,16 +8,25 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  CharacterIcon,
+  HomeIcon,
+  LorebookIcon,
+  PersonaIcon,
+  PromptIcon,
+  StoryIcon,
+  WorldIcon,
+} from "@/lib/icons";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/", icon: Home, label: "Home" },
-  { href: "/character", icon: Users, label: "Characters" },
-  { href: "/persona", icon: UserCircle, label: "Personas" },
-  { href: "/world", icon: Globe, label: "world" },
-  { href: "/story", icon: BookOpen, label: "Stories" },
-  { href: "/lorebook", icon: Library, label: "Lorebooks" },
-  { href: "/prompt", icon: MessageSquareCode, label: "Prompts" },
+  { href: "/", icon: HomeIcon, label: "Home" },
+  { href: "/character", icon: CharacterIcon, label: "Characters" },
+  { href: "/persona", icon: PersonaIcon, label: "Personas" },
+  { href: "/world", icon: WorldIcon, label: "world" },
+  { href: "/story", icon: StoryIcon, label: "Stories" },
+  { href: "/lorebook", icon: LorebookIcon, label: "Lorebooks" },
+  { href: "/prompt", icon: PromptIcon, label: "Prompts" },
 ];
 
 export function NavLinks() {

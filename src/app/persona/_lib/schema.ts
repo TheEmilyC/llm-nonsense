@@ -5,7 +5,7 @@ import { dbIdValidator } from "@/app/_shared/schema";
 export const PERSONA_CACHE_KEY = "persona";
 
 // -- Base
-const personaEntitySchema = z.object({
+export const personaEntitySchema = z.object({
   createdAt: z.date(),
   description: z.string(),
   id: dbIdValidator,

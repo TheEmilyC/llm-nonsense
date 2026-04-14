@@ -1,7 +1,6 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Globe, UserCircle, Users } from "lucide-react";
 import { Controller, useForm, UseFormSetError } from "react-hook-form";
 
 import { storyFormSchema, StoryFormValues } from "@/app/story/_lib/schema";
@@ -9,6 +8,7 @@ import { CardOption, CardSelector } from "@/components/card-selector";
 import { FieldInput } from "@/components/form-fields/field-input";
 import { FieldSelect } from "@/components/form-fields/field-select";
 import { Field, FieldError } from "@/components/ui/field";
+import { CharacterIcon, PersonaIcon, WorldIcon } from "@/lib/icons";
 
 interface StoryFormParams {
   characters?: CardOption[];
@@ -69,7 +69,7 @@ export function StoryForm({
             render={({ field, fieldState }) => (
               <Field className="h-full" data-invalid={fieldState.invalid}>
                 <CardSelector
-                  icon={Users}
+                  icon={CharacterIcon}
                   label="Character"
                   onChange={(char) => field.onChange(char.id)}
                   options={characters}
@@ -89,7 +89,7 @@ export function StoryForm({
             render={({ field, fieldState }) => (
               <Field className="h-full" data-invalid={fieldState.invalid}>
                 <CardSelector
-                  icon={UserCircle}
+                  icon={PersonaIcon}
                   label="Persona"
                   onChange={(per) => field.onChange(per.id)}
                   options={personas}
@@ -109,7 +109,7 @@ export function StoryForm({
             render={({ field, fieldState }) => (
               <Field className="h-full" data-invalid={fieldState.invalid}>
                 <CardSelector
-                  icon={Globe}
+                  icon={WorldIcon}
                   label="World"
                   onChange={(world) => field.onChange(world.id)}
                   options={worlds}

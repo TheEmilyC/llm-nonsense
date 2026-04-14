@@ -1,19 +1,6 @@
 "use client";
 
 import { UIMessage } from "ai";
-import {
-  ArrowUp,
-  BookOpen,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  EyeOff,
-  Pencil,
-  Square,
-  Trash2,
-  X,
-} from "lucide-react";
 import Image from "next/image";
 import { ReactNode, useState } from "react";
 
@@ -47,9 +34,24 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
-  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  CloseIcon,
+  ConfirmIcon,
+  DeleteIcon,
+  EditIcon,
+  HideIcon,
+  LorebookIcon,
+  MemoryIcon,
+  MoveLeftIcon,
+  MoveRightIcon,
+  RangeEndIcon,
+  RangeStartIcon,
+  SendIcon,
+  StopIcon,
+  UnHideIcon,
+} from "@/lib/icons";
 import { cn } from "@/lib/utils";
 
 export interface ChatHistoryContainerParams {
@@ -62,6 +64,9 @@ interface ChatHistoryProps {
 
 interface ChatInputParams {
   isLoading: boolean;
+  isMemoryGenerating: boolean;
+  memoryDisable: boolean;
+  onMemoryGenerate: () => void;
   onStop: () => void;
   onSubmit: (text: string) => void;
 }
@@ -70,22 +75,17 @@ interface ChatMessageProps {
   character: EntityProfile;
   isHidden: boolean;
   isStreaming: boolean;
+  memory?: {
+    isMemoryEnd: boolean;
+    isMemoryStart: boolean;
+    onMemoryEnd: () => void;
+    onMemoryStart: () => void;
+  };
   message: UIMessage;
   onDelete?: () => void;
   onEdit?: (newText: string) => void;
   onHide?: () => void;
   persona: EntityProfile;
-}
-
-interface ChatMessagesProps {
-  character: EntityProfile;
-  hiddenMessages: Record<string, boolean>;
-  messages: UIMessage[];
-  onDelete?: (messageId: string) => void;
-  onEdit?: (messageId: string, newText: string) => void;
-  onHide?: (messageId: string) => void;
-  persona: EntityProfile;
-  status: "error" | "ready" | "streaming" | "submitted";
 }
 
 interface ChatMessageThinkingProps {
@@ -123,7 +123,14 @@ export function ChatHistory({ children }: ChatHistoryProps) {
   );
 }
 
-export function ChatInput({ isLoading, onStop, onSubmit }: ChatInputParams) {
+export function ChatInput({
+  isLoading,
+  isMemoryGenerating,
+  memoryDisable,
+  onMemoryGenerate,
+  onStop,
+  onSubmit,
+}: ChatInputParams) {
   const [input, setInput] = useState("");
 
   const handleSubmit = () => {
@@ -141,7 +148,20 @@ export function ChatInput({ isLoading, onStop, onSubmit }: ChatInputParams) {
         value={input}
       >
         <PromptInputTextarea placeholder="Send a message…" />
-        <PromptInputActions className="justify-end">
+        <PromptInputActions className="flex items-center justify-between gap-2 pt-2">
+          <PromptInputAction tooltip="Generate Memory">
+            <Button
+              className="h-8 w-8 rounded-full"
+              disabled={memoryDisable}
+              onClick={onMemoryGenerate}
+              size="sm"
+              suppressHydrationWarning
+            >
+              <MemoryIcon
+                className={cn("h-4 w-4", isMemoryGenerating && "animate-spin")}
+              />
+            </Button>
+          </PromptInputAction>
           <PromptInputAction tooltip={isLoading ? "Stop" : "Send"}>
             <Button
               className="h-8 w-8 rounded-full"
@@ -153,9 +173,9 @@ export function ChatInput({ isLoading, onStop, onSubmit }: ChatInputParams) {
               suppressHydrationWarning
             >
               {isLoading ? (
-                <Square className="h-4 w-4" />
+                <StopIcon className="h-4 w-4" />
               ) : (
-                <ArrowUp className="h-4 w-4" />
+                <SendIcon className="h-4 w-4" />
               )}
             </Button>
           </PromptInputAction>
@@ -169,6 +189,7 @@ export function ChatMessage({
   character,
   isHidden,
   isStreaming,
+  memory,
   message,
   onDelete,
   onEdit,
@@ -234,7 +255,7 @@ export function ChatMessage({
                   className="flex items-start gap-1.5 text-xs text-muted-foreground/60"
                   key={partIndex}
                 >
-                  <BookOpen className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  <LorebookIcon className="h-3.5 w-3.5 mt-0.5 shrink-0" />
                   <span>
                     Looking up:{" "}
                     {entries.length > 0
@@ -268,14 +289,14 @@ export function ChatMessage({
                         className="p-1 hover:text-foreground transition-colors text-muted-foreground"
                         onClick={saveEdit}
                       >
-                        <Check className="h-3.5 w-3.5" />
+                        <ConfirmIcon className="h-3.5 w-3.5" />
                       </button>
                       <button
                         aria-label="Cancel edit"
                         className="p-1 hover:text-foreground transition-colors text-muted-foreground"
                         onClick={cancelEdit}
                       >
-                        <X className="h-3.5 w-3.5" />
+                        <CloseIcon className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   </div>
@@ -292,42 +313,77 @@ export function ChatMessage({
                   <MessageActions className="mt-1 opacity-0 group-hover/text:opacity-100 transition-opacity">
                     <MessageAction tooltip="Edit">
                       <button
-                        className="p-1 hover:text-foreground transition-colors"
+                        aria-label="Edit Message"
+                        className="p-1 hover:text-foreground transition-colors rounded-full"
                         onClick={() => startEdit(part.text, partIndex)}
                       >
-                        <Pencil className="h-3.5 w-3.5" />
+                        <EditIcon className="h-3.5 w-3.5" />
                       </button>
                     </MessageAction>
-                    <MessageAction tooltip={isHidden ? "Unhide (message will be sent to LLM)" : "Hide (message won't be sent to LLM)"}>
+                    <MessageAction
+                      tooltip={
+                        isHidden
+                          ? "Unhide (message will be sent to LLM)"
+                          : "Hide (message won't be sent to LLM)"
+                      }
+                    >
                       <button
-                        aria-label={isHidden ? "Unhide message" : "Hide message"}
-                        className="p-1 hover:text-foreground transition-colors text-muted-foreground"
+                        aria-label={
+                          isHidden ? "Unhide message" : "Hide message"
+                        }
+                        className="p-1 hover:text-foreground transition-colors text-muted-foreground rounded-full"
                         onClick={onHide}
                       >
                         {isHidden ? (
-                          <Eye className="h-3.5 w-3.5" />
+                          <UnHideIcon className="h-3.5 w-3.5" />
                         ) : (
-                          <EyeOff className="h-3.5 w-3.5" />
+                          <HideIcon className="h-3.5 w-3.5" />
                         )}
                       </button>
                     </MessageAction>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <ConfirmDialog
-                          description="This will permanently delete this message and all its swipes."
-                          onConfirm={onDelete}
-                          title="Delete message?"
-                          type="delete"
-                        >
-                          <TooltipTrigger asChild>
-                            <button className="p-1 hover:text-destructive transition-colors">
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </TooltipTrigger>
-                        </ConfirmDialog>
-                        <TooltipContent side="top">Delete</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <Tooltip>
+                      <ConfirmDialog
+                        description="This will permanently delete this message and all its swipes."
+                        onConfirm={onDelete}
+                        title="Delete message?"
+                        type="delete"
+                      >
+                        <TooltipTrigger asChild>
+                          <button className="p-1 hover:text-destructive transition-colors rounded-full">
+                            <DeleteIcon className="h-3.5 w-3.5" />
+                          </button>
+                        </TooltipTrigger>
+                      </ConfirmDialog>
+                      <TooltipContent side="top">Delete</TooltipContent>
+                    </Tooltip>
+                    <MessageAction tooltip="Memory Start">
+                      <button
+                        aria-label="Memory Start"
+                        className={cn(
+                          "p-1 hover:text-foreground transition-colors rounded-full",
+                          memory?.isMemoryStart
+                            ? "text-primary bg-primary/20"
+                            : "text-muted-foreground",
+                        )}
+                        onClick={memory?.onMemoryStart}
+                      >
+                        <RangeStartIcon className="h-3.5 w-3.5" />
+                      </button>
+                    </MessageAction>
+                    <MessageAction tooltip="Memory End">
+                      <button
+                        aria-label="Memory End"
+                        className={cn(
+                          "p-1 hover:text-foreground transition-colors rounded-full",
+                          memory?.isMemoryEnd
+                            ? "text-primary bg-primary/20"
+                            : "text-muted-foreground",
+                        )}
+                        onClick={memory?.onMemoryEnd}
+                      >
+                        <RangeEndIcon className="h-3.5 w-3.5" />
+                      </button>
+                    </MessageAction>
                   </MessageActions>
                 </div>
               );
@@ -337,35 +393,6 @@ export function ChatMessage({
         </div>
       </div>
     </Message>
-  );
-}
-
-export function ChatMessages({
-  character,
-  hiddenMessages,
-  messages,
-  onDelete,
-  onEdit,
-  onHide,
-  persona,
-  status,
-}: ChatMessagesProps) {
-  return (
-    <div className="flex flex-col gap-4">
-      {messages.map((message, i) => (
-        <ChatMessage
-          character={character}
-          isHidden={hiddenMessages[message.id] ?? false}
-          isStreaming={status === "streaming" && i === messages.length - 1}
-          key={message.id}
-          message={message}
-          onDelete={onDelete ? () => onDelete(message.id) : undefined}
-          onEdit={onEdit ? (newText) => onEdit(message.id, newText) : undefined}
-          onHide={onHide ? () => onHide(message.id) : undefined}
-          persona={persona}
-        />
-      ))}
-    </div>
   );
 }
 
@@ -397,7 +424,7 @@ export function ChatSwipe({
         className="p-0.5 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
         onClick={prevSwipe}
       >
-        <ChevronLeft className="h-3.5 w-3.5" />
+        <MoveLeftIcon className="h-3.5 w-3.5" />
       </button>
       <span className="text-xs text-muted-foreground/40 tabular-nums">
         {swipeIndex + 1}/{length}
@@ -407,7 +434,7 @@ export function ChatSwipe({
         className="p-0.5 text-muted-foreground/40 hover:text-muted-foreground transition-colors"
         onClick={nextSwipe}
       >
-        <ChevronRight className="h-3.5 w-3.5" />
+        <MoveRightIcon className="h-3.5 w-3.5" />
       </button>
     </div>
   );

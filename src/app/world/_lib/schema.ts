@@ -5,7 +5,7 @@ import { dbIdValidator } from "@/app/_shared/schema";
 export const WORLD_CACHE_KEY = "world";
 
 // -- Base
-const worldEntitySchema = z.object({
+export const worldEntitySchema = z.object({
   createdAt: z.date(),
   description: z.string(),
   id: dbIdValidator,

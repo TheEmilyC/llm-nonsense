@@ -6,7 +6,7 @@ export const STORY_CACHE_KEY = "story";
 
 // -- Base
 
-const storyEntitySchema = z.object({
+export const storyEntitySchema = z.object({
   characterId: dbIdValidator,
   createdAt: z.date(),
   id: dbIdValidator,

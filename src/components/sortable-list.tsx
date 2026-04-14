@@ -3,8 +3,8 @@
 import { move } from "@dnd-kit/helpers";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
-import { GripVertical } from "lucide-react";
 
+import { DragIcon } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 
 interface SortableItemProps {
@@ -73,7 +73,7 @@ function SortableItem({ children, id, index, onClick }: SortableItemProps) {
         ref={handleRef}
         type="button"
       >
-        <GripVertical className="h-4 w-4" />
+        <DragIcon className="h-4 w-4" />
       </button>
       <div
         className="min-w-0 flex-1 cursor-pointer"
