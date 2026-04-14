@@ -64,6 +64,7 @@ export async function constructChatResponse({
   const { maxOutputTokens, maxSteps, temperature, topK, topP } = chat.prompt;
 
   // --send and stream result--
+  logger.info("Chat generation request", { chatId, prompt, regenerate });
   return streamText({
     maxOutputTokens,
     model: models.chat,
@@ -89,6 +90,11 @@ export async function constructChatResponse({
     }),
     onFinish: async ({ messages }) => {
       const sentMessage = messages[0];
+      logger.info("Chat completion response", {
+        chatId,
+        regenerate,
+        response: sentMessage,
+      });
       let messageId = undefined;
       if (regenerate && chat.messages.length > 0)
         messageId = chat.messages[0].id;
