@@ -301,6 +301,8 @@ export function buildSummaryPrompt(
           
         Write compactly but completely — every line should add new information or insight. Synthesize redundant actions or dialogue into unified cause-effect-emotion beats.
         Favor compression over coverage whenever the two conflict; omit anything that can be inferred from context or established characterization.
+
+        Also create a short scentence describing the scene for the synopsis IE: 'Luke Skywalker in his X-Wing blows up the death star in the nick of time, saving the rebellion'"
         </summary_creation>
         </instructions>
         <lore>`,
