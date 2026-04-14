@@ -87,7 +87,7 @@ export function PromptForm({
 
   const form = useForm<PromptFormValues>({
     defaultValues: defaultValues || {
-      maxOutputTokens: 9000,
+      maxOutputTokens: undefined,
       maxSteps: 20,
       maxTokens: 80000,
       name: "",

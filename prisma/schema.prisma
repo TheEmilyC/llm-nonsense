@@ -120,7 +120,7 @@ model Prompt {
   id              String           @id @default(cuid())
   name            String
   maxTokens       Int              @default(80000)
-  maxOutputTokens Int              @default(9000)
+  maxOutputTokens Int?
   maxSteps        Int              @default(20)
   temperature     Float            @default(0.9)
   topK            Int              @default(64)
