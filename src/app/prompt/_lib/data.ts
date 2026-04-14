@@ -42,7 +42,7 @@ export async function createPrompt({
       topP,
     },
   });
-  return prompt;
+  return { ...prompt, maxOutputTokens: prompt.maxOutputTokens ?? undefined };
 }
 
 export async function deletePrompt(id: string) {
