@@ -38,7 +38,6 @@
     "png-chunks-extract": "^1.0.0",
     "radix-ui": "^1.4.3",
     "react": "19.2.4",
-    "react-diff-viewer-continued": "^4.2.0",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.72.0",
     "react-markdown": "^10.1.0",
