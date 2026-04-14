@@ -34,7 +34,7 @@ export const logger = {
   error: (message: string, context?: LogContext) =>
     console.error(formatMessage("error", message, context)),
   info: (message: string, context?: LogContext) =>
-    console.log(formatMessage("info", message, context)),
+    console.info(formatMessage("info", message, context)),
   warn: (message: string, context?: LogContext) =>
     console.warn(formatMessage("warn", message, context)),
 };
