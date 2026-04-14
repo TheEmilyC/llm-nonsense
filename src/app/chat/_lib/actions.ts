@@ -29,10 +29,7 @@ import {
   UpdateContentActionParams,
   updateContentActionParamsSchema,
 } from "@/app/chat/_lib/schema";
-import {
-  generateLorebookUpdates,
-  generateMemorySummary,
-} from "@/app/chat/_lib/service";
+import { generateMemorySummary } from "@/app/chat/_lib/service";
 import { getLorebookById } from "@/app/lorebook/_lib/data";
 import { Lorebook, LorebookStatus } from "@/app/lorebook/_lib/schema";
 import { getPersonaById } from "@/app/persona/_lib/data";
@@ -168,18 +165,18 @@ export async function generateMemoriesAction(
     }
   }
   const memory = await generateMemorySummary(chat, lorebook ?? undefined);
-  let lorebookUpdate;
-  if (lorebook) lorebookUpdate = await generateLorebookUpdates(chat, lorebook);
+  //let lorebookUpdate;
+  //if (lorebook) lorebookUpdate = await generateLorebookUpdates(chat, lorebook);
 
   const suggestions: GenerateMemoriesActionResponse = {
     content: memory.content,
-    lorebook: lorebookUpdate
-      ? lorebookUpdate.map((update) => ({
-          content: update.content,
-          file: update.file,
-          summary: update.synopsis,
-        }))
-      : [],
+    // lorebook: lorebookUpdate
+    //   ? lorebookUpdate.map((update) => ({
+    //       content: update.content,
+    //       file: update.file,
+    //       summary: update.synopsis,
+    //     }))
+    //   : [],
     summary: memory.synopsis,
   };
   return { data: suggestions, success: true };
