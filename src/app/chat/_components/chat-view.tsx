@@ -5,7 +5,10 @@ import { toast } from "sonner";
 
 import { MemoryResultsDrawer } from "@/app/chat/_components/memory-results-drawer";
 import { useChatMessages, useGenerateMemories } from "@/app/chat/_lib/hooks";
-import { ChatSessionDto, GenerateMemoriesActionResponse } from "@/app/chat/_lib/schema";
+import {
+  ChatSessionDto,
+  GenerateMemoriesActionResponse,
+} from "@/app/chat/_lib/schema";
 import {
   ChatContainer,
   ChatHistory,
@@ -25,9 +28,8 @@ export function ChatView({ chatSession }: ChatViewParams) {
     deleteMessage,
     editContent,
     handleSubmit,
-    hiddenMessages,
-    hideMessage,
     messages,
+    messageToggleHidden,
     status,
     stop,
     swipe,
@@ -88,6 +90,18 @@ export function ChatView({ chatSession }: ChatViewParams) {
     setDrawerOpen(true);
   }
 
+  function onContentEdit(
+    newText: string,
+    messageId: string,
+    contentId?: string,
+  ) {
+    if (!contentId) {
+      toast.error("Message is missing content ID. Unable to update");
+      return;
+    }
+    editContent(messageId, contentId, newText);
+  }
+
   return (
     <div className="flex h-screen flex-col bg-background">
       <Header
@@ -102,7 +116,7 @@ export function ChatView({ chatSession }: ChatViewParams) {
               {messages.map((message, i) => (
                 <ChatMessage
                   character={chatSession.character}
-                  isHidden={hiddenMessages[message.id] ?? false}
+                  isHidden={message.isHidden}
                   isStreaming={
                     status === "streaming" && i === messages.length - 1
                   }
@@ -121,8 +135,14 @@ export function ChatView({ chatSession }: ChatViewParams) {
                   }}
                   message={message}
                   onDelete={() => deleteMessage(message.id)}
-                  onEdit={(newText) => editContent(message.id, newText)}
-                  onHide={() => hideMessage(message.id)}
+                  onEdit={(newText) =>
+                    onContentEdit(
+                      newText,
+                      message.id,
+                      message.metadata?.contentId,
+                    )
+                  }
+                  onHide={() => messageToggleHidden(message.id)}
                   persona={chatSession.persona}
                 />
               ))}

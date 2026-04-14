@@ -87,6 +87,7 @@ model MessageContent {
   message    ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   role       MessageRole
   isActive   Boolean     @default(false)
+  /// [ChatMessageMetadata]
   metadata   Json?
   /// [ChatMessageParts]
   parts      Json

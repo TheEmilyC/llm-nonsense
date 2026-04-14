@@ -1,4 +1,4 @@
-import { UIDataTypes, UIMessagePart, UITools } from "ai";
+import { UIDataTypes, UIMessage, UIMessagePart, UITools } from "ai";
 import z from "zod";
 
 import {
@@ -16,8 +16,14 @@ export const CHAT_CACHE_KEY = "chat";
 
 // -- Base
 
-// trying to replicate these types DRY is a headache
+export const messageMetadataSchema = z.object({
+  contentId: dbIdValidator,
+});
+export type MessageMetadata = z.infer<typeof messageMetadataSchema>;
+
+// trying to replicate these types in Adapter Pattern is a headache
 export const messagePartSchema = z.custom<MessagePart>();
+export type LlmnUIMessage = UIMessage<MessageMetadata>;
 export type MessagePart = UIMessagePart<UIDataTypes, UITools>;
 
 export const chatEntitySchema = z.object({
@@ -40,9 +46,10 @@ export type ChatMessageEntity = z.infer<typeof chatMessageEntitySchema>;
 
 const messageContentEntitySchema = z.object({
   createdAt: z.date(),
-  id: z.string().min(1, "id is required"), // created by Vercel AI SDK so doesn't match dbIdValidator pattern
+  id: dbIdValidator,
   isActive: z.boolean(),
   messageId: dbIdValidator,
+  metadata: messageMetadataSchema,
   modifiedAt: z.date(),
   parts: z.custom<MessagePart>().array(),
   role: messageRoleSchema,
@@ -168,8 +175,9 @@ export const chatMessageDtoSchema = chatMessageEntitySchema
       .pick({
         id: true,
         isActive: true,
+        metadata: true,
         parts: true,
-        role: true,
+        role: true
       })
       .array(),
   });
