@@ -3,6 +3,7 @@
 import {
   createIdGenerator,
   generateText,
+  NoObjectGeneratedError,
   Output,
   stepCountIs,
   streamText,
@@ -15,6 +16,7 @@ import { getLorebookById } from "@/app/lorebook/_lib/data";
 import { LorebookReady, LorebookStatus } from "@/app/lorebook/_lib/schema";
 import { makeGetLorebookEntriesTool } from "@/app/lorebook/_lib/tools";
 import {
+  buildLorebookUpdatePrompt,
   buildPromptFromChat,
   buildSummaryPrompt,
 } from "@/app/prompt/_lib/prompt-builder";
@@ -105,25 +107,25 @@ export async function constructChatResponse({
   });
 }
 
-export async function generateMemorySummary(
+export async function generateLorebookUpdates(
   chat: ChatForMemoryGen,
-  lorebook?: LorebookReady,
+  lorebook: LorebookReady,
 ) {
-  const prompt = buildSummaryPrompt(chat.messages, lorebook);
-  logger.info("Memory Generation Request", { prompt });
-  const { output } = await generateText({
-    model: models.summary,
-    onFinish: (result) => {
-      logger.info("Memory Generation Result", {
-        finishReason: result.finishReason,
-        result: result.content,
-      });
-    },
-    output: Output.object({
-      schema: z.object({
-        lorebookUpdates: z
+  const prompt = buildLorebookUpdatePrompt(chat.messages, lorebook);
+  logger.info("Lorebook update request", { prompt });
+  try {
+    const { output } = await generateText({
+      model: models.lorebookUpdate,
+      onFinish: (result) => {
+        logger.info("Memory Generation Result", {
+          finishReason: result.finishReason,
+          result: result.content,
+        });
+      },
+      output: Output.object({
+        schema: z
           .object({
-            content: z.string().describe("New or Updated lorebook content"),
+            content: z.string().describe("Lorebook update suggestions"),
             file: z
               .string()
               .optional()
@@ -136,7 +138,50 @@ export async function generateMemorySummary(
               ),
           })
           .array(),
-        summary: z.object({
+      }),
+      prompt,
+      providerOptions: {
+        openrouter: {
+          reasoning: { effort: "medium" },
+        },
+      },
+      stopWhen: stepCountIs(20),
+      tools: {
+        ...(lorebook && {
+          getLorebookEntries: makeGetLorebookEntriesTool(lorebook),
+        }),
+      },
+    });
+    return output;
+  } catch (error) {
+    if (NoObjectGeneratedError.isInstance(error)) {
+      console.log("NoObjectGeneratedError");
+      console.log("Cause:", error.cause);
+      console.log("Text:", error.text);
+      console.log("Response:", error.response);
+      console.log("Usage:", error.usage);
+    }
+    throw error;
+  }
+}
+
+export async function generateMemorySummary(
+  chat: ChatForMemoryGen,
+  lorebook?: LorebookReady,
+) {
+  const prompt = buildSummaryPrompt(chat.messages, lorebook);
+  logger.info("Memory generation request", { prompt });
+  try {
+    const { output } = await generateText({
+      model: models.summary,
+      onFinish: (result) => {
+        logger.info("Memory Generation Result", {
+          finishReason: result.finishReason,
+          result: result.content,
+        });
+      },
+      output: Output.object({
+        schema: z.object({
           content: z.string(),
           synopsis: z
             .string()
@@ -145,14 +190,23 @@ export async function generateMemorySummary(
             ),
         }),
       }),
-    }),
-    prompt,
-    stopWhen: stepCountIs(20),
-    tools: {
-      ...(lorebook && {
-        getLorebookEntries: makeGetLorebookEntriesTool(lorebook),
-      }),
-    },
-  });
-  return JSON.stringify(output, null, 2);
+      prompt,
+      stopWhen: stepCountIs(20),
+      tools: {
+        ...(lorebook && {
+          getLorebookEntries: makeGetLorebookEntriesTool(lorebook),
+        }),
+      },
+    });
+    return output;
+  } catch (error) {
+    if (NoObjectGeneratedError.isInstance(error)) {
+      console.log("NoObjectGeneratedError");
+      console.log("Cause:", error.cause);
+      console.log("Text:", error.text);
+      console.log("Response:", error.response);
+      console.log("Usage:", error.usage);
+    }
+    throw error;
+  }
 }

@@ -23,12 +23,16 @@ import {
   ChatMessageEntity,
   GenerateMemoriesActionParams,
   generateMemoriesActionParamsSchema,
+  GenerateMemoriesActionResponse,
   UpdateChatMessageActionParams,
   updateChatMessageActionParamsSchema,
   UpdateContentActionParams,
   updateContentActionParamsSchema,
 } from "@/app/chat/_lib/schema";
-import { generateMemorySummary } from "@/app/chat/_lib/service";
+import {
+  generateLorebookUpdates,
+  generateMemorySummary,
+} from "@/app/chat/_lib/service";
 import { getLorebookById } from "@/app/lorebook/_lib/data";
 import { Lorebook, LorebookStatus } from "@/app/lorebook/_lib/schema";
 import { getPersonaById } from "@/app/persona/_lib/data";
@@ -144,7 +148,7 @@ export async function deleteMessageAction(
 
 export async function generateMemoriesAction(
   params: GenerateMemoriesActionParams,
-): Promise<ActionResponse<string>> {
+): Promise<ActionResponse<GenerateMemoriesActionResponse>> {
   const parseResult = generateMemoriesActionParamsSchema.safeParse(params);
   if (!parseResult.success) return toActionResponseError(parseResult.error);
   const { chatId, messageIds } = parseResult.data;
@@ -163,8 +167,22 @@ export async function generateMemoriesAction(
       lorebook = null;
     }
   }
-  const text = await generateMemorySummary(chat, lorebook ?? undefined);
-  return { data: text, success: true };
+  const memory = await generateMemorySummary(chat, lorebook ?? undefined);
+  let lorebookUpdate;
+  if (lorebook) lorebookUpdate = await generateLorebookUpdates(chat, lorebook);
+
+  const suggestions: GenerateMemoriesActionResponse = {
+    content: memory.content,
+    lorebook: lorebookUpdate
+      ? lorebookUpdate.map((update) => ({
+          content: update.content,
+          file: update.file,
+          summary: update.synopsis,
+        }))
+      : [],
+    summary: memory.synopsis,
+  };
+  return { data: suggestions, success: true };
 }
 
 export async function updateChatMessageAction(

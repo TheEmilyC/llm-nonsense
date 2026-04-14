@@ -133,6 +133,23 @@ export const chatForMemoryGenSchema = chatEntitySchema
   });
 export type ChatForMemoryGen = z.infer<typeof chatForMemoryGenSchema>;
 
+export const generateMemoriesActionResponseSchema = z.object({
+  content: z.string(),
+  lorebook: z
+    .object({
+      content: z.string(),
+      file: z.string().optional(),
+      originalContent: z.string().optional(),
+      summary: z.string().optional(),
+    })
+    .array()
+    .optional(),
+  summary: z.string(),
+});
+export type GenerateMemoriesActionResponse = z.infer<
+  typeof generateMemoriesActionResponseSchema
+>;
+
 // -- DTOs
 
 export const chatListDtoSchema = chatEntitySchema.pick({

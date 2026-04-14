@@ -2,7 +2,11 @@ import { MessageRole } from "@/app/_shared/schema";
 import { getCharacterRecord } from "@/app/character/_lib/data";
 import { ChatSession } from "@/app/chat/_lib/schema";
 import { getLorebookById } from "@/app/lorebook/_lib/data";
-import { Lorebook, LorebookStatus } from "@/app/lorebook/_lib/schema";
+import {
+  Lorebook,
+  LorebookReady,
+  LorebookStatus,
+} from "@/app/lorebook/_lib/schema";
 import { PromptFragmentType, PromptInjectTag } from "@/app/prompt/_lib/schema";
 import { NotFoundError } from "@/lib/error";
 
@@ -47,10 +51,10 @@ export class PromptBuilder {
   }: {
     maxTokens: number;
     promptSkeleton: Fragment[];
-    variables: Record<string, string>;
+    variables?: Record<string, string>;
   }) {
     this.maxTokens = maxTokens;
-    this.variables = variables;
+    if (variables) this.variables = variables;
     for (const fragment of promptSkeleton) {
       if (fragment.type === PromptFragmentType.chatHistory) {
         this.prompt.push({ ...fragment, tokens: 0 });
@@ -130,6 +134,58 @@ export class PromptBuilder {
       this.currentTokens += tokens;
     }
   }
+}
+
+export function buildLorebookUpdatePrompt(
+  messages: ChatMessage[],
+  lorebook: LorebookReady,
+) {
+  const promptBuilder = new PromptBuilder({
+    maxTokens: 20000,
+    promptSkeleton: [
+      {
+        content: `<instructions>
+        <lore_update>
+        Your job is to examine the text and produce update suggestions to existing lorebook files or new lorebook suggestions if the revelation is significant. Only incude new information in the following format:
+        # [Entry Title]
+        - New information revealed or changed by reveleations in the scene
+        - Include enough detail that it can be incorporated into the lorebook entry without needing the origonal text as context
+        - Also include suggestions of information that could be removed from the lorebook based on the scene revelations
+        </lore_update>
+        </instructions>
+        <lore>`,
+        role: "system",
+        type: PromptFragmentType.content,
+      },
+      {
+        content: "",
+        injectTag: PromptInjectTag.lorebook,
+        role: "system",
+        type: PromptFragmentType.inject,
+      },
+      {
+        content: "</lore>\n<scene>",
+        role: "system",
+        type: PromptFragmentType.content,
+      },
+      {
+        type: PromptFragmentType.chatHistory,
+      },
+      {
+        content: "</scene>",
+        role: "user",
+        type: PromptFragmentType.content,
+      },
+    ],
+  });
+
+  const lorebookPrompt = lorebook.index
+    .map((idx) => `${idx.filename}  -  ${idx.summary}`)
+    .join("\n");
+  promptBuilder.addToPrompt(PromptInjectTag.lorebook, lorebookPrompt);
+
+  promptBuilder.injectChatHistory(messages);
+  return promptBuilder.build();
 }
 
 export async function buildPromptFromChat({
@@ -232,13 +288,15 @@ export function buildSummaryPrompt(
         - Summarize how each character's **motives, emotions, and relationships** evolved.
         - Include subtext, tension, or silent implications.
         - Highlight key beats of conflict, vulnerability, trust, or power shifts.
+
+        ## Outcome & Continuity
+        - Detail resulting **decisions, emotional states, physical/magical effects, or narrative consequences**.
+        - Include all elements that influence future continuity (knowledge, relationships, injuries, promises, etc.).
+        - Note any unresolved threads or foreshadowed elements.
           
         Write compactly but completely — every line should add new information or insight. Synthesize redundant actions or dialogue into unified cause-effect-emotion beats.
         Favor compression over coverage whenever the two conflict; omit anything that can be inferred from context or established characterization.
         </summary_creation>
-        <lore_update>
-        Your second job is to examine the text and produce update suggestions to existing lorebook files or new lorebook suggestions if the revelation is significant. 
-        </lore_update>
         </instructions>
         <lore>`,
         role: "system",
@@ -264,7 +322,6 @@ export function buildSummaryPrompt(
         type: PromptFragmentType.content,
       },
     ],
-    variables: {},
   });
 
   if (lorebook && lorebook.status === LorebookStatus.Ready) {

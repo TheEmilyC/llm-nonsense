@@ -20,5 +20,8 @@ export const registry = createProviderRegistry({
 export const models = {
   chat: registry.languageModel("openrouter:anthropic/claude-opus-4.6"),
   deepseek: registry.languageModel("deepseek:deepseek-reasoner"),
-  summary: registry.languageModel("openrouter:anthropic/claude-sonnet-4.6"),
+  lorebookUpdate: registry.languageModel(
+    "openrouter:anthropic/claude-sonnet-4.6",
+  ),
+  summary: registry.languageModel("openrouter:anthropic/claude-haiku-4.5"),
 };

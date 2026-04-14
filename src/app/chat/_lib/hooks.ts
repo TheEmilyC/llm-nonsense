@@ -17,6 +17,7 @@ import {
   ChatMessageDto,
   ChatSessionDto,
   GenerateMemoriesActionParams,
+  GenerateMemoriesActionResponse,
 } from "@/app/chat/_lib/schema";
 import { ActionError, ActionResponse } from "@/lib/action-utils";
 
@@ -219,7 +220,7 @@ export function useGenerateMemories(onError?: (error: ActionError) => void) {
 
   function generateMemories(
     params: GenerateMemoriesActionParams,
-  ): Promise<ActionResponse<string>> {
+  ): Promise<ActionResponse<GenerateMemoriesActionResponse>> {
     return new Promise((resolve) => {
       startTransition(async () => {
         const res = await generateMemoriesAction(params);

@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { MemoryResultsDrawer } from "@/app/chat/_components/memory-results-drawer";
 import { useChatMessages, useGenerateMemories } from "@/app/chat/_lib/hooks";
-import { ChatSessionDto } from "@/app/chat/_lib/schema";
+import { ChatSessionDto, GenerateMemoriesActionResponse } from "@/app/chat/_lib/schema";
 import {
   ChatContainer,
   ChatHistory,
@@ -32,6 +33,9 @@ export function ChatView({ chatSession }: ChatViewParams) {
     swipe,
   } = useChatMessages(chatSession);
   const { generateMemories, isPending } = useGenerateMemories();
+  const [memoryResults, setMemoryResults] =
+    useState<GenerateMemoriesActionResponse | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [memoryStartIndex, _setMemoryStartIndex] = useState<
     number | undefined
   >();
@@ -80,8 +84,8 @@ export function ChatView({ chatSession }: ChatViewParams) {
       toast.error(res.error.message);
       return;
     }
-    // TODO: show text to user
-    console.log("text", res.data);
+    setMemoryResults(res.data ?? null);
+    setDrawerOpen(true);
   }
 
   return (
@@ -139,6 +143,11 @@ export function ChatView({ chatSession }: ChatViewParams) {
             onSubmit={handleSubmit}
           />
         </ChatContainer>
+        <MemoryResultsDrawer
+          data={memoryResults}
+          onOpenChange={setDrawerOpen}
+          open={drawerOpen}
+        />
       </div>
     </div>
   );
