@@ -175,8 +175,9 @@ export const chatMessageDtoSchema = chatMessageEntitySchema
       .pick({
         id: true,
         isActive: true,
+        metadata: true,
         parts: true,
-        role: true,
+        role: true
       })
       .array(),
   });

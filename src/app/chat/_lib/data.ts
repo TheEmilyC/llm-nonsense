@@ -289,6 +289,7 @@ export async function getChatSessionDto({
       contents: msg.contents.map((con) => ({
         id: con.id,
         isActive: con.isActive,
+        metadata: con.metadata ?? { contentId: con.id },
         parts: con.parts,
         role: con.role,
       })),

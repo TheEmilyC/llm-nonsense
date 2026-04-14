@@ -43,17 +43,6 @@ export function useChatMessages({
   );
   const [, startTransition] = useTransition();
 
-  // Map from UIMessage id (message id) to active content id for DB persistence
-  const contentIdMapRef = useRef(
-    new Map<string, string>(
-      initialMessages.flatMap((msg) => {
-        const activeContent =
-          msg.contents.find((c) => c.isActive) ?? msg.contents[0];
-        return activeContent ? [[msg.id, activeContent.id]] : [];
-      }),
-    ),
-  );
-
   const { messages, regenerate, sendMessage, setMessages, status, stop } =
     useChat<HookUIMessage>({
       messages: initialMessages.map((msg) => messageDtoToUIMessage(msg)),
@@ -141,7 +130,11 @@ export function useChatMessages({
     });
   };
 
-  const editContent = (messageId: string, newText: string) => {
+  const editContent = (
+    messageId: string,
+    contentId: string,
+    newText: string,
+  ) => {
     const updateParts = (parts: LlmnUIMessage["parts"]) =>
       parts.map((p) => (p.type === "text" ? { ...p, text: newText } : p));
 
@@ -155,15 +148,12 @@ export function useChatMessages({
         s.id === messageId ? { ...s, parts: updateParts(s.parts) } : s,
       ),
     );
-    const contentId = contentIdMapRef.current.get(messageId);
-    if (contentId) {
-      startTransition(async () => {
-        await updateMessageContentAction({
-          id: contentId,
-          update: { parts: [{ text: newText, type: "text" }] },
-        });
+    startTransition(async () => {
+      await updateMessageContentAction({
+        id: contentId,
+        update: { parts: [{ text: newText, type: "text" }] },
       });
-    }
+    });
   };
 
   return {
@@ -254,6 +244,7 @@ function messageDtoToUIMessage(chatMessage: ChatMessageDto): HookUIMessage {
   return {
     id: chatMessage.id,
     isHidden: chatMessage.isHidden,
+    metadata: activeContent.metadata,
     parts: activeContent.parts,
     role: activeContent.role,
   };
