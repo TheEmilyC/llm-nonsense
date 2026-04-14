@@ -1,16 +1,11 @@
 "use server";
 
-import {
-  createIdGenerator,
-  generateText,
-  Output,
-  stepCountIs,
-  streamText,
-} from "ai";
+import { createId } from "@paralleldrive/cuid2";
+import { generateText, Output, stepCountIs, streamText } from "ai";
 import z from "zod";
 
 import { createChatMessageContent, getChatSession } from "@/app/chat/_lib/data";
-import { ChatForMemoryGen, MessagePart } from "@/app/chat/_lib/schema";
+import { ChatForMemoryGen, LlmnUIMessage } from "@/app/chat/_lib/schema";
 import { getLorebookById } from "@/app/lorebook/_lib/data";
 import { LorebookReady, LorebookStatus } from "@/app/lorebook/_lib/schema";
 import { makeGetLorebookEntriesTool } from "@/app/lorebook/_lib/tools";
@@ -20,16 +15,12 @@ import {
   buildSummaryPrompt,
 } from "@/app/prompt/_lib/prompt-builder";
 import { models } from "@/lib/ai-registry";
-import { NotFoundError } from "@/lib/error";
+import { AppError, NotFoundError } from "@/lib/error";
 import { logger } from "@/lib/logger";
 
 interface ConstructChatResponseParams {
   chatId: string;
-  message: {
-    id: string;
-    parts: MessagePart[];
-    role: "assistant" | "system" | "user";
-  };
+  message: LlmnUIMessage;
   regenerate?: boolean;
 }
 
@@ -39,16 +30,19 @@ export async function constructChatResponse({
   regenerate,
 }: ConstructChatResponseParams) {
   // the user message will already exist in the DB during regenerate
-  if (!regenerate)
+  if (!regenerate) {
+    const userContentId = createId();
     await createChatMessageContent({
       chatId: chatId,
       messageContent: {
-        id: message.id,
+        id: userContentId,
         isActive: true,
+        metadata: { contentId: userContentId },
         parts: message.parts,
         role: message.role,
       },
     });
+  }
 
   const chat = await getChatSession({ id: chatId });
   if (!chat) throw new NotFoundError("Chat", chatId);
@@ -62,6 +56,11 @@ export async function constructChatResponse({
   });
 
   const { maxOutputTokens, maxSteps, temperature, topK, topP } = chat.prompt;
+
+  // create IDs ahead of time to support multiple content generations per message cleanly
+  const messageId =
+    regenerate && chat.messages.length > 0 ? chat.messages[0].id : createId();
+  const contentId = createId();
 
   // --send and stream result--
   logger.info("Chat generation request", { chatId, prompt, regenerate });
@@ -83,11 +82,13 @@ export async function constructChatResponse({
     },
     topK,
     topP,
-  }).toUIMessageStreamResponse({
-    generateMessageId: createIdGenerator({
-      prefix: "msg",
-      size: 16,
-    }),
+  }).toUIMessageStreamResponse<LlmnUIMessage>({
+    generateMessageId: () => messageId,
+    messageMetadata: ({ part }) => {
+      if (part.type === "start") {
+        return { contentId };
+      }
+    },
     onFinish: async ({ messages }) => {
       const sentMessage = messages[0];
       logger.info("Chat completion response", {
@@ -95,14 +96,15 @@ export async function constructChatResponse({
         regenerate,
         response: sentMessage,
       });
-      let messageId = undefined;
-      if (regenerate && chat.messages.length > 0)
-        messageId = chat.messages[0].id;
+      if (!sentMessage.metadata) {
+        throw new AppError("Sent message missing metadata", "INTERNAL_ERROR");
+      }
       await createChatMessageContent({
         chatId,
         messageContent: {
-          id: sentMessage.id,
+          id: contentId,
           isActive: true,
+          metadata: sentMessage.metadata,
           parts: sentMessage.parts,
           role: sentMessage.role,
         },

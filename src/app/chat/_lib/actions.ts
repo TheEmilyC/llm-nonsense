@@ -1,6 +1,6 @@
 "use server";
 
-import { createIdGenerator } from "ai";
+import { createId } from "@paralleldrive/cuid2";
 import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -70,16 +70,14 @@ export async function createChatFromStoryAction(
         char: character.card.name,
         user: persona ? persona.name : "",
       });
-      const idGenerator = createIdGenerator({
-        prefix: "msg",
-        size: 16,
-      });
 
+      const contentId = createId();
       await createChatMessageContent({
         chatId: newChat.id,
         messageContent: {
-          id: idGenerator(),
+          id: contentId,
           isActive: true,
+          metadata: { contentId },
           parts: [
             {
               text: message,

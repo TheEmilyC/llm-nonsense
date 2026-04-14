@@ -1,7 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, UIMessage } from "ai";
+import { DefaultChatTransport } from "ai";
 import { useRef, useState, useTransition } from "react";
 import { useDebouncedCallback } from "use-debounce";
 
@@ -18,6 +18,7 @@ import {
   ChatSessionDto,
   GenerateMemoriesActionParams,
   GenerateMemoriesActionResponse,
+  LlmnUIMessage,
 } from "@/app/chat/_lib/schema";
 import { ActionError, ActionResponse } from "@/lib/action-utils";
 
@@ -26,7 +27,7 @@ export function useChatMessages({
   messages: initialMessages,
 }: ChatSessionDto) {
   const isSwipeGenerateRef = useRef(false);
-  const [messageSwipes, setMessageSwipes] = useState<UIMessage[]>(
+  const [messageSwipes, setMessageSwipes] = useState<LlmnUIMessage[]>(
     initialMessages.length > 0
       ? getMessageSwipes(initialMessages[initialMessages.length - 1])
       : [],
@@ -138,7 +139,7 @@ export function useChatMessages({
   };
 
   const editContent = (messageId: string, newText: string) => {
-    const updateParts = (parts: UIMessage["parts"]) =>
+    const updateParts = (parts: LlmnUIMessage["parts"]) =>
       parts.map((p) => (p.type === "text" ? { ...p, text: newText } : p));
 
     setMessages(
@@ -233,7 +234,7 @@ export function useGenerateMemories(onError?: (error: ActionError) => void) {
   return { generateMemories, isPending };
 }
 
-function getMessageSwipes(message: ChatMessageDto): UIMessage[] {
+function getMessageSwipes(message: ChatMessageDto): LlmnUIMessage[] {
   return message.contents.map((con) => ({
     id: con.id,
     parts: con.parts,
@@ -241,7 +242,7 @@ function getMessageSwipes(message: ChatMessageDto): UIMessage[] {
   }));
 }
 
-function messageDtoToUIMessage(chatMessage: ChatMessageDto): UIMessage {
+function messageDtoToUIMessage(chatMessage: ChatMessageDto): LlmnUIMessage {
   const activeContent =
     chatMessage.contents.find((msg) => msg.isActive) ?? chatMessage.contents[0];
   if (!activeContent)

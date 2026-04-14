@@ -12,6 +12,7 @@ import {
   ChatSessionDto,
   chatSessionSchema,
   MessageContentEntity,
+  MessageMetadata,
 } from "@/app/chat/_lib/schema";
 import { Chat, ChatMessage, MessageContent } from "@/generated/client";
 import { NotFoundError } from "@/lib/error";
@@ -20,8 +21,12 @@ import { prisma } from "@/lib/prisma";
 
 export interface CreateChatMessageContentParams {
   chatId: string;
-  messageContent: Pick<MessageContent, "id" | "isActive" | "parts" | "role"> & {
-    metadata?: unknown;
+  messageContent: Pick<
+    MessageContent,
+    "isActive" | "metadata" | "parts" | "role"
+  > & {
+    id?: string;
+    metadata?: MessageMetadata;
   };
   messageId?: string;
 }
@@ -104,13 +109,13 @@ export async function createChatMessageContent({
     return tx.messageContent.create({
       data: {
         ...messageContent,
-        id: messageContent.id, // Vercel AI SDK Generated
         messageId: contentMsgId,
+        metadata: messageContent.metadata ?? undefined,
       },
     });
   });
 
-  return result;
+  return { ...result, metadata: result.metadata ?? { contentId: result.id } };
 }
 
 export async function deleteChat(id: string) {
@@ -363,7 +368,7 @@ export async function updateMessageContent({
     return tx.messageContent.update({
       data: {
         isActive: update.isActive,
-        metadata: update.metadata,
+        metadata: update.metadata ?? undefined,
         parts: update.parts,
         role: update.role,
       },
@@ -371,7 +376,7 @@ export async function updateMessageContent({
     });
   });
 
-  return result;
+  return { ...result, metadata: result.metadata ?? { contentId: id } };
 }
 
 function toChatListDto(chatList: Chat[]): ChatListDto[] {
