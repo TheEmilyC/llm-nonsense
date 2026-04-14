@@ -3,7 +3,6 @@
 import {
   createIdGenerator,
   generateText,
-  NoObjectGeneratedError,
   Output,
   stepCountIs,
   streamText,
@@ -113,56 +112,45 @@ export async function generateLorebookUpdates(
 ) {
   const prompt = buildLorebookUpdatePrompt(chat.messages, lorebook);
   logger.info("Lorebook update request", { prompt });
-  try {
-    const { output } = await generateText({
-      model: models.lorebookUpdate,
-      onFinish: (result) => {
-        logger.info("Memory Generation Result", {
-          finishReason: result.finishReason,
-          result: result.content,
-        });
+  const { output } = await generateText({
+    model: models.lorebookUpdate,
+    onFinish: (result) => {
+      logger.info("Memory Generation Result", {
+        finishReason: result.finishReason,
+        result: result.content,
+      });
+    },
+    output: Output.object({
+      schema: z
+        .object({
+          content: z.string().describe("Lorebook update suggestions"),
+          file: z
+            .string()
+            .optional()
+            .describe("The path to an existing lorebook entry if updating"),
+          synopsis: z
+            .string()
+            .optional()
+            .describe(
+              "One or two scentences to describe the entry if it is new or should change",
+            ),
+        })
+        .array(),
+    }),
+    prompt,
+    providerOptions: {
+      openrouter: {
+        reasoning: { effort: "medium" },
       },
-      output: Output.object({
-        schema: z
-          .object({
-            content: z.string().describe("Lorebook update suggestions"),
-            file: z
-              .string()
-              .optional()
-              .describe("The path to an existing lorebook entry if updating"),
-            synopsis: z
-              .string()
-              .optional()
-              .describe(
-                "One or two scentences to describe the entry if it is new or should change",
-              ),
-          })
-          .array(),
+    },
+    stopWhen: stepCountIs(20),
+    tools: {
+      ...(lorebook && {
+        getLorebookEntries: makeGetLorebookEntriesTool(lorebook),
       }),
-      prompt,
-      providerOptions: {
-        openrouter: {
-          reasoning: { effort: "medium" },
-        },
-      },
-      stopWhen: stepCountIs(20),
-      tools: {
-        ...(lorebook && {
-          getLorebookEntries: makeGetLorebookEntriesTool(lorebook),
-        }),
-      },
-    });
-    return output;
-  } catch (error) {
-    if (NoObjectGeneratedError.isInstance(error)) {
-      console.log("NoObjectGeneratedError");
-      console.log("Cause:", error.cause);
-      console.log("Text:", error.text);
-      console.log("Response:", error.response);
-      console.log("Usage:", error.usage);
-    }
-    throw error;
-  }
+    },
+  });
+  return output;
 }
 
 export async function generateMemorySummary(
@@ -171,42 +159,30 @@ export async function generateMemorySummary(
 ) {
   const prompt = buildSummaryPrompt(chat.messages, lorebook);
   logger.info("Memory generation request", { prompt });
-  try {
-    const { output } = await generateText({
-      model: models.summary,
-      onFinish: (result) => {
-        logger.info("Memory Generation Result", {
-          finishReason: result.finishReason,
-          result: result.content,
-        });
-      },
-      output: Output.object({
-        schema: z.object({
-          content: z.string(),
-          synopsis: z
-            .string()
-            .describe(
-              "One or two scentences to describe the scene in an index ",
-            ),
-        }),
+
+  const { output } = await generateText({
+    model: models.summary,
+    onFinish: (result) => {
+      logger.info("Memory Generation Result", {
+        finishReason: result.finishReason,
+        result: result.content,
+      });
+    },
+    output: Output.object({
+      schema: z.object({
+        content: z.string(),
+        synopsis: z
+          .string()
+          .describe("One or two scentences to describe the scene in an index "),
       }),
-      prompt,
-      stopWhen: stepCountIs(20),
-      tools: {
-        ...(lorebook && {
-          getLorebookEntries: makeGetLorebookEntriesTool(lorebook),
-        }),
-      },
-    });
-    return output;
-  } catch (error) {
-    if (NoObjectGeneratedError.isInstance(error)) {
-      console.log("NoObjectGeneratedError");
-      console.log("Cause:", error.cause);
-      console.log("Text:", error.text);
-      console.log("Response:", error.response);
-      console.log("Usage:", error.usage);
-    }
-    throw error;
-  }
+    }),
+    prompt,
+    stopWhen: stepCountIs(20),
+    tools: {
+      ...(lorebook && {
+        getLorebookEntries: makeGetLorebookEntriesTool(lorebook),
+      }),
+    },
+  });
+  return output;
 }
