@@ -55,7 +55,8 @@ export async function constructChatResponse({
     regenerate,
   });
 
-  const { maxOutputTokens, maxSteps, temperature, topK, topP } = chat.prompt;
+  const { maxSteps, temperature, topK, topP } = chat.prompt;
+  const maxOutputTokens = chat.prompt.maxOutputTokens ?? undefined;
 
   // create IDs ahead of time to support multiple content generations per message cleanly
   const messageId =

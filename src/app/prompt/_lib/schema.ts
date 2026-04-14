@@ -25,7 +25,7 @@ export enum PromptInjectTag {
 const promptEntitySchema = z.object({
   createdAt: z.date(),
   id: dbIdValidator,
-  maxOutputTokens: z.number().int().positive(),
+  maxOutputTokens: z.number().int().positive().optional(),
   maxSteps: z.number().int().positive(),
   maxTokens: z.number(),
   modifiedAt: z.date(),
