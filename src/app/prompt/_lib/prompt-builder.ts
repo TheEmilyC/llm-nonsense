@@ -289,6 +289,11 @@ export function buildSummaryPrompt(
         - Include subtext, tension, or silent implications.
         - Highlight key beats of conflict, vulnerability, trust, or power shifts.
 
+        ## Key Exchanges
+        - Include only pivotal dialogue that defines tone, emotion, or change.
+        - Attribute speakers by name; keep quotes short but exact.
+        - BE SELECTIVE. Maximum of 8 quotes.
+
         ## Outcome & Continuity
         - Detail resulting **decisions, emotional states, physical/magical effects, or narrative consequences**.
         - Include all elements that influence future continuity (knowledge, relationships, injuries, promises, etc.).
