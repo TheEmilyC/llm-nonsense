@@ -22,12 +22,14 @@ import {
 } from "@/app/chat/_lib/schema";
 import { ActionError, ActionResponse } from "@/lib/action-utils";
 
+type HookUIMessage = LlmnUIMessage & { isHidden: boolean };
+
 export function useChatMessages({
   id: chatId,
   messages: initialMessages,
 }: ChatSessionDto) {
   const isSwipeGenerateRef = useRef(false);
-  const [messageSwipes, setMessageSwipes] = useState<LlmnUIMessage[]>(
+  const [messageSwipes, setMessageSwipes] = useState<HookUIMessage[]>(
     initialMessages.length > 0
       ? getMessageSwipes(initialMessages[initialMessages.length - 1])
       : [],
@@ -41,10 +43,6 @@ export function useChatMessages({
   );
   const [, startTransition] = useTransition();
 
-  const [hiddenMessages, setHiddenMessages] = useState<Record<string, boolean>>(
-    Object.fromEntries(initialMessages.map((msg) => [msg.id, msg.isHidden])),
-  );
-
   // Map from UIMessage id (message id) to active content id for DB persistence
   const contentIdMapRef = useRef(
     new Map<string, string>(
@@ -57,7 +55,7 @@ export function useChatMessages({
   );
 
   const { messages, regenerate, sendMessage, setMessages, status, stop } =
-    useChat({
+    useChat<HookUIMessage>({
       messages: initialMessages.map((msg) => messageDtoToUIMessage(msg)),
       onFinish: ({ message }) => {
         if (isSwipeGenerateRef.current) {
@@ -127,9 +125,14 @@ export function useChatMessages({
     });
   };
 
-  const hideMessage = (messageId: string) => {
-    const newIsHidden = !(hiddenMessages[messageId] ?? false);
-    setHiddenMessages((prev) => ({ ...prev, [messageId]: newIsHidden }));
+  const messageToggleHidden = (messageId: string) => {
+    const message = messages.find((m) => m.id === messageId);
+    const newIsHidden = !(message?.isHidden ?? false);
+    setMessages(
+      messages.map((m) =>
+        m.id === messageId ? { ...m, isHidden: newIsHidden } : m,
+      ),
+    );
     startTransition(async () => {
       await updateChatMessageAction({
         id: messageId,
@@ -167,9 +170,8 @@ export function useChatMessages({
     deleteMessage,
     editContent,
     handleSubmit,
-    hiddenMessages,
-    hideMessage,
     messages,
+    messageToggleHidden,
     status,
     stop,
     swipe: {
@@ -234,15 +236,16 @@ export function useGenerateMemories(onError?: (error: ActionError) => void) {
   return { generateMemories, isPending };
 }
 
-function getMessageSwipes(message: ChatMessageDto): LlmnUIMessage[] {
+function getMessageSwipes(message: ChatMessageDto): HookUIMessage[] {
   return message.contents.map((con) => ({
     id: con.id,
+    isHidden: message.isHidden,
     parts: con.parts,
     role: con.role,
   }));
 }
 
-function messageDtoToUIMessage(chatMessage: ChatMessageDto): LlmnUIMessage {
+function messageDtoToUIMessage(chatMessage: ChatMessageDto): HookUIMessage {
   const activeContent =
     chatMessage.contents.find((msg) => msg.isActive) ?? chatMessage.contents[0];
   if (!activeContent)
@@ -250,6 +253,7 @@ function messageDtoToUIMessage(chatMessage: ChatMessageDto): LlmnUIMessage {
 
   return {
     id: chatMessage.id,
+    isHidden: chatMessage.isHidden,
     parts: activeContent.parts,
     role: activeContent.role,
   };
