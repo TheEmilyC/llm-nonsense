@@ -6,6 +6,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Clipboard,
   Clock,
   Cpu,
   Eye,
@@ -42,6 +43,7 @@ export const PromptIcon = MessageSquareCode;
 export const MemoryIcon = Brain;
 
 // Action icons
+export const CopyIcon = Clipboard;
 export const RefreshIcon = RefreshCw;
 export const DeleteIcon = Trash2;
 export const EditIcon = Pencil;
