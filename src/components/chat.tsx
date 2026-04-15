@@ -42,6 +42,7 @@ import {
   DeleteIcon,
   EditIcon,
   HideIcon,
+  InsertAssistantMessageIcon,
   LorebookIcon,
   MemoryIcon,
   MoveLeftIcon,
@@ -66,6 +67,7 @@ interface ChatInputParams {
   isLoading: boolean;
   isMemoryGenerating: boolean;
   memoryDisable: boolean;
+  onInsertAssistantMessage: () => void;
   onMemoryGenerate: () => void;
   onStop: () => void;
   onSubmit: (text: string) => void;
@@ -127,6 +129,7 @@ export function ChatInput({
   isLoading,
   isMemoryGenerating,
   memoryDisable,
+  onInsertAssistantMessage,
   onMemoryGenerate,
   onStop,
   onSubmit,
@@ -149,19 +152,32 @@ export function ChatInput({
       >
         <PromptInputTextarea placeholder="Send a message…" />
         <PromptInputActions className="flex items-center justify-between gap-2 pt-2">
-          <PromptInputAction tooltip="Generate Memory">
-            <Button
-              className="h-8 w-8 rounded-full"
-              disabled={memoryDisable}
-              onClick={onMemoryGenerate}
-              size="sm"
-              suppressHydrationWarning
-            >
-              <MemoryIcon
-                className={cn("h-4 w-4", isMemoryGenerating && "animate-spin")}
-              />
-            </Button>
-          </PromptInputAction>
+          <div className="flex items-center gap-2">
+            <PromptInputAction tooltip="Generate Memory">
+              <Button
+                className="h-8 w-8 rounded-full"
+                disabled={memoryDisable}
+                onClick={onMemoryGenerate}
+                size="sm"
+                suppressHydrationWarning
+              >
+                <MemoryIcon
+                  className={cn("h-4 w-4", isMemoryGenerating && "animate-spin")}
+                />
+              </Button>
+            </PromptInputAction>
+            <PromptInputAction tooltip="Insert blank assistant message">
+              <Button
+                className="h-8 w-8 rounded-full"
+                disabled={isLoading}
+                onClick={onInsertAssistantMessage}
+                size="sm"
+                suppressHydrationWarning
+              >
+                <InsertAssistantMessageIcon className="h-4 w-4" />
+              </Button>
+            </PromptInputAction>
+          </div>
           <PromptInputAction tooltip={isLoading ? "Stop" : "Send"}>
             <Button
               className="h-8 w-8 rounded-full"

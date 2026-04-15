@@ -28,6 +28,7 @@ export function ChatView({ chatSession }: ChatViewParams) {
     deleteMessage,
     editContent,
     handleSubmit,
+    insertBlankAssistantMessage,
     messages,
     messageToggleHidden,
     status,
@@ -158,6 +159,7 @@ export function ChatView({ chatSession }: ChatViewParams) {
             isLoading={status !== "ready"}
             isMemoryGenerating={isPending}
             memoryDisable={memoryStartIndex === undefined || isPending}
+            onInsertAssistantMessage={insertBlankAssistantMessage}
             onMemoryGenerate={onGenerateMemory}
             onStop={stop}
             onSubmit={handleSubmit}

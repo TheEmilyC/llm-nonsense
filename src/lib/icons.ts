@@ -19,6 +19,7 @@ import {
   ListStart,
   Lock,
   MessageSquareCode,
+  MessageSquarePlus,
   Moon,
   Pencil,
   RefreshCw,
@@ -54,6 +55,7 @@ export const RangeStartIcon = ListStart;
 export const RangeEndIcon = ListEnd;
 export const HideIcon = EyeOff;
 export const UnHideIcon = Eye;
+export const InsertAssistantMessageIcon = MessageSquarePlus;
 export const SendIcon = ArrowUp;
 export const StopIcon = Square;
 export const MoveLeftIcon = ChevronLeft;

@@ -180,6 +180,35 @@ export async function generateMemoriesAction(
   return { data: suggestions, success: true };
 }
 
+export async function insertBlankAssistantMessageAction(
+  chatId: string,
+): Promise<ActionResponse<{ contentId: string; id: string }>> {
+  const parseResult = dbIdValidator.safeParse(chatId);
+  if (!parseResult.success) return toActionResponseError(parseResult.error);
+
+  try {
+    const contentId = createId();
+    const content = await createChatMessageContent({
+      chatId,
+      messageContent: {
+        id: contentId,
+        isActive: true,
+        metadata: { contentId },
+        parts: [{ text: "", type: "text" }],
+        role: "assistant",
+      },
+    });
+    updateTag(`${CHAT_CACHE_KEY}-${chatId}`);
+    return { data: { contentId, id: content.messageId }, success: true };
+  } catch (err) {
+    logger.error("Failed to insert blank assistant message", {
+      chatId,
+      ...parseError(err),
+    });
+    return toActionResponseError(err);
+  }
+}
+
 export async function updateChatMessageAction(
   params: UpdateChatMessageActionParams,
 ): Promise<ActionResponse> {
