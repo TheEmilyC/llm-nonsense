@@ -158,7 +158,7 @@ export async function generateMemoriesAction(
         new NotFoundError("Lorebook", chat.lorebookId),
       );
     }
-    if (lorebook.status !== LorebookStatus.Ready) {
+    if (lorebook.status !== "READY") {
       lorebook = null;
     }
   }

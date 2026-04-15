@@ -6,11 +6,13 @@ export const LOREBOOK_CACHE_KEY = "lorebook";
 
 // -- Base
 
-export enum LorebookStatus {
-  Ready = "ready",
-  ServerUnavailable = "server-unavailable",
-  Unauthorized = "unauthorized",
-}
+const lorebookStatusSchema = z.enum([
+  "READY",
+  "SERVER_UNAVAILABLE",
+  "UNAUTHORIZED",
+  "ERRROR",
+]);
+export type LorebookStatus = z.infer<typeof lorebookStatusSchema>;
 
 export const lorebookEntitySchema = z.object({
   apiKey: z.string().min(1),
@@ -21,15 +23,20 @@ export const lorebookEntitySchema = z.object({
   port: z.number(),
 });
 
-const lorebookIndexSchema = z.object({
-  constant: z.boolean().optional(),
+export const lorebookIndexSchema = z.object({
   filename: z.string(),
-  keys: z.string().array(),
   name: z.string(),
   position: z.number(),
-  summary: z.string(),
   tags: z.string().array(),
 });
+export type LorebookIndex = z.infer<typeof lorebookIndexSchema>;
+
+const lorebookEntryIndexSchema = lorebookIndexSchema.extend({
+  aliases: z.string().array().optional(),
+  characters: z.string().array().optional(),
+  summary: z.string(),
+});
+export type LorebookEntryIndex = z.infer<typeof lorebookEntryIndexSchema>;
 
 const obsidianError = z.object({
   errorCode: z.number(),
@@ -46,21 +53,34 @@ export const lorebookFormSchema = z.object({
 export type LorebookFormValues = z.infer<typeof lorebookFormSchema>;
 
 const lorebookUnavailableSchema = z.object({
-  status: z.union([
-    z.literal(LorebookStatus.ServerUnavailable),
-    z.literal(LorebookStatus.Unauthorized),
-  ]),
+  status: lorebookStatusSchema.extract(["SERVER_UNAVAILABLE", "UNAUTHORIZED"]),
 });
+
+const lorebookErrorSchema = z.object({
+  error: obsidianError,
+  status: lorebookStatusSchema.extract(["ERRROR"]),
+});
+
+export const lorebookNotReadySchema = z.discriminatedUnion("status", [
+  lorebookUnavailableSchema,
+  lorebookErrorSchema,
+]);
+export type LorebookNotReady = z.infer<typeof lorebookNotReadySchema>;
+
 const lorebookReadySchema = z.object({
+  constants: lorebookEntryIndexSchema.array(),
+  context: lorebookIndexSchema.array(),
+  entries: lorebookEntryIndexSchema.array(),
   id: dbIdValidator,
-  index: lorebookIndexSchema.array(),
+  memories: lorebookEntryIndexSchema.array(),
   name: z.string(),
-  status: z.literal(LorebookStatus.Ready),
+  status: lorebookStatusSchema.extract(["READY"]),
 });
 export type LorebookReady = z.infer<typeof lorebookReadySchema>;
 
 export const lorebookSchema = z.discriminatedUnion("status", [
   lorebookUnavailableSchema,
+  lorebookErrorSchema,
   lorebookReadySchema,
 ]);
 export type Lorebook = z.infer<typeof lorebookSchema>;
@@ -83,27 +103,30 @@ export type GetLorebookActionParams = z.infer<
 
 // -- Obsidian schemas
 
+const lorebookFrontmatterSchema = z.object({
+  aliases: z.string().array().optional().nullable(),
+  characters: z.string().array().optional().nullable(),
+  keys: z.string().array().optional().nullable(),
+  position: z.number().optional().nullable(),
+  summary: z.string().optional().nullable(),
+  tags: z.string().array(),
+  title: z.string().optional(),
+});
+
 export const obsidianApiConnectionSchema = z.object({
   apiKey: z.string(),
   port: z.number(),
 });
 export type ObsidianApiConnection = z.infer<typeof obsidianApiConnectionSchema>;
 
-export const getObsidianIndexSuccessSchema = z
-  .object({
-    filename: z.string(),
-    result: z.object({
-      constant: z.string().optional().nullable(),
-      keys: z.string().array().nullable(),
-      position: z.number().optional().nullable(),
-      summary: z.string().nullable(),
-      tags: z.string().array(),
-      title: z.string().nullable(),
-    }),
-  })
-  .array();
+export const obsidianIndexSchema = z.object({
+  filename: z.string(),
+  result: lorebookFrontmatterSchema,
+});
+export type ObsidianIndex = z.infer<typeof obsidianIndexSchema>;
+
 export const getObsidianIndexResposneSchema = z.union([
-  getObsidianIndexSuccessSchema,
+  obsidianIndexSchema.array(),
   obsidianError,
 ]);
 export type GetLorebookIndexResposne = z.infer<
@@ -112,13 +135,7 @@ export type GetLorebookIndexResposne = z.infer<
 
 export const obsidianFileSchema = z.object({
   content: z.string(),
-  frontmatter: z.object({
-    aliases: z.string().array().optional().nullable(),
-    constant: z.string().optional().nullable(),
-    keys: z.string().array().optional().nullable(),
-    summary: z.string().optional().nullable(),
-    title: z.string().optional(),
-  }),
+  frontmatter: lorebookFrontmatterSchema,
   path: z.string(),
   stat: z.object({
     ctime: z.number(),
@@ -153,6 +170,7 @@ export type LorebookEntityDto = z.infer<typeof lorebookEntityDtoSchema>;
 
 export const lorebookStatusDtoSchema = z.discriminatedUnion("status", [
   lorebookUnavailableSchema,
-  lorebookReadySchema.omit({ index: true }),
+  lorebookErrorSchema,
+  lorebookReadySchema.omit({ constants: true, context: true, memories: true }),
 ]);
 export type LorebookStatusDto = z.infer<typeof lorebookStatusDtoSchema>;

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 
 import {
+  createLorebookAction,
   getLorebookAction,
   testConnectionAction,
   updateLorebookAction,
@@ -26,7 +27,7 @@ export function useCreateLorebook(onError?: (error: ActionError) => void) {
   function createLorebook(data: LorebookFormValues): Promise<ActionResponse> {
     return new Promise((resolve) => {
       startTransition(async () => {
-        const res = await createLorebook(data);
+        const res = await createLorebookAction(data);
         if (!res.success) onError?.(res.error);
         resolve(res);
       });

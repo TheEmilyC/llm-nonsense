@@ -42,7 +42,7 @@ export async function createPrompt({
       topP,
     },
   });
-  return { ...prompt, maxOutputTokens: prompt.maxOutputTokens ?? undefined };
+  return prompt;
 }
 
 export async function deletePrompt(id: string) {
@@ -55,7 +55,7 @@ export async function getPromptById(id: string): Promise<PromptEntity> {
 
   const prompt = await prisma.prompt.findUnique({ where: { id } });
   if (!prompt) throw new Error(`Prompt ID:${id} does not exist`);
-  return { ...prompt, maxOutputTokens: prompt.maxOutputTokens ?? undefined };
+  return prompt;
 }
 
 export async function getPromptDto(id: string): Promise<null | PromptDto> {

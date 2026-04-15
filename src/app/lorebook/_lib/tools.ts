@@ -13,7 +13,7 @@ export function makeGetLorebookEntriesTool(lorebook: LorebookReady) {
         files: entries,
         lorebookId: lorebook.id,
       });
-      return convertFilesToPrompt({ files });
+      return convertFilesToPrompt(files);
     },
     inputSchema: z.object({
       entries: z

@@ -1,41 +1,51 @@
 import { MessageRole } from "@/app/_shared/schema";
-import { getCharacterRecord } from "@/app/character/_lib/data";
+import { CharacterRecord } from "@/app/character/_lib/schema";
 import { ChatSession } from "@/app/chat/_lib/schema";
-import { getLorebookById } from "@/app/lorebook/_lib/data";
+import { LorebookEntryIndex, LorebookReady } from "@/app/lorebook/_lib/schema";
 import {
-  Lorebook,
-  LorebookReady,
-  LorebookStatus,
-} from "@/app/lorebook/_lib/schema";
-import { PromptFragmentType, PromptInjectTag } from "@/app/prompt/_lib/schema";
-import { NotFoundError } from "@/lib/error";
+  ChatHistoryFragment,
+  ContentFragment,
+  InjectFragment,
+  PromptInjectTag,
+} from "@/app/prompt/_lib/schema";
+
+type BuilderChatHistoryFragment = Pick<ChatHistoryFragment, "type">;
+
+type BuilderContentFragment = Pick<
+  ContentFragment,
+  "content" | "role" | "type"
+>;
+
+type BuilderInjectFragment = Pick<
+  InjectFragment,
+  "injectTag" | "role" | "type"
+> & {
+  content: string;
+};
 
 interface BuildPromptFromChatParams {
+  character: CharacterRecord;
   chat: ChatSession;
+  lorebook?: LorebookReady;
+  lorebookConstants?: string;
+  lorebookContext?: string;
   regenerate?: boolean;
 }
 
-type ChatHistoryFragment = {
-  type: PromptFragmentType.chatHistory;
-};
+interface BuildSummaryPromptParams {
+  lorebook?: LorebookReady;
+  lorebookConstants?: string;
+  lorebookContext?: string;
+  messages: ChatMessage[];
+}
 
 type ChatMessage = { content: string; role: MessageRole };
-
-type ContentFragment = {
-  content: string;
-  role: MessageRole;
-  type: PromptFragmentType.content;
-};
-
-type Fragment = ChatHistoryFragment | ContentFragment | InjectFragment;
+type Fragment =
+  | BuilderChatHistoryFragment
+  | BuilderContentFragment
+  | BuilderInjectFragment;
 
 type FragmentTokenCount = Fragment & { tokens: number };
-type InjectFragment = {
-  content: string;
-  injectTag: PromptInjectTag;
-  role: MessageRole;
-  type: PromptFragmentType.inject;
-};
 
 export class PromptBuilder {
   chatHistory: ChatMessage[] = [];
@@ -56,10 +66,10 @@ export class PromptBuilder {
     this.maxTokens = maxTokens;
     if (variables) this.variables = variables;
     for (const fragment of promptSkeleton) {
-      if (fragment.type === PromptFragmentType.chatHistory) {
+      if (fragment.type === "CHAT_HISTORY") {
         this.prompt.push({ ...fragment, tokens: 0 });
       }
-      if (fragment.type === PromptFragmentType.inject) {
+      if (fragment.type === "INJECT") {
         this.prompt.push({
           ...fragment,
           content: "",
@@ -67,7 +77,7 @@ export class PromptBuilder {
           tokens: 0,
         });
       }
-      if (fragment.type === PromptFragmentType.content) {
+      if (fragment.type === "CONTENT") {
         const hydreatedContent = hydratePrompt(
           fragment.content,
           this.variables,
@@ -83,10 +93,9 @@ export class PromptBuilder {
 
   addToPrompt(injectTag: PromptInjectTag, content: string) {
     const fragment = this.prompt.find(
-      (frag) =>
-        frag.type === PromptFragmentType.inject && frag.injectTag === injectTag,
+      (frag) => frag.type === "INJECT" && frag.injectTag === injectTag,
     );
-    if (!fragment || fragment.type !== PromptFragmentType.inject) return;
+    if (!fragment || fragment.type !== "INJECT") return;
     const hydreatedContent = hydratePrompt(content, this.variables);
     const tokens = estimateTokens(hydreatedContent);
     if (this.currentTokens + tokens > this.maxTokens)
@@ -98,7 +107,7 @@ export class PromptBuilder {
 
   build(): ChatMessage[] {
     return this.prompt.reduce<ChatMessage[]>((acc, fragment) => {
-      if (fragment.type === PromptFragmentType.chatHistory) {
+      if (fragment.type === "CHAT_HISTORY") {
         return acc.concat(this.chatHistory.reverse() ?? []);
       }
 
@@ -122,9 +131,7 @@ export class PromptBuilder {
   }
 
   injectChatHistory(messages: ChatMessage[]) {
-    const fragment = this.prompt.find(
-      (frag) => frag.type === PromptFragmentType.chatHistory,
-    );
+    const fragment = this.prompt.find((frag) => frag.type === "CHAT_HISTORY");
     if (!fragment) return;
     for (const message of messages) {
       const tokens = estimateTokens(message.content);
@@ -155,62 +162,51 @@ export function buildLorebookUpdatePrompt(
         </instructions>
         <lore>`,
         role: "system",
-        type: PromptFragmentType.content,
+        type: "CONTENT",
       },
       {
         content: "",
-        injectTag: PromptInjectTag.lorebook,
+        injectTag: "LOREBOOK_ENTRIES",
         role: "system",
-        type: PromptFragmentType.inject,
+        type: "INJECT",
       },
       {
         content: "</lore>\n<scene>",
         role: "system",
-        type: PromptFragmentType.content,
+        type: "CONTENT",
       },
       {
-        type: PromptFragmentType.chatHistory,
+        type: "CHAT_HISTORY",
       },
       {
         content: "</scene>",
         role: "user",
-        type: PromptFragmentType.content,
+        type: "CONTENT",
       },
     ],
   });
 
-  const lorebookPrompt = lorebook.index
+  const lorebookPrompt = lorebook.entries
     .map((idx) => `${idx.filename}  -  ${idx.summary}`)
     .join("\n");
-  promptBuilder.addToPrompt(PromptInjectTag.lorebook, lorebookPrompt);
+  promptBuilder.addToPrompt("LOREBOOK_ENTRIES", lorebookPrompt);
 
   promptBuilder.injectChatHistory(messages);
   return promptBuilder.build();
 }
 
 export async function buildPromptFromChat({
+  character,
   chat,
+  lorebook,
+  lorebookConstants,
+  lorebookContext,
   regenerate,
 }: BuildPromptFromChatParams): Promise<ChatMessage[]> {
-  const character = await getCharacterRecord(chat.character.id);
-  if (!character) throw new NotFoundError("Character", chat.character.id);
-  const lorebook = chat.lorebookId
-    ? await getLorebookById(chat.lorebookId)
-    : null;
-
   const promptBuilder = new PromptBuilder({
     maxTokens: chat.prompt.maxTokens,
     promptSkeleton: chat.prompt.promptFragments.map((frag) =>
-      frag.type === PromptFragmentType.chatHistory
-        ? { type: PromptFragmentType.chatHistory }
-        : frag.type === PromptFragmentType.content
-          ? frag
-          : {
-              content: "",
-              injectTag: frag.injectTag,
-              role: frag.role,
-              type: PromptFragmentType.inject,
-            },
+      frag.type === "INJECT" ? { ...frag, content: "" } : frag,
     ),
     variables: {
       char: character.card.name,
@@ -225,47 +221,44 @@ export async function buildPromptFromChat({
     ? chat.messages.slice(2)
     : chat.messages.slice(1);
 
-  promptBuilder.addToPrompt(PromptInjectTag.lastMessage, lastMessage.content);
+  promptBuilder.addToPrompt("LAST_MESSAGE", lastMessage.content);
   promptBuilder.addToPrompt(
-    PromptInjectTag.characterDescription,
+    "CHARACTER_DESCRIPTION",
     character.card.description,
   );
   promptBuilder.addToPrompt(
-    PromptInjectTag.characterPersonality,
+    "CHARACTER_PERSONALITY",
     character.card.personality,
   );
-  promptBuilder.addToPrompt(
-    PromptInjectTag.characterScenario,
-    character.card.scenario,
-  );
+  promptBuilder.addToPrompt("CHARACTER_SCENARIO", character.card.scenario);
 
   if (chat.persona) {
-    promptBuilder.addToPrompt(
-      PromptInjectTag.personaDescription,
-      chat.persona.description,
-    );
+    promptBuilder.addToPrompt("PERSONA_DESCRIPTION", chat.persona.description);
   }
   if (chat.world) {
-    promptBuilder.addToPrompt(
-      PromptInjectTag.worldDescription,
-      chat.world.description,
-    );
+    promptBuilder.addToPrompt("WORLD_DESCRIPTION", chat.world.description);
   }
-  if (lorebook && lorebook.status === LorebookStatus.Ready) {
-    const lorebookPrompt = lorebook.index
-      .map((idx) => `${idx.filename}  -  ${idx.summary}`)
-      .join("\n");
-    promptBuilder.addToPrompt(PromptInjectTag.lorebook, lorebookPrompt);
+  if (lorebook) {
+    if (lorebookContext)
+      promptBuilder.addToPrompt("LOREBOOK_CONTEXT", lorebookContext);
+    if (lorebookConstants)
+      promptBuilder.addToPrompt("LOREBOOK_CONSTANT", lorebookConstants);
+    const entriesPrompt = buildLorePromptTable(lorebook.entries);
+    promptBuilder.addToPrompt("LOREBOOK_ENTRIES", entriesPrompt);
+    const memoryPrompt = buildLorePromptTable(lorebook.memories);
+    promptBuilder.addToPrompt("LOREBOOK_MEMORIES", memoryPrompt);
   }
   promptBuilder.injectChatHistory(chatHistory);
 
   return promptBuilder.build();
 }
 
-export function buildSummaryPrompt(
-  messages: ChatMessage[],
-  lorebook?: Lorebook,
-): ChatMessage[] {
+export function buildSummaryPrompt({
+  lorebook,
+  lorebookConstants,
+  lorebookContext,
+  messages,
+}: BuildSummaryPromptParams): ChatMessage[] {
   // TODO: Remove hardcoded prompt
   const promptBuilder = new PromptBuilder({
     maxTokens: 20000,
@@ -307,35 +300,39 @@ export function buildSummaryPrompt(
         </instructions>
         <lore>`,
         role: "system",
-        type: PromptFragmentType.content,
+        type: "CONTENT",
       },
       {
         content: "",
-        injectTag: PromptInjectTag.lorebook,
+        injectTag: "LOREBOOK_ENTRIES",
         role: "system",
-        type: PromptFragmentType.inject,
+        type: "INJECT",
       },
       {
         content: "</lore>\n<scene>",
         role: "system",
-        type: PromptFragmentType.content,
+        type: "CONTENT",
       },
       {
-        type: PromptFragmentType.chatHistory,
+        type: "CHAT_HISTORY",
       },
       {
         content: "</scene>",
         role: "user",
-        type: PromptFragmentType.content,
+        type: "CONTENT",
       },
     ],
   });
 
-  if (lorebook && lorebook.status === LorebookStatus.Ready) {
-    const lorebookPrompt = lorebook.index
-      .map((idx) => `${idx.filename}  -  ${idx.summary}`)
-      .join("\n");
-    promptBuilder.addToPrompt(PromptInjectTag.lorebook, lorebookPrompt);
+  if (lorebook) {
+    if (lorebookContext)
+      promptBuilder.addToPrompt("LOREBOOK_CONTEXT", lorebookContext);
+    if (lorebookConstants)
+      promptBuilder.addToPrompt("LOREBOOK_CONSTANT", lorebookConstants);
+    const entriesPrompt = buildLorePromptTable(lorebook.entries);
+    promptBuilder.addToPrompt("LOREBOOK_ENTRIES", entriesPrompt);
+    const memoryPrompt = buildLorePromptTable(lorebook.memories);
+    promptBuilder.addToPrompt("LOREBOOK_MEMORIES", memoryPrompt);
   }
 
   promptBuilder.injectChatHistory(messages);
@@ -354,6 +351,22 @@ export function hydratePrompt(
       return "";
     }
   });
+}
+
+function buildLorePromptTable(entries: LorebookEntryIndex[]): string {
+  let entriesPrompt = "";
+  if (entries.length > 0) {
+    entriesPrompt +=
+      "| File Name | Aliases | Relevant Characters | Summary |\n| --- | --- | --- | --- |\n";
+    entriesPrompt += entries
+      .map(
+        (ent) =>
+          `| ${ent.filename} | ${ent.aliases?.join(", ")} | ${ent.characters?.join(", ")} | ${ent.summary} |`,
+      )
+      .join("\n");
+  }
+
+  return entriesPrompt;
 }
 
 function estimateTokens(text: string): number {

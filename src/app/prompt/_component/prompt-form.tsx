@@ -12,11 +12,7 @@ import {
   useWatch,
 } from "react-hook-form";
 
-import {
-  promptFormSchema,
-  PromptFormValues,
-  PromptFragmentType,
-} from "@/app/prompt/_lib/schema";
+import { promptFormSchema, PromptFormValues } from "@/app/prompt/_lib/schema";
 import { FieldInput } from "@/components/form-fields/field-input";
 import { SortableList } from "@/components/sortable-list";
 import { Button } from "@/components/ui/button";
@@ -87,7 +83,7 @@ export function PromptForm({
 
   const form = useForm<PromptFormValues>({
     defaultValues: defaultValues || {
-      maxOutputTokens: undefined,
+      maxOutputTokens: 0,
       maxSteps: 20,
       maxTokens: 80000,
       name: "",
@@ -133,7 +129,7 @@ export function PromptForm({
         />
         <FieldInput
           control={form.control}
-          label="Max Output Tokens"
+          label="Max Output Tokens (0 = Unlimited)"
           name="maxOutputTokens"
           type="number"
         />
@@ -172,7 +168,7 @@ export function PromptForm({
                 enabled: true,
                 name: "New Fragment",
                 role: "system",
-                type: PromptFragmentType.content,
+                type: "CONTENT",
               })
             }
             size="sm"
@@ -192,7 +188,7 @@ export function PromptForm({
             const index = fields.findIndex((f) => f._rhfId === field._rhfId);
             const watched = watchedFragments[index];
             const Icon =
-              watched?.type === PromptFragmentType.chatHistory
+              watched?.type === "CHAT_HISTORY"
                 ? ROLE_ICONS["history"]
                 : ROLE_ICONS[watched?.role ?? "system"];
             return (
@@ -220,13 +216,11 @@ export function PromptForm({
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-muted-foreground">
-                    {field.type === PromptFragmentType.content && "content"}
-                    {field.type === PromptFragmentType.inject &&
-                      field.injectTag}
-                    {field.type === PromptFragmentType.chatHistory &&
-                      "chatHistory"}
+                    {field.type === "CONTENT" && "content"}
+                    {field.type === "INJECT" && field.injectTag}
+                    {field.type === "CHAT_HISTORY" && "chatHistory"}
                   </span>
-                  {field.type === "content" ? (
+                  {field.type === "CONTENT" ? (
                     <Button
                       onClick={(e) => {
                         e.preventDefault();
@@ -274,7 +268,7 @@ export function PromptForm({
                   </Field>
                 )}
               />
-              {editingFragment?.type !== PromptFragmentType.chatHistory && (
+              {editingFragment?.type !== "CHAT_HISTORY" && (
                 <Controller
                   control={form.control}
                   name={`promptFragments.${editingIndex}.role`}
@@ -303,7 +297,7 @@ export function PromptForm({
                 />
               )}
 
-              {editingFragment?.type === "content" && (
+              {editingFragment?.type === "CONTENT" && (
                 <Controller
                   control={form.control}
                   name={`promptFragments.${editingIndex}.content`}

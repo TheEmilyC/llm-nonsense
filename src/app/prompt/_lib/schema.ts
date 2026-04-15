@@ -6,26 +6,31 @@ export const PROMPT_CACHE_KEY = "prompt";
 
 // -- Base
 
-export enum PromptFragmentType {
-  chatHistory = "chatHistory",
-  content = "content",
-  inject = "inject",
-}
+export const promptFragmentTypeSchema = z.enum([
+  "CHAT_HISTORY",
+  "CONTENT",
+  "INJECT",
+]);
+export type PromptFragmentType = z.infer<typeof promptFragmentTypeSchema>;
 
-export enum PromptInjectTag {
-  characterDescription = "characterDescription",
-  characterPersonality = "characterPersonality",
-  characterScenario = "characterScenario",
-  lastMessage = "lastMessage",
-  lorebook = "lorebook",
-  personaDescription = "personaDescription",
-  worldDescription = "worldDescription",
-}
+export const promptInjectTagSchema = z.enum([
+  "CHARACTER_DESCRIPTION",
+  "CHARACTER_PERSONALITY",
+  "CHARACTER_SCENARIO",
+  "LAST_MESSAGE",
+  "LOREBOOK_MEMORIES",
+  "LOREBOOK_CONTEXT",
+  "LOREBOOK_ENTRIES",
+  "LOREBOOK_CONSTANT",
+  "PERSONA_DESCRIPTION",
+  "WORLD_DESCRIPTION",
+]);
+export type PromptInjectTag = z.infer<typeof promptInjectTagSchema>;
 
 const promptEntitySchema = z.object({
   createdAt: z.date(),
   id: dbIdValidator,
-  maxOutputTokens: z.number().int().positive().optional(),
+  maxOutputTokens: z.number().int().min(0),
   maxSteps: z.number().int().positive(),
   maxTokens: z.number(),
   modifiedAt: z.date(),
@@ -55,18 +60,21 @@ const promptSettingsFields = {
 const contentFragmentSchema = baseFragmentSchema.extend({
   content: z.string().min(1),
   role: messageRoleSchema,
-  type: z.literal(PromptFragmentType.content),
+  type: promptFragmentTypeSchema.extract(["CONTENT"]),
 });
+export type ContentFragment = z.infer<typeof contentFragmentSchema>;
 
 const injectFragmentSchema = baseFragmentSchema.extend({
-  injectTag: z.enum(PromptInjectTag),
+  injectTag: promptInjectTagSchema,
   role: messageRoleSchema,
-  type: z.literal(PromptFragmentType.inject),
+  type: promptFragmentTypeSchema.extract(["INJECT"]),
 });
+export type InjectFragment = z.infer<typeof injectFragmentSchema>;
 
 const chatHistoryFragmentSchema = baseFragmentSchema.extend({
-  type: z.literal(PromptFragmentType.chatHistory),
+  type: promptFragmentTypeSchema.extract(["CHAT_HISTORY"]),
 });
+export type ChatHistoryFragment = z.infer<typeof chatHistoryFragmentSchema>;
 
 export const promptFragmentSchema = z.discriminatedUnion("type", [
   contentFragmentSchema,
