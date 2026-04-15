@@ -10,6 +10,7 @@ import {
   deleteChatAction,
   deleteMessageAction,
   generateMemoriesAction,
+  insertBlankAssistantMessageAction,
   updateChatMessageAction,
   updateMessageContentAction,
 } from "@/app/chat/_lib/actions";
@@ -130,6 +131,20 @@ export function useChatMessages({
     });
   };
 
+  const insertBlankAssistantMessage = async () => {
+    const res = await insertBlankAssistantMessageAction(chatId);
+    if (!res.success || !res.data) return;
+    const { id, contentId } = res.data;
+    const newMessage: HookUIMessage = {
+      id,
+      isHidden: false,
+      metadata: { contentId },
+      parts: [{ text: "", type: "text" }],
+      role: "assistant",
+    };
+    setMessages([...messages, newMessage]);
+  };
+
   const editContent = (
     messageId: string,
     contentId: string,
@@ -160,6 +175,7 @@ export function useChatMessages({
     deleteMessage,
     editContent,
     handleSubmit,
+    insertBlankAssistantMessage,
     messages,
     messageToggleHidden,
     status,
