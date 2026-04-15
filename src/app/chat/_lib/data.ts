@@ -15,7 +15,6 @@ import {
   MessageMetadata,
 } from "@/app/chat/_lib/schema";
 import { Chat, ChatMessage, MessageContent } from "@/generated/client";
-import { NotFoundError } from "@/lib/error";
 import { buildCharacterImageUrl, buildPersonaImageUrl } from "@/lib/image";
 import { prisma } from "@/lib/prisma";
 
@@ -85,23 +84,26 @@ export async function createChatMessageContent({
   messageId,
 }: CreateChatMessageContentParams): Promise<MessageContentEntity> {
   const result = await prisma.$transaction(async (tx) => {
-    let contentMsgId: string;
+    let contentMsgId: string | undefined;
     if (messageId) {
       const existingMsg = await tx.chatMessage.findUnique({
         where: { id: messageId },
       });
-      if (!existingMsg) throw new NotFoundError("ChatMessage", messageId);
-      contentMsgId = existingMsg.id;
-      if (messageContent.isActive) {
-        // only one message may be active at a time
-        await tx.messageContent.updateMany({
-          data: { isActive: false },
-          where: { messageId },
-        });
+      if (existingMsg) {
+        contentMsgId = existingMsg.id;
+        if (messageContent.isActive) {
+          // only one message may be active at a time
+          await tx.messageContent.updateMany({
+            data: { isActive: false },
+            where: { messageId },
+          });
+        }
       }
-    } else {
+    }
+
+    if (!contentMsgId) {
       const message = await tx.chatMessage.create({
-        data: { chatId },
+        data: { chatId, id: messageId },
       });
       contentMsgId = message.id;
     }
