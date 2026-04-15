@@ -55,7 +55,7 @@ export async function getPromptById(id: string): Promise<PromptEntity> {
 
   const prompt = await prisma.prompt.findUnique({ where: { id } });
   if (!prompt) throw new Error(`Prompt ID:${id} does not exist`);
-  return prompt;
+  return { ...prompt, maxOutputTokens: prompt.maxOutputTokens ?? undefined };
 }
 
 export async function getPromptDto(id: string): Promise<null | PromptDto> {
