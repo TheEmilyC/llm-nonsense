@@ -135,7 +135,7 @@ function ReasoningContent({
     >
       <div
         className={cn(
-          "text-muted-foreground prose prose-sm dark:prose-invert",
+          "text-muted-foreground prose prose-sm dark:prose-invert max-w-none",
           contentClassName
         )}
         ref={innerRef}
