@@ -1,7 +1,7 @@
 "use client";
 
 import { useLorebook } from "@/app/lorebook/_lib/hooks";
-import { LorebookStatus, LorebookStatusDto } from "@/app/lorebook/_lib/schema";
+import { LorebookStatusDto } from "@/app/lorebook/_lib/schema";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,13 +45,13 @@ export function CurrentLorebook({
         </Button>
       </span>
       <div className="mt-1">
-        {lorebook.status === LorebookStatus.Ready && (
+        {lorebook.status === "READY" && (
           <Badge variant="secondary">{lorebook.name}</Badge>
         )}
-        {lorebook.status === LorebookStatus.ServerUnavailable && (
+        {lorebook.status === "SERVER_UNAVAILABLE" && (
           <Badge variant="destructive">Server unavailable</Badge>
         )}
-        {lorebook.status === LorebookStatus.Unauthorized && (
+        {lorebook.status === "UNAUTHORIZED" && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Badge variant="ghost">Unauthorized</Badge>
@@ -59,6 +59,17 @@ export function CurrentLorebook({
             <TooltipContent>
               Your API key may be wrong, or you have the wrong Obsidian lorebook
               running.
+            </TooltipContent>
+          </Tooltip>
+        )}
+        {lorebook.status === "ERRROR" && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="destructive">Error</Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              Code: {lorebook.error.errorCode}
+              Message: {lorebook.error.message}
             </TooltipContent>
           </Tooltip>
         )}

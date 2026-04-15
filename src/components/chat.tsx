@@ -162,7 +162,10 @@ export function ChatInput({
                 suppressHydrationWarning
               >
                 <MemoryIcon
-                  className={cn("h-4 w-4", isMemoryGenerating && "animate-spin")}
+                  className={cn(
+                    "h-4 w-4",
+                    isMemoryGenerating && "animate-spin",
+                  )}
                 />
               </Button>
             </PromptInputAction>

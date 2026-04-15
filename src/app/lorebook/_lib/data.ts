@@ -1,26 +1,31 @@
 "use server";
 
 import { cacheTag } from "next/cache";
-import path from "path";
 
 import {
-  GetLorebookIndexResposne,
   getObsidianIndexResposneSchema,
   Lorebook,
   LOREBOOK_CACHE_KEY,
   LorebookEntityDto,
   LorebookEntityListDto,
-  LorebookStatus,
+  LorebookEntryIndex,
+  LorebookIndex,
+  LorebookNotReady,
   LorebookStatusDto,
   lorebookStatusDtoSchema,
   ObsidianApiConnection,
   ObsidianFile,
   obsidianFileResponseSchema,
+  ObsidianIndex,
 } from "@/app/lorebook/_lib/schema";
 import { Lorebook as LorebookEntity } from "@/generated/client";
 import {
+  LOREBOOK_ALWAYS_TAG,
+  LOREBOOK_CONTEXT_TAG,
+  LOREBOOK_MEMORY_TAG,
   LOREBOOK_NEVER_TAG,
   LOREBOOK_TAG,
+  LOREBOOK_TEMPLATES_FOLDER,
   OBSIDIAN_URL,
 } from "@/lib/env-variables";
 import { NotFoundError, ObsidianError } from "@/lib/error";
@@ -41,6 +46,13 @@ export interface UpdateLorebookEntityParams {
   id: string;
   update: Partial<Pick<LorebookEntity, "apiKey" | "name" | "port">>;
 }
+
+type FetchLorebookIndexResult =
+  | (LorebookNotReady & { success: false })
+  | {
+      index: ObsidianIndex[];
+      success: true;
+    };
 
 interface GetLorebookEntryParams {
   fileName: string;
@@ -74,56 +86,33 @@ export async function getLorebookById(id: string): Promise<Lorebook | null> {
   if (!entity) return null;
 
   // Get file index
-  let index: GetLorebookIndexResposne;
-  try {
-    const indexResponse = await fetch(`${OBSIDIAN_URL}:${entity.port}/search`, {
-      body: `TABLE title, tags, keys, summary, constant, position FROM ${LOREBOOK_TAG} and !${LOREBOOK_NEVER_TAG} and !"system/Templates"`,
-      headers: {
-        Authorization: `Bearer ${entity.apiKey}`,
-        "Content-type": "application/vnd.olrapi.dataview.dql+txt",
-      },
-      method: "POST",
-    });
-    if (!indexResponse.ok) {
-      logger.error("fetch lorebook file index request failed", {
-        lorebookId: id,
-        status: indexResponse.status,
-        statusText: indexResponse.statusText,
-      });
+  const indexResult = await fetchLorebookIndex({ entity, id });
+  if (!indexResult.success) return indexResult;
 
-      return { status: LorebookStatus.ServerUnavailable };
-    }
-    if (indexResponse.status === HttpStatus.UNAUTHORIZED) {
-      return { status: LorebookStatus.Unauthorized };
-    }
-    index = getObsidianIndexResposneSchema.parse(await indexResponse.json());
-  } catch (err) {
-    logger.error("Failed to get lorebook file index", {
-      id,
-      ...parseError(err),
-    });
-    return { status: LorebookStatus.ServerUnavailable };
+  // create index lists
+  const entryIndex: LorebookEntryIndex[] = [];
+  const constantIndex: LorebookEntryIndex[] = [];
+  const memoryIndex: LorebookEntryIndex[] = [];
+  const contextIndex: LorebookIndex[] = [];
+  for (const index of indexResult.index) {
+    if (index.result.tags.includes(LOREBOOK_ALWAYS_TAG))
+      constantIndex.push(toLorebookEntryIndex(index));
+    else if (index.result.tags.includes(LOREBOOK_CONTEXT_TAG))
+      contextIndex.push(toLorebookIndex(index));
+    else if (index.result.tags.includes(LOREBOOK_MEMORY_TAG))
+      memoryIndex.push(toLorebookEntryIndex(index));
+    else entryIndex.push(toLorebookEntryIndex(index));
   }
 
   // build lorebook
   const lorebook: Lorebook = {
+    constants: constantIndex,
+    context: contextIndex,
+    entries: entryIndex,
     id: entity.id,
-    index: Array.isArray(index)
-      ? index.map((idx) => ({
-          constant:
-            idx.result.constant && idx.result.constant === "true"
-              ? true
-              : false,
-          filename: idx.filename,
-          keys: idx.result.keys ?? [],
-          name: idx.result.title ?? path.basename(idx.filename),
-          position: idx.result.position ?? 10,
-          summary: idx.result.summary ?? "",
-          tags: idx.result.tags,
-        }))
-      : [],
+    memories: memoryIndex,
     name: entity.name,
-    status: LorebookStatus.Ready,
+    status: "READY",
   };
 
   return lorebook;
@@ -229,6 +218,53 @@ export async function updateLorebookEntity({
   return toLorebookEntityDto(entity);
 }
 
+async function fetchLorebookIndex({
+  entity,
+  id,
+}: {
+  entity: LorebookEntity;
+  id: string;
+}): Promise<FetchLorebookIndexResult> {
+  try {
+    const rawResponse = await fetch(`${OBSIDIAN_URL}:${entity.port}/search`, {
+      body: `TABLE title, tags, summary, position FROM #${LOREBOOK_TAG} and !#${LOREBOOK_NEVER_TAG} and !"${LOREBOOK_TEMPLATES_FOLDER}"`,
+      headers: {
+        Authorization: `Bearer ${entity.apiKey}`,
+        "Content-type": "application/vnd.olrapi.dataview.dql+txt",
+      },
+      method: "POST",
+    });
+    if (!rawResponse.ok) {
+      logger.error("fetch lorebook file index request failed", {
+        lorebookId: id,
+        rawResponse,
+        status: rawResponse.status,
+        statusText: rawResponse.statusText,
+      });
+      return { status: "SERVER_UNAVAILABLE", success: false };
+    }
+    if (rawResponse.status === HttpStatus.UNAUTHORIZED) {
+      return { status: "UNAUTHORIZED", success: false };
+    }
+    const result = getObsidianIndexResposneSchema.parse(
+      await rawResponse.json(),
+    );
+    if ("errorCode" in result) {
+      return { error: result, status: "ERRROR", success: false };
+    }
+    return {
+      index: result,
+      success: true,
+    };
+  } catch (err) {
+    logger.error("Failed to get lorebook file index", {
+      id,
+      ...parseError(err),
+    });
+    return { status: "SERVER_UNAVAILABLE", success: false };
+  }
+}
+
 function toLorebookEntityDto(lorebook: LorebookEntity): LorebookEntityDto {
   return {
     apiKey: lorebook.apiKey,
@@ -242,4 +278,21 @@ function toLorebookEntityListDto(
   lorebooks: LorebookEntity[],
 ): LorebookEntityListDto[] {
   return lorebooks.map(({ createdAt, id, name }) => ({ createdAt, id, name }));
+}
+
+function toLorebookEntryIndex(index: ObsidianIndex): LorebookEntryIndex {
+  return {
+    ...toLorebookIndex(index),
+    characters: index.result.characters ?? [],
+    summary: index.result.summary ?? "",
+  };
+}
+
+function toLorebookIndex(index: ObsidianIndex): LorebookIndex {
+  return {
+    filename: index.filename,
+    name: index.result.title ?? index.filename,
+    position: index.result.position ?? 50,
+    tags: index.result.tags,
+  };
 }

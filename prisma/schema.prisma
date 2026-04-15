@@ -120,7 +120,7 @@ model Prompt {
   id              String           @id @default(cuid())
   name            String
   maxTokens       Int              @default(80000)
-  maxOutputTokens Int?
+  maxOutputTokens Int              @default(0)
   maxSteps        Int              @default(20)
   temperature     Float            @default(0.9)
   topK            Int              @default(64)
@@ -132,20 +132,22 @@ model Prompt {
 }
 
 enum PromptInjectTag {
-  lastMessage
-  chatHistory
-  characterDescription
-  characterPersonality
-  characterScenario
-  personaDescription
-  worldDescription
-  lorebook
+  CHARACTER_DESCRIPTION
+  CHARACTER_PERSONALITY
+  CHARACTER_SCENARIO
+  LAST_MESSAGE
+  LOREBOOK_MEMORIES
+  LOREBOOK_CONTEXT
+  LOREBOOK_ENTRIES
+  LOREBOOK_CONSTANT
+  PERSONA_DESCRIPTION
+  WORLD_DESCRIPTION
 }
 
 enum PromptFragmentType {
-  chatHistory
-  content
-  inject
+  CHAT_HISTORY
+  CONTENT
+  INJECT
 }
 
 model PromptFragment {

@@ -10,10 +10,10 @@ import {
   ChatMessageEntity,
   ChatSession,
   ChatSessionDto,
-  chatSessionSchema,
   MessageContentEntity,
   MessageMetadata,
 } from "@/app/chat/_lib/schema";
+import { promptWithFragmentsSchema } from "@/app/prompt/_lib/schema";
 import { Chat, ChatMessage, MessageContent } from "@/generated/client";
 import { buildCharacterImageUrl, buildPersonaImageUrl } from "@/lib/image";
 import { prisma } from "@/lib/prisma";
@@ -222,8 +222,7 @@ export async function getChatSession({
   });
   if (!chat) return null;
 
-  // Prompt fragment parsing gets complicated, letting zod handle it
-  return chatSessionSchema.parse({
+  return {
     character: chat.story.character,
     id: chat.id,
     lorebookId: chat.story.lorebookId ?? undefined,
@@ -237,10 +236,15 @@ export async function getChatSession({
     })),
     name: chat.name,
     persona: chat.story.persona,
-    prompt: chat.story.prompt,
-    story: chat.story,
-    world: chat.story.world,
-  } as ChatSession);
+    // Prompt fragment parsing gets complicated, letting zod handle it
+    prompt: promptWithFragmentsSchema.parse(chat.story.prompt),
+    story: {
+      ...chat.story,
+      lorebookId: chat.story.lorebookId ?? undefined,
+      worldId: chat.story.worldId ?? undefined,
+    },
+    world: chat.story.world ?? undefined,
+  };
 }
 
 export async function getChatSessionDto({

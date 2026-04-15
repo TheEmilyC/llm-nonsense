@@ -14,8 +14,10 @@ export interface IndexEntry {
   summary: string;
 }
 
-interface ConvertFilesToPromptParams {
-  files: { content: string; path: string; title?: string; }[];
+interface ConvertFilesToPromptFile {
+  content: string;
+  path: string;
+  title?: string;
 }
 
 interface ScanLorebookIndexParams {
@@ -23,7 +25,7 @@ interface ScanLorebookIndexParams {
   scanText: string;
 }
 
-export function convertFilesToPrompt({ files }: ConvertFilesToPromptParams) {
+export function convertFilesToPrompt(files: ConvertFilesToPromptFile[]) {
   const lorebookPrompt = files.reduce((acc, file) => {
     const fileText = stripFrontMatter(file.content);
     const { cleanedText, header } = extractHeader(fileText);

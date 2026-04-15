@@ -4,10 +4,15 @@ import { createId } from "@paralleldrive/cuid2";
 import { generateText, Output, stepCountIs, streamText } from "ai";
 import z from "zod";
 
+import { getCharacterRecord } from "@/app/character/_lib/data";
 import { createChatMessageContent, getChatSession } from "@/app/chat/_lib/data";
 import { ChatForMemoryGen, LlmnUIMessage } from "@/app/chat/_lib/schema";
-import { getLorebookById } from "@/app/lorebook/_lib/data";
-import { LorebookReady, LorebookStatus } from "@/app/lorebook/_lib/schema";
+import {
+  getLorebookById,
+  getLorebookEntryList,
+} from "@/app/lorebook/_lib/data";
+import { convertFilesToPrompt } from "@/app/lorebook/_lib/lorebook-scanning";
+import { LorebookReady } from "@/app/lorebook/_lib/schema";
 import { makeGetLorebookEntriesTool } from "@/app/lorebook/_lib/tools";
 import {
   buildLorebookUpdatePrompt,
@@ -46,23 +51,53 @@ export async function constructChatResponse({
 
   const chat = await getChatSession({ id: chatId });
   if (!chat) throw new NotFoundError("Chat", chatId);
-  const lorebook = chat.lorebookId
+  const lorebookRaw = chat.lorebookId
     ? await getLorebookById(chat.lorebookId)
     : undefined;
+  const character = await getCharacterRecord(chat.character.id);
+  if (!character) throw new NotFoundError("Character", chat.character.id);
+
+  const lorebook = lorebookRaw?.status === "READY" ? lorebookRaw : undefined;
+
+  // get lorebook context and constants
+  let lorebookConstants: string | undefined;
+  let lorebookContext: string | undefined;
+  if (lorebook) {
+    const contextFileList = lorebook.context
+      .sort((a, b) => a.position - b.position)
+      .map((ctx) => ctx.filename);
+    const constantFileList = lorebook.constants
+      .sort((a, b) => a.position - b.position)
+      .map((con) => con.filename);
+
+    const [contextFiles, constantFiles] = await Promise.all([
+      getLorebookEntryList({ files: contextFileList, lorebookId: lorebook.id }),
+      getLorebookEntryList({
+        files: constantFileList,
+        lorebookId: lorebook.id,
+      }),
+    ]);
+    lorebookContext = convertFilesToPrompt(contextFiles);
+    lorebookConstants = convertFilesToPrompt(constantFiles);
+  }
 
   const prompt = await buildPromptFromChat({
+    character,
     chat,
+    lorebook,
+    lorebookConstants,
+    lorebookContext,
     regenerate,
   });
 
   const { maxSteps, temperature, topK, topP } = chat.prompt;
-  const maxOutputTokens = chat.prompt.maxOutputTokens ?? undefined;
+  const maxOutputTokens =
+    chat.prompt.maxOutputTokens === 0 ? undefined : chat.prompt.maxOutputTokens;
 
   // create IDs ahead of time to support multiple content generations per message cleanly
   const messageId =
     regenerate && chat.messages.length > 0 ? chat.messages[0].id : createId();
   const contentId = createId();
-
   // --send and stream result--
   logger.info("Chat generation request", { chatId, prompt, regenerate });
   return streamText({
@@ -77,8 +112,8 @@ export async function constructChatResponse({
     stopWhen: stepCountIs(maxSteps),
     temperature,
     tools: {
-      ...(lorebook?.status === LorebookStatus.Ready && {
-        getLorebookEntries: makeGetLorebookEntriesTool(lorebook),
+      ...(lorebookRaw?.status === "READY" && {
+        getLorebookEntries: makeGetLorebookEntriesTool(lorebookRaw),
       }),
     },
     topK,
@@ -166,7 +201,7 @@ export async function generateMemorySummary(
   chat: ChatForMemoryGen,
   lorebook?: LorebookReady,
 ) {
-  const prompt = buildSummaryPrompt(chat.messages, lorebook);
+  const prompt = buildSummaryPrompt({ lorebook, messages: chat.messages });
   logger.info("Memory generation request", { prompt });
 
   const { output } = await generateText({
