@@ -8,11 +8,16 @@ interface Params {
 export async function POST(req: Request, { params }: Params) {
   const { id } = await params;
   const body = await req.json();
-  const { content: message, trigger } = chatPostRequestBodySchema.parse(body);
+  const {
+    content: message,
+    model,
+    trigger,
+  } = chatPostRequestBodySchema.parse(body);
 
   return constructChatResponse({
     chatId: id,
     message: message,
+    model,
     regenerate: trigger === "regenerate-message",
   });
 }

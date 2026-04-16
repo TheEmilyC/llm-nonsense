@@ -16,8 +16,12 @@ export const CHAT_CACHE_KEY = "chat";
 
 // -- Base
 
+export const chatModelKeySchema = z.enum(["deepseek", "gemini", "glm", "opus"]);
+export type ChatModelKey = z.infer<typeof chatModelKeySchema>;
+
 export const messageMetadataSchema = z.object({
   contentId: dbIdValidator,
+  model: chatModelKeySchema.optional(),
 });
 export type MessageMetadata = z.infer<typeof messageMetadataSchema>;
 
@@ -102,6 +106,7 @@ export const chatPostRequestBodySchema = z.object({
     role: z.enum(["user", "system", "assistant"]),
   }),
   id: z.string(),
+  model: chatModelKeySchema,
   trigger: z.enum(["submit-message", "regenerate-message"]),
 });
 export type ChatPostRequestBody = z.infer<typeof chatPostRequestBodySchema>;
@@ -177,7 +182,7 @@ export const chatMessageDtoSchema = chatMessageEntitySchema
         isActive: true,
         metadata: true,
         parts: true,
-        role: true
+        role: true,
       })
       .array(),
   });

@@ -16,12 +16,16 @@ export const registry = createProviderRegistry({
   openrouter: openRouterProvider,
 });
 
-// Helper to get specialized models for specific tasks
-export const models = {
-  chat: registry.languageModel("openrouter:anthropic/claude-opus-4.6"),
+export const chatModels = {
   deepseek: registry.languageModel("deepseek:deepseek-reasoner"),
+  gemini: registry.languageModel("openrouter:google/gemini-3.1-pro-preview"),
+  glm: registry.languageModel("openrouter:z-ai/glm-5"),
+  opus: registry.languageModel("openrouter:anthropic/claude-opus-4.6"),
+};
+
+export const taskModels = {
   lorebookUpdate: registry.languageModel(
     "openrouter:anthropic/claude-sonnet-4.6",
   ),
-  summary: registry.languageModel("openrouter:anthropic/claude-haiku-4.5"),
+  summary: registry.languageModel("openrouter:anthropic/claude-sonnet-4.6"),
 };

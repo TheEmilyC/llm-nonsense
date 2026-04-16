@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { MemoryResultsDrawer } from "@/app/chat/_components/memory-results-drawer";
 import { useChatMessages, useGenerateMemories } from "@/app/chat/_lib/hooks";
 import {
+  ChatModelKey,
   ChatSessionDto,
   GenerateMemoriesActionResponse,
 } from "@/app/chat/_lib/schema";
@@ -25,16 +26,13 @@ export interface ChatViewParams {
 
 export function ChatView({ chatSession }: ChatViewParams) {
   const {
-    deleteMessage,
-    editContent,
     handleSubmit,
-    insertBlankAssistantMessage,
-    messages,
-    messageToggleHidden,
+    message: { messages, ...messageControl },
     status,
     stop,
-    swipe,
+    swipe: { nextSwipe, ...restSwipe },
   } = useChatMessages(chatSession);
+  const [chatModel, setChatModel] = useState<ChatModelKey>("opus");
   const { generateMemories, isPending } = useGenerateMemories();
   const [memoryResults, setMemoryResults] =
     useState<GenerateMemoriesActionResponse | null>(null);
@@ -100,7 +98,7 @@ export function ChatView({ chatSession }: ChatViewParams) {
       toast.error("Message is missing content ID. Unable to update");
       return;
     }
-    editContent(messageId, contentId, newText);
+    messageControl.editMessage(messageId, contentId, newText);
   }
 
   return (
@@ -135,7 +133,7 @@ export function ChatView({ chatSession }: ChatViewParams) {
                         : setMemoryStartIndex(i),
                   }}
                   message={message}
-                  onDelete={() => deleteMessage(message.id)}
+                  onDelete={() => messageControl.deleteMessage(message.id)}
                   onEdit={(newText) =>
                     onContentEdit(
                       newText,
@@ -143,7 +141,7 @@ export function ChatView({ chatSession }: ChatViewParams) {
                       message.metadata?.contentId,
                     )
                   }
-                  onHide={() => messageToggleHidden(message.id)}
+                  onHide={() => messageControl.messageToggleHidden(message.id)}
                   persona={chatSession.persona}
                 />
               ))}
@@ -153,16 +151,27 @@ export function ChatView({ chatSession }: ChatViewParams) {
             )}
             {lastMessage &&
               lastMessage.role === "assistant" &&
-              status !== "streaming" && <ChatSwipe swipe={swipe} />}
+              status !== "streaming" && (
+                <ChatSwipe
+                  swipe={{
+                    ...restSwipe,
+                    nextSwipe: () => nextSwipe(chatModel),
+                  }}
+                />
+              )}
           </ChatHistory>
           <ChatInput
             isLoading={status !== "ready"}
             isMemoryGenerating={isPending}
             memoryDisable={memoryStartIndex === undefined || isPending}
-            onInsertAssistantMessage={insertBlankAssistantMessage}
+            onInsertAssistantMessage={
+              messageControl.insertBlankAssistantMessage
+            }
             onMemoryGenerate={onGenerateMemory}
+            onModelChange={setChatModel}
             onStop={stop}
             onSubmit={handleSubmit}
+            selectedModel={chatModel}
           />
         </ChatContainer>
         <MemoryResultsDrawer

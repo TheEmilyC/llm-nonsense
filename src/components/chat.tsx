@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ReactNode, useState } from "react";
 
 import { EntityProfile } from "@/app/_shared/schema";
+import { ChatModelKey } from "@/app/chat/_lib/schema";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +31,13 @@ import {
   ReasoningTrigger,
 } from "@/components/ui/reasoning";
 import { ScrollButton } from "@/components/ui/scroll-button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
@@ -63,14 +71,23 @@ interface ChatHistoryProps {
   children: ReactNode;
 }
 
+const MODEL_LABELS: Record<ChatModelKey, string> = {
+  deepseek: "DeepSeek",
+  gemini: "Gemini",
+  glm: "GLM",
+  opus: "Opus",
+};
+
 interface ChatInputParams {
   isLoading: boolean;
   isMemoryGenerating: boolean;
   memoryDisable: boolean;
   onInsertAssistantMessage: () => void;
   onMemoryGenerate: () => void;
+  onModelChange: (model: ChatModelKey) => void;
   onStop: () => void;
-  onSubmit: (text: string) => void;
+  onSubmit: (text: string, model: ChatModelKey) => void;
+  selectedModel: ChatModelKey;
 }
 
 interface ChatMessageProps {
@@ -131,13 +148,15 @@ export function ChatInput({
   memoryDisable,
   onInsertAssistantMessage,
   onMemoryGenerate,
+  onModelChange,
   onStop,
   onSubmit,
+  selectedModel,
 }: ChatInputParams) {
   const [input, setInput] = useState("");
 
   const handleSubmit = () => {
-    onSubmit(input);
+    onSubmit(input, selectedModel);
     setInput("");
   };
 
@@ -181,23 +200,40 @@ export function ChatInput({
               </Button>
             </PromptInputAction>
           </div>
-          <PromptInputAction tooltip={isLoading ? "Stop" : "Send"}>
-            <Button
-              className="h-8 w-8 rounded-full"
-              disabled={!input.trim() && !isLoading}
-              onClick={isLoading ? onStop : handleSubmit}
-              size="sm"
-              /* disabled state causing hydration errors because of useChats
-              initializtion on server vs client */
-              suppressHydrationWarning
+          <div className="flex items-center gap-2">
+            <Select
+              onValueChange={(v) => onModelChange(v as ChatModelKey)}
+              value={selectedModel}
             >
-              {isLoading ? (
-                <StopIcon className="h-4 w-4" />
-              ) : (
-                <SendIcon className="h-4 w-4" />
-              )}
-            </Button>
-          </PromptInputAction>
+              <SelectTrigger className="h-8 w-28 rounded-full border-input/50 bg-transparent px-3 text-xs">
+                <SelectValue>{MODEL_LABELS[selectedModel]}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(MODEL_LABELS) as ChatModelKey[]).map((key) => (
+                  <SelectItem key={key} value={key}>
+                    {MODEL_LABELS[key]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <PromptInputAction tooltip={isLoading ? "Stop" : "Send"}>
+              <Button
+                className="h-8 w-8 rounded-full"
+                disabled={!input.trim() && !isLoading}
+                onClick={isLoading ? onStop : handleSubmit}
+                size="sm"
+                /* disabled state causing hydration errors because of useChats
+                initializtion on server vs client */
+                suppressHydrationWarning
+              >
+                {isLoading ? (
+                  <StopIcon className="h-4 w-4" />
+                ) : (
+                  <SendIcon className="h-4 w-4" />
+                )}
+              </Button>
+            </PromptInputAction>
+          </div>
         </PromptInputActions>
       </PromptInput>
     </div>
