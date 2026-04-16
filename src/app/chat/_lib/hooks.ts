@@ -16,6 +16,7 @@ import {
 } from "@/app/chat/_lib/actions";
 import {
   ChatMessageDto,
+  ChatModelKey,
   ChatSessionDto,
   GenerateMemoriesActionParams,
   GenerateMemoriesActionResponse,
@@ -61,10 +62,15 @@ export function useChatMessages({
       },
       transport: new DefaultChatTransport({
         api: `/api/chat/${chatId}`,
-        prepareSendMessagesRequest({ id, messages, trigger }) {
+        prepareSendMessagesRequest({ body, id, messages, trigger }) {
           //only send the last message to the server
           return {
-            body: { content: messages[messages.length - 1], id, trigger },
+            body: {
+              content: messages[messages.length - 1],
+              id,
+              model: body?.model,
+              trigger,
+            },
           };
         },
       }),
@@ -83,9 +89,9 @@ export function useChatMessages({
     debouncedUpdateMessageContent(messageSwipes[index].id);
   };
 
-  const nextSwipe = () => {
+  const nextSwipe = (model: ChatModelKey) => {
     if (swipeIndex >= messageSwipes.length - 1) {
-      handleSwipeGenerate();
+      handleSwipeGenerate(model);
     } else {
       setMessageSwipe(swipeIndex + 1);
     }
@@ -96,16 +102,16 @@ export function useChatMessages({
     setMessageSwipe(swipeIndex - 1);
   };
 
-  const handleSubmit = (text: string) => {
+  const handleSubmit = (text: string, model: ChatModelKey) => {
     if (text.trim()) {
       isSwipeGenerateRef.current = false;
-      sendMessage({ text });
+      sendMessage({ text }, { body: { model } });
     }
   };
 
-  const handleSwipeGenerate = () => {
+  const handleSwipeGenerate = (model: ChatModelKey) => {
     isSwipeGenerateRef.current = true;
-    regenerate();
+    regenerate({ body: { model } });
   };
 
   const deleteMessage = (messageId: string) => {
@@ -134,7 +140,7 @@ export function useChatMessages({
   const insertBlankAssistantMessage = async () => {
     const res = await insertBlankAssistantMessageAction(chatId);
     if (!res.success || !res.data) return;
-    const { id, contentId } = res.data;
+    const { contentId, id } = res.data;
     const newMessage: HookUIMessage = {
       id,
       isHidden: false,
@@ -145,7 +151,7 @@ export function useChatMessages({
     setMessages([...messages, newMessage]);
   };
 
-  const editContent = (
+  const editMessage = (
     messageId: string,
     contentId: string,
     newText: string,
@@ -172,12 +178,14 @@ export function useChatMessages({
   };
 
   return {
-    deleteMessage,
-    editContent,
     handleSubmit,
-    insertBlankAssistantMessage,
-    messages,
-    messageToggleHidden,
+    message: {
+      deleteMessage,
+      editMessage,
+      insertBlankAssistantMessage,
+      messages,
+      messageToggleHidden,
+    },
     status,
     stop,
     swipe: {

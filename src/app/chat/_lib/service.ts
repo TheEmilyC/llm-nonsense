@@ -6,7 +6,11 @@ import z from "zod";
 
 import { getCharacterRecord } from "@/app/character/_lib/data";
 import { createChatMessageContent, getChatSession } from "@/app/chat/_lib/data";
-import { ChatForMemoryGen, LlmnUIMessage } from "@/app/chat/_lib/schema";
+import {
+  ChatForMemoryGen,
+  ChatModelKey,
+  LlmnUIMessage,
+} from "@/app/chat/_lib/schema";
 import {
   getLorebookById,
   getLorebookEntryList,
@@ -19,19 +23,21 @@ import {
   buildPromptFromChat,
   buildSummaryPrompt,
 } from "@/app/prompt/_lib/prompt-builder";
-import { models } from "@/lib/ai-registry";
+import { chatModels, taskModels } from "@/lib/ai-registry";
 import { AppError, NotFoundError } from "@/lib/error";
 import { logger } from "@/lib/logger";
 
 interface ConstructChatResponseParams {
   chatId: string;
   message: LlmnUIMessage;
+  model: ChatModelKey;
   regenerate?: boolean;
 }
 
 export async function constructChatResponse({
   chatId,
   message,
+  model,
   regenerate,
 }: ConstructChatResponseParams) {
   // the user message will already exist in the DB during regenerate
@@ -102,7 +108,7 @@ export async function constructChatResponse({
   logger.info("Chat generation request", { chatId, prompt, regenerate });
   return streamText({
     maxOutputTokens,
-    model: models.chat,
+    model: chatModels[model],
     prompt,
     providerOptions: {
       openrouter: {
@@ -140,7 +146,7 @@ export async function constructChatResponse({
         messageContent: {
           id: contentId,
           isActive: true,
-          metadata: sentMessage.metadata,
+          metadata: { ...sentMessage.metadata, model },
           parts: sentMessage.parts,
           role: sentMessage.role,
         },
@@ -157,7 +163,7 @@ export async function generateLorebookUpdates(
   const prompt = buildLorebookUpdatePrompt(chat.messages, lorebook);
   logger.info("Lorebook update request", { prompt });
   const { output } = await generateText({
-    model: models.lorebookUpdate,
+    model: taskModels.lorebookUpdate,
     onFinish: (result) => {
       logger.info("Memory Generation Result", {
         finishReason: result.finishReason,
@@ -205,7 +211,7 @@ export async function generateMemorySummary(
   logger.info("Memory generation request", { prompt });
 
   const { output } = await generateText({
-    model: models.summary,
+    model: taskModels.summary,
     onFinish: (result) => {
       logger.info("Memory Generation Result", {
         finishReason: result.finishReason,
