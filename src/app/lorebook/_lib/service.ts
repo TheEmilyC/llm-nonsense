@@ -13,6 +13,7 @@ import {
 import { makeGetLorebookEntriesTool } from "@/app/lorebook/_lib/tools";
 import { PromptBuilder } from "@/app/prompt/_lib/prompt-builder";
 import { taskModels } from "@/lib/ai-registry";
+import { SIDE_PROMPT_TOKEN_LIMIT } from "@/lib/env-variables";
 import { AppError, NotFoundError } from "@/lib/error";
 import { logger } from "@/lib/logger";
 
@@ -35,7 +36,7 @@ export async function generateMemoryArc(lorebookId: string, files: string[]) {
   const lbEntries = await getLorebookEntryList({ files, lorebookId });
   const memories = `<memories>${convertFilesToPrompt(lbEntries)}</memories>`;
   const promptBuilder = new PromptBuilder({
-    maxTokens: 20000,
+    maxTokens: SIDE_PROMPT_TOKEN_LIMIT,
     promptSkeleton: [
       {
         content: memoryArcInstructionPrompt,

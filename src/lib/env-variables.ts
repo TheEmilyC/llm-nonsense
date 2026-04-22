@@ -4,6 +4,8 @@ export const WORKING_DIRECTORY = process.cwd();
 export const OBSIDIAN_URL = process.env.OBSIDIAN_URL ?? "http://127.0.0.1";
 export const PROMPT_FILE =
   process.env.PROMPT_FILE ?? "main-prompts/writer.json";
+export const SIDE_PROMPT_TOKEN_LIMIT =
+  Number(process.env.SIDE_PROMPT_TOKEN_LIMIT) ?? 40000;
 
 // -- Lorebooks
 export const LOREBOOK_TAG = process.env.LOREBOOK_TAG ?? "#lorebook";
