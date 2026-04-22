@@ -4,6 +4,13 @@ import { useLorebook } from "@/app/lorebook/_lib/hooks";
 import { LorebookStatusDto } from "@/app/lorebook/_lib/schema";
 import { Button } from "@/components/ui/button";
 import {
+  Drawer,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -35,14 +42,52 @@ export function CurrentLorebook({
 
   if (!lorebook) return null;
 
+  const refreshButton = (
+    <Button
+      disabled={isPending}
+      onClick={() => refreshLorebook()}
+      size="icon-xs"
+      title="Retry connection"
+      type="button"
+      variant="ghost"
+    >
+      <RefreshIcon className={isPending ? "animate-spin" : undefined} />
+    </Button>
+  );
+
+  if (lorebook.status === "READY") {
+    return (
+      <Drawer direction="right">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <DrawerTrigger asChild>
+            <button className="flex cursor-pointer items-center gap-2 transition-colors hover:text-foreground">
+              <LorebookIcon className="h-4 w-4 shrink-0" />
+              <span className="h-2 w-2 shrink-0 rounded-full bg-green-500" />
+              <span>{lorebook.name}</span>
+            </button>
+          </DrawerTrigger>
+          {refreshButton}
+        </div>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>{lorebook.name}</DrawerTitle>
+          </DrawerHeader>
+          <div className="flex-1 space-y-6 overflow-y-auto px-4 pb-4">
+            <EntrySection entries={lorebook.constants} title="Constants" />
+            <EntrySection entries={lorebook.entries} title="Entries" />
+            <EntrySection entries={lorebook.memories} title="Memories" />
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
+  }
+
   const label =
-    lorebook.status === "READY"
-      ? lorebook.name
-      : lorebook.status === "SERVER_UNAVAILABLE"
-        ? "Unavailable"
-        : lorebook.status === "UNAUTHORIZED"
-          ? "Unauthorized"
-          : "Error";
+    lorebook.status === "SERVER_UNAVAILABLE"
+      ? "Unavailable"
+      : lorebook.status === "UNAUTHORIZED"
+        ? "Unauthorized"
+        : "Error";
 
   const tooltipContent =
     lorebook.status === "UNAUTHORIZED"
@@ -56,21 +101,12 @@ export function CurrentLorebook({
       <LorebookIcon className="h-4 w-4 shrink-0" />
       <span
         className={cn(
-          "h-2 w-2 rounded-full shrink-0",
+          "h-2 w-2 shrink-0 rounded-full",
           STATUS_DOT_CLASS[lorebook.status],
         )}
       />
       <span>{label}</span>
-      <Button
-        disabled={isPending}
-        onClick={() => refreshLorebook()}
-        size="icon-xs"
-        title="Retry connection"
-        type="button"
-        variant="ghost"
-      >
-        <RefreshIcon className={isPending ? "animate-spin" : undefined} />
-      </Button>
+      {refreshButton}
     </div>
   );
 
@@ -81,5 +117,32 @@ export function CurrentLorebook({
       <TooltipTrigger asChild>{indicator}</TooltipTrigger>
       <TooltipContent>{tooltipContent}</TooltipContent>
     </Tooltip>
+  );
+}
+
+function EntrySection({
+  entries,
+  title,
+}: {
+  entries: { filename: string; name: string; summary: string }[];
+  title: string;
+}) {
+  if (entries.length === 0) return null;
+  return (
+    <section>
+      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {title}
+      </h3>
+      <ul className="space-y-2">
+        {entries.map((entry) => (
+          <li key={entry.filename}>
+            <p className="text-sm font-medium">{entry.name}</p>
+            {entry.summary && (
+              <p className="text-xs text-muted-foreground">{entry.summary}</p>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

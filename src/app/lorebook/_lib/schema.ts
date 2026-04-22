@@ -176,6 +176,6 @@ export type LorebookEntityDto = z.infer<typeof lorebookEntityDtoSchema>;
 export const lorebookStatusDtoSchema = z.discriminatedUnion("status", [
   lorebookUnavailableSchema,
   lorebookErrorSchema,
-  lorebookReadySchema.omit({ constants: true, context: true, memories: true }),
+  lorebookReadySchema.omit({ context: true }),
 ]);
 export type LorebookStatusDto = z.infer<typeof lorebookStatusDtoSchema>;
