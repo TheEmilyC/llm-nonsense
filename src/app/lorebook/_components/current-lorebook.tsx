@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { useLorebook } from "@/app/lorebook/_lib/hooks";
 import { LorebookStatusDto } from "@/app/lorebook/_lib/schema";
 import { Button } from "@/components/ui/button";
@@ -20,7 +22,9 @@ import { cn } from "@/lib/utils";
 
 interface CurrentLorebookProps {
   initialLorebook: LorebookStatusDto;
+  isArcPending?: boolean;
   lorebookId: string;
+  onGenerateArc?: (filenames: string[]) => void;
 }
 
 const STATUS_DOT_CLASS: Record<string, string> = {
@@ -33,7 +37,9 @@ const STATUS_DOT_CLASS: Record<string, string> = {
 
 export function CurrentLorebook({
   initialLorebook,
+  isArcPending,
   lorebookId,
+  onGenerateArc,
 }: CurrentLorebookProps) {
   const { isPending, lorebook, refreshLorebook } = useLorebook({
     initialLorebook,
@@ -75,7 +81,11 @@ export function CurrentLorebook({
           <div className="flex-1 space-y-6 overflow-y-auto px-4 pb-4">
             <EntrySection entries={lorebook.constants} title="Constants" />
             <EntrySection entries={lorebook.entries} title="Entries" />
-            <EntrySection entries={lorebook.memories} title="Memories" />
+            <MemoriesSection
+              isArcPending={isArcPending}
+              memories={lorebook.memories}
+              onGenerateArc={onGenerateArc}
+            />
           </div>
         </DrawerContent>
       </Drawer>
@@ -140,6 +150,70 @@ function EntrySection({
             {entry.summary && (
               <p className="text-xs text-muted-foreground">{entry.summary}</p>
             )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function MemoriesSection({
+  isArcPending,
+  memories,
+  onGenerateArc,
+}: {
+  isArcPending?: boolean;
+  memories: { filename: string; name: string; summary: string }[];
+  onGenerateArc?: (filenames: string[]) => void;
+}) {
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  if (memories.length === 0) return null;
+
+  function toggle(filename: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(filename)) next.delete(filename);
+      else next.add(filename);
+      return next;
+    });
+  }
+
+  return (
+    <section>
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Memories
+        </h3>
+        <Button
+          disabled={selected.size === 0 || isArcPending}
+          onClick={() => onGenerateArc?.(Array.from(selected))}
+          size="xs"
+          type="button"
+          variant="outline"
+        >
+          {isArcPending ? (
+            <RefreshIcon className="animate-spin" />
+          ) : (
+            "Generate Arc"
+          )}
+        </Button>
+      </div>
+      <ul className="space-y-2">
+        {memories.map((entry) => (
+          <li className="flex items-start gap-2" key={entry.filename}>
+            <input
+              checked={selected.has(entry.filename)}
+              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-primary"
+              onChange={() => toggle(entry.filename)}
+              type="checkbox"
+            />
+            <div>
+              <p className="text-sm font-medium">{entry.name}</p>
+              {entry.summary && (
+                <p className="text-xs text-muted-foreground">{entry.summary}</p>
+              )}
+            </div>
           </li>
         ))}
       </ul>

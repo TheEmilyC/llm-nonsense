@@ -55,8 +55,10 @@ type FetchLorebookIndexResult =
     };
 
 interface GetLorebookEntryParams {
+  apiKey: string;
   fileName: string;
   lorebookId: string;
+  port: number;
 }
 
 export async function createLorebookEntity({
@@ -90,11 +92,20 @@ export async function getLorebookById(id: string): Promise<Lorebook | null> {
   if (!indexResult.success) return indexResult;
 
   // create index lists
+  const sorted = [...indexResult.index].sort((a, b) => {
+    const aOrder = a.result.order ?? null;
+    const bOrder = b.result.order ?? null;
+    if (aOrder !== null && bOrder !== null) return aOrder - bOrder;
+    if (aOrder !== null) return -1;
+    if (bOrder !== null) return 1;
+    return (Number(a.result.ctime) || 0) - (Number(b.result.ctime) || 0);
+  });
+
   const entryIndex: LorebookEntryIndex[] = [];
   const constantIndex: LorebookEntryIndex[] = [];
   const memoryIndex: LorebookEntryIndex[] = [];
   const contextIndex: LorebookIndex[] = [];
-  for (const index of indexResult.index) {
+  for (const index of sorted) {
     if (index.result.tags.includes(LOREBOOK_ALWAYS_TAG))
       constantIndex.push(toLorebookEntryIndex(index));
     else if (index.result.tags.includes(LOREBOOK_CONTEXT_TAG))
@@ -145,40 +156,21 @@ export async function getLorebookEntityDtoList(): Promise<
   return toLorebookEntityListDto(result);
 }
 
-export async function getLorebookEntry({
-  fileName,
-  lorebookId,
-}: GetLorebookEntryParams): Promise<ObsidianFile> {
-  "use cache";
-  cacheTag(`${LOREBOOK_CACHE_KEY}-${lorebookId}`);
-
-  const lorebookEntity = await getLorebookEntityById(lorebookId);
-  if (!lorebookEntity) throw new NotFoundError("Lorebook", lorebookId);
-
-  const response = await fetch(
-    `${OBSIDIAN_URL}:${lorebookEntity.port}/vault/${fileName}`,
-    {
-      headers: {
-        Accept: "application/vnd.olrapi.note+json",
-        Authorization: `Bearer ${lorebookEntity.apiKey}`,
-      },
-    },
-  );
-
-  const file = obsidianFileResponseSchema.parse(await response.json());
-  if ("errorCode" in file) {
-    throw new ObsidianError(response.statusText, response.status);
-  }
-
-  return file;
-}
-
 export async function getLorebookEntryList({
   files,
   lorebookId,
 }: GetLorebookEntryListParams): Promise<ObsidianFile[]> {
+  const lorebookEntity = await getLorebookEntityById(lorebookId);
+  if (!lorebookEntity) throw new NotFoundError("Lorebook", lorebookId);
   return Promise.all(
-    files.map((fileName) => getLorebookEntry({ fileName, lorebookId })),
+    files.map((fileName) =>
+      getLorebookEntry({
+        apiKey: lorebookEntity.apiKey,
+        fileName,
+        lorebookId,
+        port: lorebookEntity.port,
+      }),
+    ),
   );
 }
 
@@ -227,7 +219,7 @@ async function fetchLorebookIndex({
 }): Promise<FetchLorebookIndexResult> {
   try {
     const rawResponse = await fetch(`${OBSIDIAN_URL}:${entity.port}/search`, {
-      body: `TABLE title, tags, summary, position FROM #${LOREBOOK_TAG} and !#${LOREBOOK_NEVER_TAG} and !"${LOREBOOK_TEMPLATES_FOLDER}"`,
+      body: `TABLE title, tags, summary, order, file.ctime as "ctime" FROM #${LOREBOOK_TAG} and !#${LOREBOOK_NEVER_TAG} and !"${LOREBOOK_TEMPLATES_FOLDER}"`,
       headers: {
         Authorization: `Bearer ${entity.apiKey}`,
         "Content-type": "application/vnd.olrapi.dataview.dql+txt",
@@ -265,6 +257,30 @@ async function fetchLorebookIndex({
   }
 }
 
+async function getLorebookEntry({
+  apiKey,
+  fileName,
+  lorebookId,
+  port,
+}: GetLorebookEntryParams): Promise<ObsidianFile> {
+  "use cache";
+  cacheTag(`${LOREBOOK_CACHE_KEY}-${lorebookId}`);
+
+  const response = await fetch(`${OBSIDIAN_URL}:${port}/vault/${fileName}`, {
+    headers: {
+      Accept: "application/vnd.olrapi.note+json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+  });
+
+  const file = obsidianFileResponseSchema.parse(await response.json());
+  if ("errorCode" in file) {
+    throw new ObsidianError(response.statusText, response.status);
+  }
+
+  return file;
+}
+
 function toLorebookEntityDto(lorebook: LorebookEntity): LorebookEntityDto {
   return {
     apiKey: lorebook.apiKey,
@@ -290,9 +306,10 @@ function toLorebookEntryIndex(index: ObsidianIndex): LorebookEntryIndex {
 
 function toLorebookIndex(index: ObsidianIndex): LorebookIndex {
   return {
+    createdAt: index.result.ctime,
     filename: index.filename,
     name: index.result.title ?? index.filename,
-    position: index.result.position ?? 50,
+    order: index.result.order ?? 50,
     tags: index.result.tags,
   };
 }

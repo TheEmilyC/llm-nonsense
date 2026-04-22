@@ -10,8 +10,11 @@ import {
   ChatSessionDto,
   GenerateMemoriesActionResponse,
 } from "@/app/chat/_lib/schema";
+import { ArcResultsDrawer } from "@/app/lorebook/_components/arc-results-drawer";
 import { CurrentLorebook } from "@/app/lorebook/_components/current-lorebook";
+import { useGenerateMemoryArc } from "@/app/lorebook/_lib/hooks";
 import { LorebookStatusDto } from "@/app/lorebook/_lib/schema";
+import { GenerateMemoryArcResult } from "@/app/lorebook/_lib/service";
 import {
   ChatContainer,
   ChatHistory,
@@ -38,9 +41,12 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
   } = useChatMessages(chatSession);
   const [chatModel, setChatModel] = useState<ChatModelKey>("opus");
   const { generateMemories, isPending } = useGenerateMemories();
+  const { generateMemoryArc, isPending: isArcPending } = useGenerateMemoryArc();
   const [memoryResults, setMemoryResults] =
     useState<GenerateMemoriesActionResponse | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [arcResults, setArcResults] = useState<GenerateMemoryArcResult | null>(null);
+  const [arcDrawerOpen, setArcDrawerOpen] = useState(false);
   const [memoryStartIndex, _setMemoryStartIndex] = useState<
     number | undefined
   >();
@@ -70,6 +76,20 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
 
   const lastMessage =
     messages.length > 0 ? messages[messages.length - 1] : null;
+
+  async function onGenerateArc(filenames: string[]) {
+    if (!chatSession.story.lorebookId) return;
+    const res = await generateMemoryArc({
+      files: filenames,
+      id: chatSession.story.lorebookId,
+    });
+    if (!res.success) {
+      toast.error(res.error.message);
+      return;
+    }
+    setArcResults(res.data ?? null);
+    setArcDrawerOpen(true);
+  }
 
   async function onGenerateMemory() {
     const memoryMessages =
@@ -115,7 +135,9 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
         {chatSession.story.lorebookId ? (
           <CurrentLorebook
             initialLorebook={lorebook}
+            isArcPending={isArcPending}
             lorebookId={chatSession.story.lorebookId}
+            onGenerateArc={onGenerateArc}
           />
         ) : (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -195,6 +217,11 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
           data={memoryResults}
           onOpenChange={setDrawerOpen}
           open={drawerOpen}
+        />
+        <ArcResultsDrawer
+          data={arcResults}
+          onOpenChange={setArcDrawerOpen}
+          open={arcDrawerOpen}
         />
       </div>
     </div>

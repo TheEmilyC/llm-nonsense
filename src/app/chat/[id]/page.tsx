@@ -37,7 +37,5 @@ async function ChatPageContent({ params }: Props) {
     };
   }
 
-  console.log("lorebook", lorebook);
-
   return <ChatView chatSession={chatSession} lorebook={lorebook} />;
 }

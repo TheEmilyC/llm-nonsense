@@ -5,10 +5,16 @@ import { generateText, Output, stepCountIs, streamText } from "ai";
 import z from "zod";
 
 import { getCharacterRecord } from "@/app/character/_lib/data";
+import { CharacterRecord } from "@/app/character/_lib/schema";
 import { createChatMessageContent, getChatSession } from "@/app/chat/_lib/data";
+import {
+  lorebookUpdatePrompt,
+  summaryInstructions,
+} from "@/app/chat/_lib/prompts";
 import {
   ChatForMemoryGen,
   ChatModelKey,
+  ChatSession,
   LlmnUIMessage,
 } from "@/app/chat/_lib/schema";
 import {
@@ -19,13 +25,36 @@ import { convertFilesToPrompt } from "@/app/lorebook/_lib/lorebook-scanning";
 import { LorebookReady } from "@/app/lorebook/_lib/schema";
 import { makeGetLorebookEntriesTool } from "@/app/lorebook/_lib/tools";
 import {
-  buildLorebookUpdatePrompt,
-  buildPromptFromChat,
-  buildSummaryPrompt,
+  BuilderChatMessage,
+  buildLorePromptTable,
+  PromptBuilder,
 } from "@/app/prompt/_lib/prompt-builder";
 import { chatModels, taskModels } from "@/lib/ai-registry";
 import { AppError, NotFoundError } from "@/lib/error";
 import { logger } from "@/lib/logger";
+
+interface BuildPromptFromChatParams {
+  character: CharacterRecord;
+  chat: ChatSession;
+  lorebook?: LorebookReady;
+  lorebookConstants?: string;
+  lorebookContext?: string;
+  regenerate?: boolean;
+}
+
+interface BuildSummaryPromptParams {
+  lorebook?: LorebookReady;
+  lorebookConstants?: string;
+  lorebookContext?: string;
+  messages: BuilderChatMessage[];
+}
+
+interface BuildSummaryPromptParams {
+  lorebook?: LorebookReady;
+  lorebookConstants?: string;
+  lorebookContext?: string;
+  messages: BuilderChatMessage[];
+}
 
 interface ConstructChatResponseParams {
   chatId: string;
@@ -69,12 +98,8 @@ export async function constructChatResponse({
   let lorebookConstants: string | undefined;
   let lorebookContext: string | undefined;
   if (lorebook) {
-    const contextFileList = lorebook.context
-      .sort((a, b) => a.position - b.position)
-      .map((ctx) => ctx.filename);
-    const constantFileList = lorebook.constants
-      .sort((a, b) => a.position - b.position)
-      .map((con) => con.filename);
+    const contextFileList = lorebook.context.map((ctx) => ctx.filename);
+    const constantFileList = lorebook.constants.map((con) => con.filename);
 
     const [contextFiles, constantFiles] = await Promise.all([
       getLorebookEntryList({ files: contextFileList, lorebookId: lorebook.id }),
@@ -213,7 +238,7 @@ export async function generateMemorySummary(
   const { output } = await generateText({
     model: taskModels.summary,
     onFinish: (result) => {
-      logger.info("Memory Generation Result", {
+      logger.info("Memory generation result", {
         finishReason: result.finishReason,
         result: result.content,
       });
@@ -223,7 +248,7 @@ export async function generateMemorySummary(
         content: z.string(),
         synopsis: z
           .string()
-          .describe("One or two scentences to describe the scene in an index "),
+          .describe("One or two scentences to describe the scene in an index"),
       }),
     }),
     prompt,
@@ -235,4 +260,168 @@ export async function generateMemorySummary(
     },
   });
   return output;
+}
+
+function buildLorebookUpdatePrompt(
+  messages: BuilderChatMessage[],
+  lorebook: LorebookReady,
+) {
+  const promptBuilder = new PromptBuilder({
+    maxTokens: 20000,
+    promptSkeleton: [
+      {
+        content: lorebookUpdatePrompt,
+        role: "system",
+        type: "CONTENT",
+      },
+      {
+        content: `<lore>`,
+        role: "system",
+        type: "CONTENT",
+      },
+      {
+        content: "",
+        injectTag: "LOREBOOK_ENTRIES",
+        role: "system",
+        type: "INJECT",
+      },
+      {
+        content: "</lore>\n<scene>",
+        role: "system",
+        type: "CONTENT",
+      },
+      {
+        type: "CHAT_HISTORY",
+      },
+      {
+        content: "</scene>",
+        role: "user",
+        type: "CONTENT",
+      },
+    ],
+  });
+
+  const lorebookPrompt = lorebook.entries
+    .map((idx) => `${idx.filename}  -  ${idx.summary}`)
+    .join("\n");
+  promptBuilder.addToPrompt("LOREBOOK_ENTRIES", lorebookPrompt);
+
+  promptBuilder.injectChatHistory(messages);
+  return promptBuilder.build();
+}
+
+async function buildPromptFromChat({
+  character,
+  chat,
+  lorebook,
+  lorebookConstants,
+  lorebookContext,
+  regenerate,
+}: BuildPromptFromChatParams): Promise<BuilderChatMessage[]> {
+  const promptBuilder = new PromptBuilder({
+    maxTokens: chat.prompt.maxTokens,
+    promptSkeleton: chat.prompt.promptFragments.map((frag) =>
+      frag.type === "INJECT" ? { ...frag, content: "" } : frag,
+    ),
+    variables: {
+      char: character.card.name,
+      user: chat.persona?.name ?? "",
+      world: chat.world?.name ?? "",
+    },
+  });
+
+  const lastMessage = regenerate ? chat.messages[1] : chat.messages[0];
+
+  const chatHistory = regenerate
+    ? chat.messages.slice(2)
+    : chat.messages.slice(1);
+
+  promptBuilder.addToPrompt("LAST_MESSAGE", lastMessage.content);
+  promptBuilder.addToPrompt(
+    "CHARACTER_DESCRIPTION",
+    character.card.description,
+  );
+  promptBuilder.addToPrompt(
+    "CHARACTER_PERSONALITY",
+    character.card.personality,
+  );
+  promptBuilder.addToPrompt("CHARACTER_SCENARIO", character.card.scenario);
+
+  if (chat.persona) {
+    promptBuilder.addToPrompt("PERSONA_DESCRIPTION", chat.persona.description);
+  }
+  if (chat.world) {
+    promptBuilder.addToPrompt("WORLD_DESCRIPTION", chat.world.description);
+  }
+  if (lorebook) {
+    if (lorebookContext)
+      promptBuilder.addToPrompt("LOREBOOK_CONTEXT", lorebookContext);
+    if (lorebookConstants)
+      promptBuilder.addToPrompt("LOREBOOK_CONSTANT", lorebookConstants);
+    const entriesPrompt = buildLorePromptTable(lorebook.entries);
+    promptBuilder.addToPrompt("LOREBOOK_ENTRIES", entriesPrompt);
+    const memoryPrompt = buildLorePromptTable(lorebook.memories);
+    promptBuilder.addToPrompt("LOREBOOK_MEMORIES", memoryPrompt);
+  }
+  promptBuilder.injectChatHistory(chatHistory);
+
+  return promptBuilder.build();
+}
+
+function buildSummaryPrompt({
+  lorebook,
+  lorebookConstants,
+  lorebookContext,
+  messages,
+}: BuildSummaryPromptParams): BuilderChatMessage[] {
+  // TODO: Remove hardcoded prompt
+  const promptBuilder = new PromptBuilder({
+    maxTokens: 20000,
+    promptSkeleton: [
+      {
+        content: summaryInstructions,
+        role: "system",
+        type: "CONTENT",
+      },
+      {
+        content: `<lore>`,
+        role: "system",
+        type: "CONTENT",
+      },
+
+      {
+        content: "",
+        injectTag: "LOREBOOK_ENTRIES",
+        role: "system",
+        type: "INJECT",
+      },
+      {
+        content: "</lore>\n<scene>",
+        role: "system",
+        type: "CONTENT",
+      },
+      {
+        type: "CHAT_HISTORY",
+      },
+      {
+        content: "</scene>",
+        role: "user",
+        type: "CONTENT",
+      },
+    ],
+  });
+
+  if (lorebook) {
+    if (lorebookContext)
+      promptBuilder.addToPrompt("LOREBOOK_CONTEXT", lorebookContext);
+    if (lorebookConstants)
+      promptBuilder.addToPrompt("LOREBOOK_CONSTANT", lorebookConstants);
+    const entriesPrompt = buildLorePromptTable(lorebook.entries);
+    promptBuilder.addToPrompt("LOREBOOK_ENTRIES", entriesPrompt);
+    const memoryPrompt = buildLorePromptTable(lorebook.memories);
+    promptBuilder.addToPrompt("LOREBOOK_MEMORIES", memoryPrompt);
+  }
+
+  promptBuilder.injectChatHistory(messages);
+  return promptBuilder.build();
 }

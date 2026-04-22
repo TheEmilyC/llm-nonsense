@@ -4,16 +4,19 @@ import { useState, useTransition } from "react";
 
 import {
   createLorebookAction,
+  generateMemoryArcAction,
   getLorebookAction,
   testConnectionAction,
   updateLorebookAction,
 } from "@/app/lorebook/_lib/actions";
 import {
+  GenerateMemoryArcActionParams,
   LorebookFormValues,
   LorebookStatusDto,
   ObsidianApiConnection,
   UpdateLorebookActionParams,
 } from "@/app/lorebook/_lib/schema";
+import { GenerateMemoryArcResult } from "@/app/lorebook/_lib/service";
 import { ActionError, ActionResponse } from "@/lib/action-utils";
 
 interface UseLorebookParams {
@@ -55,6 +58,27 @@ export function useDeleteLorebook(onError?: (error: ActionError) => void) {
 
   return {
     deleteLorebook,
+    isPending,
+  };
+}
+
+export function useGenerateMemoryArc(onError?: (error: ActionError) => void) {
+  const [isPending, startTransition] = useTransition();
+
+  function generateMemoryArc(
+    params: GenerateMemoryArcActionParams,
+  ): Promise<ActionResponse<GenerateMemoryArcResult>> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const res = await generateMemoryArcAction(params);
+        if (!res.success) onError?.(res.error);
+        resolve(res);
+      });
+    });
+  }
+
+  return {
+    generateMemoryArc,
     isPending,
   };
 }
