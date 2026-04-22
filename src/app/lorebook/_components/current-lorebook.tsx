@@ -2,19 +2,27 @@
 
 import { useLorebook } from "@/app/lorebook/_lib/hooks";
 import { LorebookStatusDto } from "@/app/lorebook/_lib/schema";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { RefreshIcon } from "@/lib/icons";
+import { LorebookIcon, RefreshIcon } from "@/lib/icons";
+import { cn } from "@/lib/utils";
 
 interface CurrentLorebookProps {
-  initialLorebook?: LorebookStatusDto;
+  initialLorebook: LorebookStatusDto;
   lorebookId: string;
 }
+
+const STATUS_DOT_CLASS: Record<string, string> = {
+  ERRROR: "bg-destructive",
+  NONE_SELECTED: "bg-muted-foreground/40",
+  READY: "bg-green-500",
+  SERVER_UNAVAILABLE: "bg-destructive",
+  UNAUTHORIZED: "bg-amber-500",
+};
 
 export function CurrentLorebook({
   initialLorebook,
@@ -25,55 +33,53 @@ export function CurrentLorebook({
     lorebookId,
   });
 
-  if (!lorebook) {
-    return <></>;
-  }
+  if (!lorebook) return null;
+
+  const label =
+    lorebook.status === "READY"
+      ? lorebook.name
+      : lorebook.status === "SERVER_UNAVAILABLE"
+        ? "Unavailable"
+        : lorebook.status === "UNAUTHORIZED"
+          ? "Unauthorized"
+          : "Error";
+
+  const tooltipContent =
+    lorebook.status === "UNAUTHORIZED"
+      ? "Your API key may be wrong."
+      : lorebook.status === "ERRROR"
+        ? `Code: ${lorebook.error.errorCode} — ${lorebook.error.message}`
+        : null;
+
+  const indicator = (
+    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <LorebookIcon className="h-4 w-4 shrink-0" />
+      <span
+        className={cn(
+          "h-2 w-2 rounded-full shrink-0",
+          STATUS_DOT_CLASS[lorebook.status],
+        )}
+      />
+      <span>{label}</span>
+      <Button
+        disabled={isPending}
+        onClick={() => refreshLorebook()}
+        size="icon-xs"
+        title="Retry connection"
+        type="button"
+        variant="ghost"
+      >
+        <RefreshIcon className={isPending ? "animate-spin" : undefined} />
+      </Button>
+    </div>
+  );
+
+  if (!tooltipContent) return indicator;
 
   return (
-    <div>
-      <span className="text-muted-foreground">
-        Current{" "}
-        <Button
-          disabled={isPending}
-          onClick={() => refreshLorebook()}
-          size="icon-xs"
-          title="Retry connection"
-          type="button"
-          variant="ghost"
-        >
-          <RefreshIcon className={isPending ? "animate-spin" : undefined} />
-        </Button>
-      </span>
-      <div className="mt-1">
-        {lorebook.status === "READY" && (
-          <Badge variant="secondary">{lorebook.name}</Badge>
-        )}
-        {lorebook.status === "SERVER_UNAVAILABLE" && (
-          <Badge variant="destructive">Server unavailable</Badge>
-        )}
-        {lorebook.status === "UNAUTHORIZED" && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="ghost">Unauthorized</Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              Your API key may be wrong, or you have the wrong Obsidian lorebook
-              running.
-            </TooltipContent>
-          </Tooltip>
-        )}
-        {lorebook.status === "ERRROR" && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Badge variant="destructive">Error</Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              Code: {lorebook.error.errorCode}
-              Message: {lorebook.error.message}
-            </TooltipContent>
-          </Tooltip>
-        )}
-      </div>
-    </div>
+    <Tooltip>
+      <TooltipTrigger asChild>{indicator}</TooltipTrigger>
+      <TooltipContent>{tooltipContent}</TooltipContent>
+    </Tooltip>
   );
 }

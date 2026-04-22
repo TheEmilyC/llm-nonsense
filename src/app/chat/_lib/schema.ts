@@ -197,9 +197,6 @@ export const chatSessionDtoSchema = chatEntitySchema
     character: entityProfileSchema,
     messages: chatMessageDtoSchema.array(),
     persona: entityProfileSchema,
-    story: z.object({
-      id: dbIdValidator,
-      name: z.string().min(1),
-    }),
+    story: storyEntitySchema.pick({ id: true, lorebookId: true, name: true }),
   });
 export type ChatSessionDto = z.infer<typeof chatSessionDtoSchema>;

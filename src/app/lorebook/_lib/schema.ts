@@ -11,6 +11,7 @@ const lorebookStatusSchema = z.enum([
   "SERVER_UNAVAILABLE",
   "UNAUTHORIZED",
   "ERRROR",
+  "NONE_SELECTED",
 ]);
 export type LorebookStatus = z.infer<typeof lorebookStatusSchema>;
 
@@ -53,7 +54,11 @@ export const lorebookFormSchema = z.object({
 export type LorebookFormValues = z.infer<typeof lorebookFormSchema>;
 
 const lorebookUnavailableSchema = z.object({
-  status: lorebookStatusSchema.extract(["SERVER_UNAVAILABLE", "UNAUTHORIZED"]),
+  status: lorebookStatusSchema.extract([
+    "SERVER_UNAVAILABLE",
+    "UNAUTHORIZED",
+    "NONE_SELECTED",
+  ]),
 });
 
 const lorebookErrorSchema = z.object({
