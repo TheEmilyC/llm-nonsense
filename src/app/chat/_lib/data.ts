@@ -310,6 +310,7 @@ export async function getChatSessionDto({
     },
     story: {
       id: chat.story.id,
+      lorebookId: chat.story.lorebookId ?? undefined,
       name: chat.story.name,
     },
   };
