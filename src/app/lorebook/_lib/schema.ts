@@ -107,17 +107,28 @@ export type GetLorebookActionParams = z.infer<
   typeof getLorebookActionParamsSchema
 >;
 
+export const generateMemoryArcActionParamsSchema = z.object({
+  files: z.string().array(),
+  id: dbIdValidator,
+});
+export type GenerateMemoryArcActionParams = z.infer<
+  typeof generateMemoryArcActionParamsSchema
+>;
+
 // -- Obsidian schemas
 
 const lorebookFrontmatterSchema = z.object({
   aliases: z.string().array().optional().nullable(),
   characters: z.string().array().optional().nullable(),
-  ctime: z.coerce.date(),
   keys: z.string().array().optional().nullable(),
   order: z.number().optional().nullable(),
   summary: z.string().optional().nullable(),
   tags: z.string().array(),
   title: z.string().optional(),
+});
+
+const lorebookIndexResult = lorebookFrontmatterSchema.extend({
+  ctime: z.coerce.date(),
 });
 
 export const obsidianApiConnectionSchema = z.object({
@@ -128,7 +139,7 @@ export type ObsidianApiConnection = z.infer<typeof obsidianApiConnectionSchema>;
 
 export const obsidianIndexSchema = z.object({
   filename: z.string(),
-  result: lorebookFrontmatterSchema,
+  result: lorebookIndexResult,
 });
 export type ObsidianIndex = z.infer<typeof obsidianIndexSchema>;
 

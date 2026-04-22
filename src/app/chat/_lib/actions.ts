@@ -31,7 +31,7 @@ import {
 } from "@/app/chat/_lib/schema";
 import { generateMemorySummary } from "@/app/chat/_lib/service";
 import { getLorebookById } from "@/app/lorebook/_lib/data";
-import { Lorebook, LorebookStatus } from "@/app/lorebook/_lib/schema";
+import { Lorebook } from "@/app/lorebook/_lib/schema";
 import { getPersonaById } from "@/app/persona/_lib/data";
 import { hydratePrompt } from "@/app/prompt/_lib/prompt-builder";
 import { getStoryById } from "@/app/story/_lib/data";

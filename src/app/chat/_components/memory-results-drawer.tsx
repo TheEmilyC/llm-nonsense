@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
-
 import { GenerateMemoriesActionResponse } from "@/app/chat/_lib/schema";
+import { CopyButton } from "@/components/copy-button";
 import {
   Drawer,
   DrawerContent,
@@ -11,7 +10,6 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Markdown } from "@/components/ui/markdown";
-import { ConfirmIcon, CopyIcon } from "@/lib/icons";
 
 interface MemoryResultsDrawerProps {
   data: GenerateMemoriesActionResponse | null;
@@ -96,29 +94,5 @@ export function MemoryResultsDrawer({
         )}
       </DrawerContent>
     </Drawer>
-  );
-}
-
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-
-  function handleCopy() {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
-  }
-
-  const Icon = copied ? ConfirmIcon : CopyIcon;
-
-  return (
-    <button
-      aria-label="Copy to clipboard"
-      className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-      onClick={handleCopy}
-      type="button"
-    >
-      <Icon className="size-3.5" />
-    </button>
   );
 }

@@ -2,7 +2,7 @@ GET https://127.0.0.1:27124/
 
 ### Read file
 
-GET http://127.0.0.1:27123/vault/lorebook/characters/thea-ashworth.md HTTP/1.1
+GET http://127.0.0.1:27123/vault/lorebook/characters/thea/thea-ashworth.md HTTP/1.1
 Accept: application/vnd.olrapi.note+json
 Authorization: Bearer 315608501d039714d6139d5da6e0ccd0636e195dc900457210de9124c5c63194
 
@@ -16,7 +16,7 @@ POST http://127.0.0.1:27123/search/
 Authorization: Bearer 315608501d039714d6139d5da6e0ccd0636e195dc900457210de9124c5c63194
 Content-Type: application/vnd.olrapi.dataview.dql+txt
 
-TABLE title, tags, summary, order, characters, file.ctime FROM #lorebook and !#lorebook-never and !"system/templates" SORT order ASC, file.ctime DESC
+TABLE title, tags, summary, order, characters, file.ctime as "ctime" FROM #lorebook and !#lorebook-never and !"system/templates" SORT order ASC, file.ctime DESC
 
 
 ### Write file test

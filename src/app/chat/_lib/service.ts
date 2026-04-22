@@ -238,7 +238,7 @@ export async function generateMemorySummary(
   const { output } = await generateText({
     model: taskModels.summary,
     onFinish: (result) => {
-      logger.info("Memory Generation Result", {
+      logger.info("Memory generation result", {
         finishReason: result.finishReason,
         result: result.content,
       });
@@ -248,7 +248,7 @@ export async function generateMemorySummary(
         content: z.string(),
         synopsis: z
           .string()
-          .describe("One or two scentences to describe the scene in an index "),
+          .describe("One or two scentences to describe the scene in an index"),
       }),
     }),
     prompt,

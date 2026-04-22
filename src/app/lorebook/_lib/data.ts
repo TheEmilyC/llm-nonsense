@@ -55,8 +55,10 @@ type FetchLorebookIndexResult =
     };
 
 interface GetLorebookEntryParams {
+  apiKey: string;
   fileName: string;
   lorebookId: string;
+  port: number;
 }
 
 export async function createLorebookEntity({
@@ -154,40 +156,21 @@ export async function getLorebookEntityDtoList(): Promise<
   return toLorebookEntityListDto(result);
 }
 
-export async function getLorebookEntry({
-  fileName,
-  lorebookId,
-}: GetLorebookEntryParams): Promise<ObsidianFile> {
-  "use cache";
-  cacheTag(`${LOREBOOK_CACHE_KEY}-${lorebookId}`);
-
-  const lorebookEntity = await getLorebookEntityById(lorebookId);
-  if (!lorebookEntity) throw new NotFoundError("Lorebook", lorebookId);
-
-  const response = await fetch(
-    `${OBSIDIAN_URL}:${lorebookEntity.port}/vault/${fileName}`,
-    {
-      headers: {
-        Accept: "application/vnd.olrapi.note+json",
-        Authorization: `Bearer ${lorebookEntity.apiKey}`,
-      },
-    },
-  );
-
-  const file = obsidianFileResponseSchema.parse(await response.json());
-  if ("errorCode" in file) {
-    throw new ObsidianError(response.statusText, response.status);
-  }
-
-  return file;
-}
-
 export async function getLorebookEntryList({
   files,
   lorebookId,
 }: GetLorebookEntryListParams): Promise<ObsidianFile[]> {
+  const lorebookEntity = await getLorebookEntityById(lorebookId);
+  if (!lorebookEntity) throw new NotFoundError("Lorebook", lorebookId);
   return Promise.all(
-    files.map((fileName) => getLorebookEntry({ fileName, lorebookId })),
+    files.map((fileName) =>
+      getLorebookEntry({
+        apiKey: lorebookEntity.apiKey,
+        fileName,
+        lorebookId,
+        port: lorebookEntity.port,
+      }),
+    ),
   );
 }
 
@@ -272,6 +255,30 @@ async function fetchLorebookIndex({
     });
     return { status: "SERVER_UNAVAILABLE", success: false };
   }
+}
+
+async function getLorebookEntry({
+  apiKey,
+  fileName,
+  lorebookId,
+  port,
+}: GetLorebookEntryParams): Promise<ObsidianFile> {
+  "use cache";
+  cacheTag(`${LOREBOOK_CACHE_KEY}-${lorebookId}`);
+
+  const response = await fetch(`${OBSIDIAN_URL}:${port}/vault/${fileName}`, {
+    headers: {
+      Accept: "application/vnd.olrapi.note+json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+  });
+
+  const file = obsidianFileResponseSchema.parse(await response.json());
+  if ("errorCode" in file) {
+    throw new ObsidianError(response.statusText, response.status);
+  }
+
+  return file;
 }
 
 function toLorebookEntityDto(lorebook: LorebookEntity): LorebookEntityDto {

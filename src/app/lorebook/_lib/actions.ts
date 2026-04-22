@@ -12,6 +12,8 @@ import {
   updateLorebookEntity,
 } from "@/app/lorebook/_lib/data";
 import {
+  GenerateMemoryArcActionParams,
+  generateMemoryArcActionParamsSchema,
   GetLorebookActionParams,
   getLorebookActionParamsSchema,
   LOREBOOK_CACHE_KEY,
@@ -24,6 +26,10 @@ import {
   UpdateLorebookActionParams,
   updateLorebookActionParamsSchema,
 } from "@/app/lorebook/_lib/schema";
+import {
+  generateMemoryArc,
+  GenerateMemoryArcResult,
+} from "@/app/lorebook/_lib/service";
 import { ActionResponse, toActionResponseError } from "@/lib/action-utils";
 import { LOREBOOK_TAG } from "@/lib/env-variables";
 import { NotFoundError } from "@/lib/error";
@@ -68,6 +74,30 @@ export async function deleteLorebookAction(
   updateTag(`${LOREBOOK_CACHE_KEY}-${lorebookId}`);
   updateTag(LOREBOOK_CACHE_KEY);
   redirect("/lorebook");
+}
+
+export async function generateMemoryArcAction(
+  params: GenerateMemoryArcActionParams,
+): Promise<ActionResponse<GenerateMemoryArcResult>> {
+  const parseResult = generateMemoryArcActionParamsSchema.safeParse(params);
+  if (!parseResult.success) return toActionResponseError(parseResult.error);
+  const { files, id } = parseResult.data;
+
+  let arcs: GenerateMemoryArcResult | undefined;
+  try {
+    arcs = await generateMemoryArc(id, files);
+  } catch (err) {
+    logger.error("Failed to generate memory arc", {
+      files,
+      id,
+      ...parseError(err),
+    });
+    return toActionResponseError(err);
+  }
+  logger.info("Memory arc generated", { id });
+  return { data: arcs, success: true };
+
+  throw new Error("Not yet implemented");
 }
 
 export async function getLorebookAction(
