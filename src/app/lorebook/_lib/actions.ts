@@ -31,7 +31,6 @@ import {
   GenerateMemoryArcResult,
 } from "@/app/lorebook/_lib/service";
 import { ActionResponse, toActionResponseError } from "@/lib/action-utils";
-import { LOREBOOK_TAG } from "@/lib/env-variables";
 import { NotFoundError } from "@/lib/error";
 import { logger, parseError } from "@/lib/logger";
 
@@ -96,8 +95,6 @@ export async function generateMemoryArcAction(
   }
   logger.info("Memory arc generated", { id });
   return { data: arcs, success: true };
-
-  throw new Error("Not yet implemented");
 }
 
 export async function getLorebookAction(
@@ -107,7 +104,7 @@ export async function getLorebookAction(
   if (!parseResult.success) return toActionResponseError(parseResult.error);
   const { id, isRetry } = parseResult.data;
 
-  if (isRetry) updateTag(LOREBOOK_TAG);
+  if (isRetry) updateTag(`${LOREBOOK_CACHE_KEY}-${id}`);
   let lorebook: LorebookStatusDto | null;
   try {
     lorebook = await getLorebookStatusDto(id);
