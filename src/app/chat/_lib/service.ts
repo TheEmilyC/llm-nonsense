@@ -30,6 +30,7 @@ import {
   PromptBuilder,
 } from "@/app/prompt/_lib/prompt-builder";
 import { chatModels, taskModels } from "@/lib/ai-registry";
+import { SIDE_PROMPT_TOKEN_LIMIT } from "@/lib/env-variables";
 import { AppError, NotFoundError } from "@/lib/error";
 import { logger } from "@/lib/logger";
 
@@ -267,7 +268,7 @@ function buildLorebookUpdatePrompt(
   lorebook: LorebookReady,
 ) {
   const promptBuilder = new PromptBuilder({
-    maxTokens: 20000,
+    maxTokens: SIDE_PROMPT_TOKEN_LIMIT,
     promptSkeleton: [
       {
         content: lorebookUpdatePrompt,
@@ -376,7 +377,7 @@ function buildSummaryPrompt({
 }: BuildSummaryPromptParams): BuilderChatMessage[] {
   // TODO: Remove hardcoded prompt
   const promptBuilder = new PromptBuilder({
-    maxTokens: 20000,
+    maxTokens: SIDE_PROMPT_TOKEN_LIMIT,
     promptSkeleton: [
       {
         content: summaryInstructions,
