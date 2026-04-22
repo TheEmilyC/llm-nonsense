@@ -12,11 +12,11 @@ Authorization: Bearer 315608501d039714d6139d5da6e0ccd0636e195dc900457210de9124c5
 
 ### Dataview query
 
-POST http3://127.0.0.1:27123/search/
+POST http://127.0.0.1:27123/search/
 Authorization: Bearer 315608501d039714d6139d5da6e0ccd0636e195dc900457210de9124c5c63194
 Content-Type: application/vnd.olrapi.dataview.dql+txt
 
-TABLE title, tags, summary, position FROM #lorebook and !#lorebook-never and !"system/Templates"
+TABLE title, tags, summary, order, characters, file.ctime FROM #lorebook and !#lorebook-never and !"system/templates" SORT order ASC, file.ctime DESC
 
 
 ### Write file test

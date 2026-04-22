@@ -25,9 +25,10 @@ export const lorebookEntitySchema = z.object({
 });
 
 export const lorebookIndexSchema = z.object({
+  createdAt: z.date(),
   filename: z.string(),
   name: z.string(),
-  position: z.number(),
+  order: z.number(),
   tags: z.string().array(),
 });
 export type LorebookIndex = z.infer<typeof lorebookIndexSchema>;
@@ -111,8 +112,9 @@ export type GetLorebookActionParams = z.infer<
 const lorebookFrontmatterSchema = z.object({
   aliases: z.string().array().optional().nullable(),
   characters: z.string().array().optional().nullable(),
+  ctime: z.coerce.date(),
   keys: z.string().array().optional().nullable(),
-  position: z.number().optional().nullable(),
+  order: z.number().optional().nullable(),
   summary: z.string().optional().nullable(),
   tags: z.string().array(),
   title: z.string().optional(),

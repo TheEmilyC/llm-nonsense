@@ -69,12 +69,8 @@ export async function constructChatResponse({
   let lorebookConstants: string | undefined;
   let lorebookContext: string | undefined;
   if (lorebook) {
-    const contextFileList = lorebook.context
-      .sort((a, b) => a.position - b.position)
-      .map((ctx) => ctx.filename);
-    const constantFileList = lorebook.constants
-      .sort((a, b) => a.position - b.position)
-      .map((con) => con.filename);
+    const contextFileList = lorebook.context.map((ctx) => ctx.filename);
+    const constantFileList = lorebook.constants.map((con) => con.filename);
 
     const [contextFiles, constantFiles] = await Promise.all([
       getLorebookEntryList({ files: contextFileList, lorebookId: lorebook.id }),
