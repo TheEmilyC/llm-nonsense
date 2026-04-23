@@ -357,6 +357,13 @@ export async function updateChatMessage({
   return result;
 }
 
+export async function hideChatMessages(ids: string[]): Promise<void> {
+  await prisma.chatMessage.updateMany({
+    data: { isHidden: true },
+    where: { id: { in: ids } },
+  });
+}
+
 export async function updateMessageContent({
   id,
   update,
