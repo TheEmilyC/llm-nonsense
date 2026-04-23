@@ -273,8 +273,9 @@ export function ChatMessage({
     <Message className={cn("reading-body", isUser ? "justify-end" : "")}>
       <div
         className={cn(
-          "flex w-full overflow-hidden rounded-lg shadow-lg ring-1 ring-black/10 bg-secondary",
+          "flex w-full overflow-hidden rounded-lg shadow-lg ring-1 bg-secondary",
           isUser ? "" : "flex-row-reverse",
+          isHidden ? "opacity-50 ring-muted-foreground/40" : "ring-black/10",
         )}
       >
         <ChatAvatar
