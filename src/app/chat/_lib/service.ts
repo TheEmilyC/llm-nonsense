@@ -10,6 +10,7 @@ import {
   createChatMessageContent,
   getChatForMemoryGen,
   getChatSession,
+  hideChatMessages,
 } from "@/app/chat/_lib/data";
 import {
   ChatForMemoryGen,
@@ -309,6 +310,7 @@ export async function generateSummaries({
       previousCast: castContent,
     }),
   ]);
+  await hideChatMessages(messageIds);
   return { cast, memory };
 }
 
