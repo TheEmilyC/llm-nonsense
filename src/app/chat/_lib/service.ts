@@ -241,7 +241,7 @@ export async function generateMemorySummary(
     lastMemoryContent = convertFilesToPrompt([file]);
   }
 
-  const prompt = buildSummaryPrompt({
+  const prompt = await buildSummaryPrompt({
     lastMemoryContent,
     lorebook: lorebookForPrompt,
     messages: chat.messages,
@@ -356,18 +356,18 @@ async function buildPromptFromChat({
     promptBuilder.addToPrompt("WORLD_DESCRIPTION", chat.world.description);
   }
   if (lorebook) {
-    promptBuilder.addLorebookToPrompt(lorebook);
+    await promptBuilder.addLorebookToPrompt(lorebook);
   }
   promptBuilder.injectChatHistory(chatHistory);
 
   return promptBuilder.build();
 }
 
-function buildSummaryPrompt({
+async function buildSummaryPrompt({
   lastMemoryContent,
   lorebook,
   messages,
-}: BuildSummaryPromptParams): BuilderChatMessage[] {
+}: BuildSummaryPromptParams): Promise<BuilderChatMessage[]> {
   const promptSkeleton: BuilderFragment[] = [
     { content: summaryInstructions, role: "system", type: "CONTENT" },
     { content: `<lore>`, role: "system", type: "CONTENT" },
@@ -397,7 +397,7 @@ function buildSummaryPrompt({
   });
 
   if (lorebook) {
-    promptBuilder.addLorebookToPrompt(lorebook);
+    await promptBuilder.addLorebookToPrompt(lorebook);
   }
 
   promptBuilder.injectChatHistory(messages);
