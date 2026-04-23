@@ -1,5 +1,7 @@
 import { MessageRole } from "@/app/_shared/schema";
-import { LorebookEntryIndex } from "@/app/lorebook/_lib/schema";
+import { getLorebookEntryList } from "@/app/lorebook/_lib/data";
+import { convertFilesToPrompt } from "@/app/lorebook/_lib/lorebook-scanning";
+import { LorebookEntryIndex, LorebookReady } from "@/app/lorebook/_lib/schema";
 import {
   ChatHistoryFragment,
   ContentFragment,
@@ -74,6 +76,29 @@ export class PromptBuilder {
     }
   }
 
+  async addLorebookToPrompt(lorebook: LorebookReady) {
+    const contextFileList = lorebook.context.map((ctx) => ctx.filename);
+    const constantFileList = lorebook.constants.map((con) => con.filename);
+
+    const [contextFiles, constantFiles] = await Promise.all([
+      getLorebookEntryList({ files: contextFileList, lorebookId: lorebook.id }),
+      getLorebookEntryList({
+        files: constantFileList,
+        lorebookId: lorebook.id,
+      }),
+    ]);
+    const lorebookContext = convertFilesToPrompt(contextFiles);
+    const lorebookConstants = convertFilesToPrompt(constantFiles);
+
+    if (lorebookContext) this.addToPrompt("LOREBOOK_CONTEXT", lorebookContext);
+    if (lorebookConstants)
+      this.addToPrompt("LOREBOOK_CONSTANT", lorebookConstants);
+    const entriesPrompt = buildLorePromptTable(lorebook.entries);
+    this.addToPrompt("LOREBOOK_ENTRIES", entriesPrompt);
+    const memoryPrompt = buildLorePromptTable(lorebook.memories);
+    this.addToPrompt("LOREBOOK_MEMORIES", memoryPrompt);
+  }
+
   addToPrompt(injectTag: PromptInjectTag, content: string) {
     const fragment = this.prompt.find(
       (frag) => frag.type === "INJECT" && frag.injectTag === injectTag,
@@ -126,7 +151,21 @@ export class PromptBuilder {
   }
 }
 
-export function buildLorePromptTable(entries: LorebookEntryIndex[]): string {
+export function hydratePrompt(
+  prompt: string,
+  variables: Record<string, string>,
+): string {
+  return prompt.replace(/{{(\w+(?:\.\w+)*)}}/g, (match, key) => {
+    if (key in variables) {
+      return variables[key];
+    } else {
+      console.warn(`unreplaced variable:{{${key}}}`);
+      return "";
+    }
+  });
+}
+
+function buildLorePromptTable(entries: LorebookEntryIndex[]): string {
   let entriesPrompt = "";
   if (entries.length > 0) {
     entriesPrompt +=
@@ -140,20 +179,6 @@ export function buildLorePromptTable(entries: LorebookEntryIndex[]): string {
   }
 
   return entriesPrompt;
-}
-
-export function hydratePrompt(
-  prompt: string,
-  variables: Record<string, string>,
-): string {
-  return prompt.replace(/{{(\w+(?:\.\w+)*)}}/g, (match, key) => {
-    if (key in variables) {
-      return variables[key];
-    } else {
-      console.warn(`unreplaced variable:{{${key}}}`);
-      return "";
-    }
-  });
 }
 
 function estimateTokens(text: string): number {
