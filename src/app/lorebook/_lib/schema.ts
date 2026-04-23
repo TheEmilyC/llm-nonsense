@@ -121,7 +121,7 @@ const lorebookFrontmatterSchema = z.object({
   aliases: z.string().array().optional().nullable(),
   characters: z.string().array().optional().nullable(),
   keys: z.string().array().optional().nullable(),
-  order: z.number().optional().nullable(),
+  order: z.coerce.number().optional().nullable(),
   summary: z.string().optional().nullable(),
   tags: z.string().array(),
   title: z.string().optional(),
