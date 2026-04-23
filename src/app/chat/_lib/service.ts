@@ -209,7 +209,7 @@ export async function generateCastOfCharacters({
   const prompt = promptBuilder.build();
   logger.info("Cast of characters request", { prompt });
   const { output } = await generateText({
-    model: taskModels.summary,
+    model: taskModels.castofCharacters,
     onFinish: (result) => {
       logger.info("Cast of characters result", {
         finishReason: result.finishReason,
