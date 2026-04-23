@@ -11,6 +11,11 @@ import {
 
 export type BuilderChatMessage = { content: string; role: MessageRole };
 
+export type BuilderFragment =
+  | BuilderChatHistoryFragment
+  | BuilderContentFragment
+  | BuilderInjectFragment;
+
 type BuilderChatHistoryFragment = Pick<ChatHistoryFragment, "type">;
 
 type BuilderContentFragment = Pick<
@@ -25,12 +30,7 @@ type BuilderInjectFragment = Pick<
   content: string;
 };
 
-type Fragment =
-  | BuilderChatHistoryFragment
-  | BuilderContentFragment
-  | BuilderInjectFragment;
-
-type FragmentTokenCount = Fragment & { tokens: number };
+type FragmentTokenCount = BuilderFragment & { tokens: number };
 
 export class PromptBuilder {
   chatHistory: BuilderChatMessage[] = [];
@@ -45,7 +45,7 @@ export class PromptBuilder {
     variables,
   }: {
     maxTokens: number;
-    promptSkeleton: Fragment[];
+    promptSkeleton: BuilderFragment[];
     variables?: Record<string, string>;
   }) {
     this.maxTokens = maxTokens;

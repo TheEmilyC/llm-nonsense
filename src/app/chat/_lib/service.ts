@@ -6,19 +6,28 @@ import z from "zod";
 
 import { getCharacterRecord } from "@/app/character/_lib/data";
 import { CharacterRecord } from "@/app/character/_lib/schema";
-import { createChatMessageContent, getChatSession } from "@/app/chat/_lib/data";
+import {
+  createChatMessageContent,
+  getChatForMemoryGen,
+  getChatSession,
+} from "@/app/chat/_lib/data";
 import {
   ChatForMemoryGen,
   ChatModelKey,
   ChatSession,
   LlmnUIMessage,
 } from "@/app/chat/_lib/schema";
-import { getLorebookById } from "@/app/lorebook/_lib/data";
-import { summaryInstructions } from "@/app/lorebook/_lib/promps";
-import { LorebookReady } from "@/app/lorebook/_lib/schema";
+import { getLorebookById, getLorebookEntry } from "@/app/lorebook/_lib/data";
+import { convertFilesToPrompt } from "@/app/lorebook/_lib/lorebook-scanning";
+import {
+  castOfCharactersPrompt,
+  summaryInstructions,
+} from "@/app/lorebook/_lib/promps";
+import { Lorebook, LorebookReady } from "@/app/lorebook/_lib/schema";
 import { makeGetLorebookEntriesTool } from "@/app/lorebook/_lib/tools";
 import {
   BuilderChatMessage,
+  BuilderFragment,
   PromptBuilder,
 } from "@/app/prompt/_lib/prompt-builder";
 import { chatModels, taskModels } from "@/lib/ai-registry";
@@ -35,15 +44,11 @@ interface BuildPromptFromChatParams {
 
 interface BuildSummaryPromptParams {
   lorebook?: LorebookReady;
-  lorebookConstants?: string;
-  lorebookContext?: string;
   messages: BuilderChatMessage[];
 }
 
 interface BuildSummaryPromptParams {
   lorebook?: LorebookReady;
-  lorebookConstants?: string;
-  lorebookContext?: string;
   messages: BuilderChatMessage[];
 }
 
@@ -52,6 +57,16 @@ interface ConstructChatResponseParams {
   message: LlmnUIMessage;
   model: ChatModelKey;
   regenerate?: boolean;
+}
+
+interface GenerateCastOfCharactersParams {
+  messages: BuilderChatMessage[];
+  previousCast?: string;
+}
+
+interface GenerateSummariesParams {
+  chatId: string;
+  messageIds: string[];
 }
 
 export async function constructChatResponse({
@@ -152,6 +167,63 @@ export async function constructChatResponse({
   });
 }
 
+export async function generateCastOfCharacters({
+  messages,
+  previousCast,
+}: GenerateCastOfCharactersParams) {
+  const promptSkeleton: BuilderFragment[] = [
+    {
+      content: castOfCharactersPrompt,
+      role: "system",
+      type: "CONTENT",
+    },
+  ];
+  if (previousCast) {
+    promptSkeleton.push({
+      content: previousCast,
+      role: "system",
+      type: "CONTENT",
+    });
+  }
+
+  promptSkeleton.push(
+    {
+      content: "<scene>",
+      role: "system",
+      type: "CONTENT",
+    },
+    {
+      type: "CHAT_HISTORY",
+    },
+    {
+      content: "</scene>",
+      role: "user",
+      type: "CONTENT",
+    },
+  );
+
+  const promptBuilder = new PromptBuilder({
+    maxTokens: SIDE_PROMPT_TOKEN_LIMIT,
+    promptSkeleton,
+  });
+
+  promptBuilder.injectChatHistory(messages);
+
+  const prompt = promptBuilder.build();
+  logger.info("Cast of characters request", { prompt });
+  const { output } = await generateText({
+    model: taskModels.summary,
+    onFinish: (result) => {
+      logger.info("Cast of characters result", {
+        finishReason: result.finishReason,
+        result: result.content,
+      });
+    },
+    prompt,
+  });
+  return output;
+}
+
 export async function generateMemorySummary(
   chat: ChatForMemoryGen,
   lorebook?: LorebookReady,
@@ -184,6 +256,44 @@ export async function generateMemorySummary(
     },
   });
   return output;
+}
+
+export async function generateSummaries({
+  chatId,
+  messageIds,
+}: GenerateSummariesParams) {
+  const chat = await getChatForMemoryGen(chatId, messageIds);
+  if (!chat) throw new NotFoundError("Chat", chatId);
+
+  let lorebook: Lorebook | null = null;
+  let castContent: string | undefined;
+  if (chat.lorebookId) {
+    lorebook = await getLorebookById(chat.lorebookId);
+    if (!lorebook) {
+      throw new NotFoundError("Lorebook", chat.lorebookId);
+    }
+    if (lorebook.status !== "READY") {
+      lorebook = null;
+    }
+    if (lorebook && lorebook.cast) {
+      const castEntity = await getLorebookEntry({
+        fileName: lorebook.cast.filename,
+        lorebookId: lorebook.id,
+      });
+      castContent = convertFilesToPrompt([
+        { ...castEntity, title: "previous_cast_of_characters" },
+      ]);
+    }
+  }
+
+  const [memory, cast] = await Promise.all([
+    generateMemorySummary(chat, lorebook ?? undefined),
+    generateCastOfCharacters({
+      messages: chat.messages,
+      previousCast: castContent,
+    }),
+  ]);
+  return { cast, memory };
 }
 
 async function buildPromptFromChat({

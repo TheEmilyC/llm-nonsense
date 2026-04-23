@@ -12,7 +12,6 @@ import {
   deleteChat,
   deleteChatMessage,
   getChatById,
-  getChatForMemoryGen,
   getChatMessageById,
   updateChatMessage,
   updateMessageContent,
@@ -21,17 +20,15 @@ import {
   CHAT_CACHE_KEY,
   ChatEntity,
   ChatMessageEntity,
-  GenerateMemoriesActionParams,
-  generateMemoriesActionParamsSchema,
-  GenerateMemoriesActionResponse,
+  GenerateSummariesActionParams,
+  generateSummariesActionParamsSchema,
+  GenerateSummariesActionResponse,
   UpdateChatMessageActionParams,
   updateChatMessageActionParamsSchema,
   UpdateContentActionParams,
   updateContentActionParamsSchema,
 } from "@/app/chat/_lib/schema";
-import { generateMemorySummary } from "@/app/chat/_lib/service";
-import { getLorebookById } from "@/app/lorebook/_lib/data";
-import { Lorebook } from "@/app/lorebook/_lib/schema";
+import { generateSummaries } from "@/app/chat/_lib/service";
 import { getPersonaById } from "@/app/persona/_lib/data";
 import { hydratePrompt } from "@/app/prompt/_lib/prompt-builder";
 import { getStoryById } from "@/app/story/_lib/data";
@@ -141,40 +138,18 @@ export async function deleteMessageAction(
   return { success: true };
 }
 
-export async function generateMemoriesAction(
-  params: GenerateMemoriesActionParams,
-): Promise<ActionResponse<GenerateMemoriesActionResponse>> {
-  const parseResult = generateMemoriesActionParamsSchema.safeParse(params);
+export async function generateSummariesAction(
+  params: GenerateSummariesActionParams,
+): Promise<ActionResponse<GenerateSummariesActionResponse>> {
+  const parseResult = generateSummariesActionParamsSchema.safeParse(params);
   if (!parseResult.success) return toActionResponseError(parseResult.error);
   const { chatId, messageIds } = parseResult.data;
 
-  const chat = await getChatForMemoryGen(chatId, messageIds);
-  if (!chat) return toActionResponseError(new NotFoundError("Chat", chatId));
-  let lorebook: Lorebook | null = null;
-  if (chat.lorebookId) {
-    lorebook = await getLorebookById(chat.lorebookId);
-    if (!lorebook) {
-      return toActionResponseError(
-        new NotFoundError("Lorebook", chat.lorebookId),
-      );
-    }
-    if (lorebook.status !== "READY") {
-      lorebook = null;
-    }
-  }
-  const memory = await generateMemorySummary(chat, lorebook ?? undefined);
-  //let lorebookUpdate;
-  //if (lorebook) lorebookUpdate = await generateLorebookUpdates(chat, lorebook);
+  const { cast, memory } = await generateSummaries({ chatId, messageIds });
 
-  const suggestions: GenerateMemoriesActionResponse = {
+  const suggestions: GenerateSummariesActionResponse = {
+    cast: cast,
     content: memory.content,
-    // lorebook: lorebookUpdate
-    //   ? lorebookUpdate.map((update) => ({
-    //       content: update.content,
-    //       file: update.file,
-    //       summary: update.synopsis,
-    //     }))
-    //   : [],
     summary: memory.synopsis,
   };
   return { data: suggestions, success: true };

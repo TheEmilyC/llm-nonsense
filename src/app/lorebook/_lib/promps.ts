@@ -107,3 +107,16 @@ Your job is to examine the text and produce update suggestions to existing loreb
     - Include enough detail that it can be incorporated into the lorebook entry without needing the origonal text as context
     - Also include suggestions of information that could be removed from the lorebook based on the scene revelations
 </instructions>`;
+
+export const castOfCharactersPrompt = dedent`
+You are a skilled reporter with a clear eye for judging the importance of NPCs to the plot. 
+Step 1: Review the scene and either add or update plot-related characters to the cast of characters report.
+Step 2: This list should be kept in order of importance to the plot, so it may need to be reordered.
+Step 3: If your response would be more than 2000 tokens long, remove NPCs with the least impact to the plot.
+
+<format>
+(In order of importance to the plot)
+
+- Person 1: 1-2 sentence desription
+- Person 2: 1-2 sentence desription
+</format>`;

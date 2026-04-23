@@ -1,6 +1,6 @@
 "use client";
 
-import { GenerateMemoriesActionResponse } from "@/app/chat/_lib/schema";
+import { GenerateSummariesActionResponse } from "@/app/chat/_lib/schema";
 import { CopyButton } from "@/components/copy-button";
 import {
   Drawer,
@@ -12,7 +12,7 @@ import {
 import { Markdown } from "@/components/ui/markdown";
 
 interface MemoryResultsDrawerProps {
-  data: GenerateMemoriesActionResponse | null;
+  data: GenerateSummariesActionResponse | null;
   onOpenChange: (open: boolean) => void;
   open: boolean;
 }
@@ -53,43 +53,20 @@ export function MemoryResultsDrawer({
               </Markdown>
             </section>
 
-            {data.lorebook && data.lorebook.length > 0 && (
-              <section className="space-y-4">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  Lorebook Updates
-                </h3>
-                {data.lorebook.map((entry, i) => (
-                  <div className="rounded-lg border overflow-hidden" key={i}>
-                    {(entry.file || entry.summary) && (
-                      <div className="px-3 py-2 bg-muted/50 border-b flex items-start justify-between gap-2">
-                        <div className="flex flex-col gap-0.5">
-                          {entry.file && (
-                            <span className="font-mono text-xs text-foreground">
-                              {entry.file}
-                            </span>
-                          )}
-                          {entry.summary && (
-                            <span className="text-xs text-muted-foreground">
-                              {entry.summary}
-                              <CopyButton text={entry.summary} />
-                            </span>
-                          )}
-                        </div>
-                        <CopyButton text={entry.content} />
-                      </div>
-                    )}
-                    {!(entry.file || entry.summary) && (
-                      <div className="flex justify-end px-2 pt-2">
-                        <CopyButton text={entry.content} />
-                      </div>
-                    )}
-                    <Markdown className="prose prose-sm dark:prose-invert max-w-none">
-                      {entry.content}
-                    </Markdown>
-                  </div>
-                ))}
+            {data.cast && (
+              <section>
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    Cast of Characters
+                    <CopyButton text={data.cast} />
+                  </h3>
+                </div>
+                <Markdown className="prose prose-sm dark:prose-invert max-w-none">
+                  {data.cast}
+                </Markdown>
               </section>
             )}
+
           </div>
         )}
       </DrawerContent>

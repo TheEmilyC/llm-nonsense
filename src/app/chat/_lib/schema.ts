@@ -111,12 +111,12 @@ export const chatPostRequestBodySchema = z.object({
 });
 export type ChatPostRequestBody = z.infer<typeof chatPostRequestBodySchema>;
 
-export const generateMemoriesActionParamsSchema = z.object({
+export const generateSummariesActionParamsSchema = z.object({
   chatId: dbIdValidator,
   messageIds: dbIdValidator.array(),
 });
-export type GenerateMemoriesActionParams = z.infer<
-  typeof generateMemoriesActionParamsSchema
+export type GenerateSummariesActionParams = z.infer<
+  typeof generateSummariesActionParamsSchema
 >;
 
 export const chatSessionSchema = chatEntitySchema
@@ -145,21 +145,13 @@ export const chatForMemoryGenSchema = chatEntitySchema
   });
 export type ChatForMemoryGen = z.infer<typeof chatForMemoryGenSchema>;
 
-export const generateMemoriesActionResponseSchema = z.object({
+export const generateSummariesActionResponseSchema = z.object({
+  cast: z.string().optional(),
   content: z.string(),
-  lorebook: z
-    .object({
-      content: z.string(),
-      file: z.string().optional(),
-      originalContent: z.string().optional(),
-      summary: z.string().optional(),
-    })
-    .array()
-    .optional(),
   summary: z.string(),
 });
-export type GenerateMemoriesActionResponse = z.infer<
-  typeof generateMemoriesActionResponseSchema
+export type GenerateSummariesActionResponse = z.infer<
+  typeof generateSummariesActionResponseSchema
 >;
 
 // -- DTOs

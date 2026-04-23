@@ -4,11 +4,14 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { MemoryResultsDrawer } from "@/app/chat/_components/memory-results-drawer";
-import { useChatMessages, useGenerateMemories } from "@/app/chat/_lib/hooks";
+import {
+  useChatMessages,
+  useGenerateChatSummaries,
+} from "@/app/chat/_lib/hooks";
 import {
   ChatModelKey,
   ChatSessionDto,
-  GenerateMemoriesActionResponse,
+  GenerateSummariesActionResponse,
 } from "@/app/chat/_lib/schema";
 import { ArcResultsDrawer } from "@/app/lorebook/_components/arc-results-drawer";
 import { CurrentLorebook } from "@/app/lorebook/_components/current-lorebook";
@@ -40,12 +43,14 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
     swipe: { nextSwipe, ...restSwipe },
   } = useChatMessages(chatSession);
   const [chatModel, setChatModel] = useState<ChatModelKey>("opus");
-  const { generateMemories, isPending } = useGenerateMemories();
+  const { generateSummaries, isPending: isSummaryPending } = useGenerateChatSummaries();
   const { generateMemoryArc, isPending: isArcPending } = useGenerateMemoryArc();
   const [memoryResults, setMemoryResults] =
-    useState<GenerateMemoriesActionResponse | null>(null);
+    useState<GenerateSummariesActionResponse | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [arcResults, setArcResults] = useState<GenerateMemoryArcResult | null>(null);
+  const [arcResults, setArcResults] = useState<GenerateMemoryArcResult | null>(
+    null,
+  );
   const [arcDrawerOpen, setArcDrawerOpen] = useState(false);
   const [memoryStartIndex, _setMemoryStartIndex] = useState<
     number | undefined
@@ -101,7 +106,7 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
               memoryEndIndex ? memoryEndIndex + 1 : undefined,
             )
             .map((msg) => msg.id);
-    const res = await generateMemories({
+    const res = await generateSummaries({
       chatId: chatSession.id,
       messageIds: memoryMessages,
     });
@@ -201,8 +206,8 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
           </ChatHistory>
           <ChatInput
             isLoading={status !== "ready"}
-            isMemoryGenerating={isPending}
-            memoryDisable={memoryStartIndex === undefined || isPending}
+            isMemoryGenerating={isSummaryPending}
+            memoryDisable={memoryStartIndex === undefined || isSummaryPending}
             onInsertAssistantMessage={
               messageControl.insertBlankAssistantMessage
             }

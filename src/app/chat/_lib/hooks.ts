@@ -9,7 +9,7 @@ import {
   createChatFromStoryAction,
   deleteChatAction,
   deleteMessageAction,
-  generateMemoriesAction,
+  generateSummariesAction,
   insertBlankAssistantMessageAction,
   updateChatMessageAction,
   updateMessageContentAction,
@@ -18,8 +18,8 @@ import {
   ChatMessageDto,
   ChatModelKey,
   ChatSessionDto,
-  GenerateMemoriesActionParams,
-  GenerateMemoriesActionResponse,
+  GenerateSummariesActionParams,
+  GenerateSummariesActionResponse,
   LlmnUIMessage,
 } from "@/app/chat/_lib/schema";
 import { ActionError, ActionResponse } from "@/lib/action-utils";
@@ -232,22 +232,24 @@ export function useDeleteChat(onError?: (error: ActionError) => void) {
   return { deleteChat, isPending };
 }
 
-export function useGenerateMemories(onError?: (error: ActionError) => void) {
+export function useGenerateChatSummaries(
+  onError?: (error: ActionError) => void,
+) {
   const [isPending, startTransition] = useTransition();
 
-  function generateMemories(
-    params: GenerateMemoriesActionParams,
-  ): Promise<ActionResponse<GenerateMemoriesActionResponse>> {
+  function generateSummaries(
+    params: GenerateSummariesActionParams,
+  ): Promise<ActionResponse<GenerateSummariesActionResponse>> {
     return new Promise((resolve) => {
       startTransition(async () => {
-        const res = await generateMemoriesAction(params);
+        const res = await generateSummariesAction(params);
         if (!res.success) onError?.(res.error);
         resolve(res);
       });
     });
   }
 
-  return { generateMemories, isPending };
+  return { generateSummaries, isPending };
 }
 
 function getMessageSwipes(message: ChatMessageDto): HookUIMessage[] {
