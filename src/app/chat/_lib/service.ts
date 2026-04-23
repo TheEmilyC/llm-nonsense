@@ -6,27 +6,28 @@ import z from "zod";
 
 import { getCharacterRecord } from "@/app/character/_lib/data";
 import { CharacterRecord } from "@/app/character/_lib/schema";
-import { createChatMessageContent, getChatSession } from "@/app/chat/_lib/data";
 import {
-  lorebookUpdatePrompt,
-  summaryInstructions,
-} from "@/app/chat/_lib/prompts";
+  createChatMessageContent,
+  getChatForMemoryGen,
+  getChatSession,
+} from "@/app/chat/_lib/data";
 import {
   ChatForMemoryGen,
   ChatModelKey,
   ChatSession,
   LlmnUIMessage,
 } from "@/app/chat/_lib/schema";
-import {
-  getLorebookById,
-  getLorebookEntryList,
-} from "@/app/lorebook/_lib/data";
+import { getLorebookById, getLorebookEntry } from "@/app/lorebook/_lib/data";
 import { convertFilesToPrompt } from "@/app/lorebook/_lib/lorebook-scanning";
-import { LorebookReady } from "@/app/lorebook/_lib/schema";
+import {
+  castOfCharactersPrompt,
+  summaryInstructions,
+} from "@/app/lorebook/_lib/promps";
+import { Lorebook, LorebookReady } from "@/app/lorebook/_lib/schema";
 import { makeGetLorebookEntriesTool } from "@/app/lorebook/_lib/tools";
 import {
   BuilderChatMessage,
-  buildLorePromptTable,
+  BuilderFragment,
   PromptBuilder,
 } from "@/app/prompt/_lib/prompt-builder";
 import { chatModels, taskModels } from "@/lib/ai-registry";
@@ -38,22 +39,16 @@ interface BuildPromptFromChatParams {
   character: CharacterRecord;
   chat: ChatSession;
   lorebook?: LorebookReady;
-  lorebookConstants?: string;
-  lorebookContext?: string;
   regenerate?: boolean;
 }
 
 interface BuildSummaryPromptParams {
   lorebook?: LorebookReady;
-  lorebookConstants?: string;
-  lorebookContext?: string;
   messages: BuilderChatMessage[];
 }
 
 interface BuildSummaryPromptParams {
   lorebook?: LorebookReady;
-  lorebookConstants?: string;
-  lorebookContext?: string;
   messages: BuilderChatMessage[];
 }
 
@@ -62,6 +57,16 @@ interface ConstructChatResponseParams {
   message: LlmnUIMessage;
   model: ChatModelKey;
   regenerate?: boolean;
+}
+
+interface GenerateCastOfCharactersParams {
+  messages: BuilderChatMessage[];
+  previousCast?: string;
+}
+
+interface GenerateSummariesParams {
+  chatId: string;
+  messageIds: string[];
 }
 
 export async function constructChatResponse({
@@ -95,30 +100,10 @@ export async function constructChatResponse({
 
   const lorebook = lorebookRaw?.status === "READY" ? lorebookRaw : undefined;
 
-  // get lorebook context and constants
-  let lorebookConstants: string | undefined;
-  let lorebookContext: string | undefined;
-  if (lorebook) {
-    const contextFileList = lorebook.context.map((ctx) => ctx.filename);
-    const constantFileList = lorebook.constants.map((con) => con.filename);
-
-    const [contextFiles, constantFiles] = await Promise.all([
-      getLorebookEntryList({ files: contextFileList, lorebookId: lorebook.id }),
-      getLorebookEntryList({
-        files: constantFileList,
-        lorebookId: lorebook.id,
-      }),
-    ]);
-    lorebookContext = convertFilesToPrompt(contextFiles);
-    lorebookConstants = convertFilesToPrompt(constantFiles);
-  }
-
   const prompt = await buildPromptFromChat({
     character,
     chat,
     lorebook,
-    lorebookConstants,
-    lorebookContext,
     regenerate,
   });
 
@@ -182,49 +167,59 @@ export async function constructChatResponse({
   });
 }
 
-export async function generateLorebookUpdates(
-  chat: ChatForMemoryGen,
-  lorebook: LorebookReady,
-) {
-  const prompt = buildLorebookUpdatePrompt(chat.messages, lorebook);
-  logger.info("Lorebook update request", { prompt });
+export async function generateCastOfCharacters({
+  messages,
+  previousCast,
+}: GenerateCastOfCharactersParams) {
+  const promptSkeleton: BuilderFragment[] = [
+    {
+      content: castOfCharactersPrompt,
+      role: "system",
+      type: "CONTENT",
+    },
+  ];
+  if (previousCast) {
+    promptSkeleton.push({
+      content: previousCast,
+      role: "system",
+      type: "CONTENT",
+    });
+  }
+
+  promptSkeleton.push(
+    {
+      content: "<scene>",
+      role: "system",
+      type: "CONTENT",
+    },
+    {
+      type: "CHAT_HISTORY",
+    },
+    {
+      content: "</scene>",
+      role: "user",
+      type: "CONTENT",
+    },
+  );
+
+  const promptBuilder = new PromptBuilder({
+    maxTokens: SIDE_PROMPT_TOKEN_LIMIT,
+    promptSkeleton,
+  });
+
+  promptBuilder.injectChatHistory(messages);
+
+  const prompt = promptBuilder.build();
+  logger.info("Cast of characters request", { prompt });
   const { output } = await generateText({
-    model: taskModels.lorebookUpdate,
+    model: taskModels.summary,
     onFinish: (result) => {
-      logger.info("Memory Generation Result", {
+      logger.info("Cast of characters result", {
         finishReason: result.finishReason,
         result: result.content,
       });
     },
-    output: Output.object({
-      schema: z
-        .object({
-          content: z.string().describe("Lorebook update suggestions"),
-          file: z
-            .string()
-            .optional()
-            .describe("The path to an existing lorebook entry if updating"),
-          synopsis: z
-            .string()
-            .optional()
-            .describe(
-              "One or two scentences to describe the entry if it is new or should change",
-            ),
-        })
-        .array(),
-    }),
     prompt,
-    providerOptions: {
-      openrouter: {
-        reasoning: { effort: "medium" },
-      },
-    },
-    stopWhen: stepCountIs(20),
-    tools: {
-      ...(lorebook && {
-        getLorebookEntries: makeGetLorebookEntriesTool(lorebook),
-      }),
-    },
   });
   return output;
 }
@@ -263,60 +258,48 @@ export async function generateMemorySummary(
   return output;
 }
 
-function buildLorebookUpdatePrompt(
-  messages: BuilderChatMessage[],
-  lorebook: LorebookReady,
-) {
-  const promptBuilder = new PromptBuilder({
-    maxTokens: SIDE_PROMPT_TOKEN_LIMIT,
-    promptSkeleton: [
-      {
-        content: lorebookUpdatePrompt,
-        role: "system",
-        type: "CONTENT",
-      },
-      {
-        content: `<lore>`,
-        role: "system",
-        type: "CONTENT",
-      },
-      {
-        content: "",
-        injectTag: "LOREBOOK_ENTRIES",
-        role: "system",
-        type: "INJECT",
-      },
-      {
-        content: "</lore>\n<scene>",
-        role: "system",
-        type: "CONTENT",
-      },
-      {
-        type: "CHAT_HISTORY",
-      },
-      {
-        content: "</scene>",
-        role: "user",
-        type: "CONTENT",
-      },
-    ],
-  });
+export async function generateSummaries({
+  chatId,
+  messageIds,
+}: GenerateSummariesParams) {
+  const chat = await getChatForMemoryGen(chatId, messageIds);
+  if (!chat) throw new NotFoundError("Chat", chatId);
 
-  const lorebookPrompt = lorebook.entries
-    .map((idx) => `${idx.filename}  -  ${idx.summary}`)
-    .join("\n");
-  promptBuilder.addToPrompt("LOREBOOK_ENTRIES", lorebookPrompt);
+  let lorebook: Lorebook | null = null;
+  let castContent: string | undefined;
+  if (chat.lorebookId) {
+    lorebook = await getLorebookById(chat.lorebookId);
+    if (!lorebook) {
+      throw new NotFoundError("Lorebook", chat.lorebookId);
+    }
+    if (lorebook.status !== "READY") {
+      lorebook = null;
+    }
+    if (lorebook && lorebook.cast) {
+      const castEntity = await getLorebookEntry({
+        fileName: lorebook.cast.filename,
+        lorebookId: lorebook.id,
+      });
+      castContent = convertFilesToPrompt([
+        { ...castEntity, title: "previous_cast_of_characters" },
+      ]);
+    }
+  }
 
-  promptBuilder.injectChatHistory(messages);
-  return promptBuilder.build();
+  const [memory, cast] = await Promise.all([
+    generateMemorySummary(chat, lorebook ?? undefined),
+    generateCastOfCharacters({
+      messages: chat.messages,
+      previousCast: castContent,
+    }),
+  ]);
+  return { cast, memory };
 }
 
 async function buildPromptFromChat({
   character,
   chat,
   lorebook,
-  lorebookConstants,
-  lorebookContext,
   regenerate,
 }: BuildPromptFromChatParams): Promise<BuilderChatMessage[]> {
   const promptBuilder = new PromptBuilder({
@@ -355,14 +338,7 @@ async function buildPromptFromChat({
     promptBuilder.addToPrompt("WORLD_DESCRIPTION", chat.world.description);
   }
   if (lorebook) {
-    if (lorebookContext)
-      promptBuilder.addToPrompt("LOREBOOK_CONTEXT", lorebookContext);
-    if (lorebookConstants)
-      promptBuilder.addToPrompt("LOREBOOK_CONSTANT", lorebookConstants);
-    const entriesPrompt = buildLorePromptTable(lorebook.entries);
-    promptBuilder.addToPrompt("LOREBOOK_ENTRIES", entriesPrompt);
-    const memoryPrompt = buildLorePromptTable(lorebook.memories);
-    promptBuilder.addToPrompt("LOREBOOK_MEMORIES", memoryPrompt);
+    promptBuilder.addLorebookToPrompt(lorebook);
   }
   promptBuilder.injectChatHistory(chatHistory);
 
@@ -371,11 +347,8 @@ async function buildPromptFromChat({
 
 function buildSummaryPrompt({
   lorebook,
-  lorebookConstants,
-  lorebookContext,
   messages,
 }: BuildSummaryPromptParams): BuilderChatMessage[] {
-  // TODO: Remove hardcoded prompt
   const promptBuilder = new PromptBuilder({
     maxTokens: SIDE_PROMPT_TOKEN_LIMIT,
     promptSkeleton: [
@@ -389,7 +362,6 @@ function buildSummaryPrompt({
         role: "system",
         type: "CONTENT",
       },
-
       {
         content: "",
         injectTag: "LOREBOOK_ENTRIES",
@@ -413,14 +385,7 @@ function buildSummaryPrompt({
   });
 
   if (lorebook) {
-    if (lorebookContext)
-      promptBuilder.addToPrompt("LOREBOOK_CONTEXT", lorebookContext);
-    if (lorebookConstants)
-      promptBuilder.addToPrompt("LOREBOOK_CONSTANT", lorebookConstants);
-    const entriesPrompt = buildLorePromptTable(lorebook.entries);
-    promptBuilder.addToPrompt("LOREBOOK_ENTRIES", entriesPrompt);
-    const memoryPrompt = buildLorePromptTable(lorebook.memories);
-    promptBuilder.addToPrompt("LOREBOOK_MEMORIES", memoryPrompt);
+    promptBuilder.addLorebookToPrompt(lorebook);
   }
 
   promptBuilder.injectChatHistory(messages);

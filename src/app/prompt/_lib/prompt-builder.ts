@@ -1,5 +1,7 @@
 import { MessageRole } from "@/app/_shared/schema";
-import { LorebookEntryIndex } from "@/app/lorebook/_lib/schema";
+import { getLorebookEntryList } from "@/app/lorebook/_lib/data";
+import { convertFilesToPrompt } from "@/app/lorebook/_lib/lorebook-scanning";
+import { LorebookEntryIndex, LorebookReady } from "@/app/lorebook/_lib/schema";
 import {
   ChatHistoryFragment,
   ContentFragment,
@@ -8,6 +10,11 @@ import {
 } from "@/app/prompt/_lib/schema";
 
 export type BuilderChatMessage = { content: string; role: MessageRole };
+
+export type BuilderFragment =
+  | BuilderChatHistoryFragment
+  | BuilderContentFragment
+  | BuilderInjectFragment;
 
 type BuilderChatHistoryFragment = Pick<ChatHistoryFragment, "type">;
 
@@ -23,12 +30,7 @@ type BuilderInjectFragment = Pick<
   content: string;
 };
 
-type Fragment =
-  | BuilderChatHistoryFragment
-  | BuilderContentFragment
-  | BuilderInjectFragment;
-
-type FragmentTokenCount = Fragment & { tokens: number };
+type FragmentTokenCount = BuilderFragment & { tokens: number };
 
 export class PromptBuilder {
   chatHistory: BuilderChatMessage[] = [];
@@ -43,7 +45,7 @@ export class PromptBuilder {
     variables,
   }: {
     maxTokens: number;
-    promptSkeleton: Fragment[];
+    promptSkeleton: BuilderFragment[];
     variables?: Record<string, string>;
   }) {
     this.maxTokens = maxTokens;
@@ -72,6 +74,29 @@ export class PromptBuilder {
         this.currentTokens += tokens;
       }
     }
+  }
+
+  async addLorebookToPrompt(lorebook: LorebookReady) {
+    const contextFileList = lorebook.context.map((ctx) => ctx.filename);
+    const constantFileList = lorebook.constants.map((con) => con.filename);
+
+    const [contextFiles, constantFiles] = await Promise.all([
+      getLorebookEntryList({ files: contextFileList, lorebookId: lorebook.id }),
+      getLorebookEntryList({
+        files: constantFileList,
+        lorebookId: lorebook.id,
+      }),
+    ]);
+    const lorebookContext = convertFilesToPrompt(contextFiles);
+    const lorebookConstants = convertFilesToPrompt(constantFiles);
+
+    if (lorebookContext) this.addToPrompt("LOREBOOK_CONTEXT", lorebookContext);
+    if (lorebookConstants)
+      this.addToPrompt("LOREBOOK_CONSTANT", lorebookConstants);
+    const entriesPrompt = buildLorePromptTable(lorebook.entries);
+    this.addToPrompt("LOREBOOK_ENTRIES", entriesPrompt);
+    const memoryPrompt = buildLorePromptTable(lorebook.memories);
+    this.addToPrompt("LOREBOOK_MEMORIES", memoryPrompt);
   }
 
   addToPrompt(injectTag: PromptInjectTag, content: string) {
@@ -126,7 +151,21 @@ export class PromptBuilder {
   }
 }
 
-export function buildLorePromptTable(entries: LorebookEntryIndex[]): string {
+export function hydratePrompt(
+  prompt: string,
+  variables: Record<string, string>,
+): string {
+  return prompt.replace(/{{(\w+(?:\.\w+)*)}}/g, (match, key) => {
+    if (key in variables) {
+      return variables[key];
+    } else {
+      console.warn(`unreplaced variable:{{${key}}}`);
+      return "";
+    }
+  });
+}
+
+function buildLorePromptTable(entries: LorebookEntryIndex[]): string {
   let entriesPrompt = "";
   if (entries.length > 0) {
     entriesPrompt +=
@@ -140,20 +179,6 @@ export function buildLorePromptTable(entries: LorebookEntryIndex[]): string {
   }
 
   return entriesPrompt;
-}
-
-export function hydratePrompt(
-  prompt: string,
-  variables: Record<string, string>,
-): string {
-  return prompt.replace(/{{(\w+(?:\.\w+)*)}}/g, (match, key) => {
-    if (key in variables) {
-      return variables[key];
-    } else {
-      console.warn(`unreplaced variable:{{${key}}}`);
-      return "";
-    }
-  });
 }
 
 function estimateTokens(text: string): number {

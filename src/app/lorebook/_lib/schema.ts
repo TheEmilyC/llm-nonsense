@@ -74,6 +74,7 @@ export const lorebookNotReadySchema = z.discriminatedUnion("status", [
 export type LorebookNotReady = z.infer<typeof lorebookNotReadySchema>;
 
 const lorebookReadySchema = z.object({
+  cast: lorebookEntryIndexSchema.optional(),
   constants: lorebookEntryIndexSchema.array(),
   context: lorebookIndexSchema.array(),
   entries: lorebookEntryIndexSchema.array(),
@@ -121,7 +122,7 @@ const lorebookFrontmatterSchema = z.object({
   aliases: z.string().array().optional().nullable(),
   characters: z.string().array().optional().nullable(),
   keys: z.string().array().optional().nullable(),
-  order: z.number().optional().nullable(),
+  order: z.coerce.number().optional().nullable(),
   summary: z.string().optional().nullable(),
   tags: z.string().array(),
   title: z.string().optional(),
