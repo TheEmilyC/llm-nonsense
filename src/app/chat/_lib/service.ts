@@ -43,11 +43,7 @@ interface BuildPromptFromChatParams {
 }
 
 interface BuildSummaryPromptParams {
-  lorebook?: LorebookReady;
-  messages: BuilderChatMessage[];
-}
-
-interface BuildSummaryPromptParams {
+  lastMemoryContent?: string;
   lorebook?: LorebookReady;
   messages: BuilderChatMessage[];
 }
@@ -228,7 +224,27 @@ export async function generateMemorySummary(
   chat: ChatForMemoryGen,
   lorebook?: LorebookReady,
 ) {
-  const prompt = buildSummaryPrompt({ lorebook, messages: chat.messages });
+  let lastMemoryContent: string | undefined;
+  let lorebookForPrompt = lorebook;
+
+  if (lorebook && lorebook.memories.length > 0) {
+    const lastMemory = lorebook.memories[lorebook.memories.length - 1];
+    lorebookForPrompt = {
+      ...lorebook,
+      memories: lorebook.memories.slice(0, -1),
+    };
+    const file = await getLorebookEntry({
+      fileName: lastMemory.filename,
+      lorebookId: lorebook.id,
+    });
+    lastMemoryContent = convertFilesToPrompt([file]);
+  }
+
+  const prompt = buildSummaryPrompt({
+    lastMemoryContent,
+    lorebook: lorebookForPrompt,
+    messages: chat.messages,
+  });
   logger.info("Memory generation request", { prompt });
 
   const { output } = await generateText({
@@ -346,42 +362,36 @@ async function buildPromptFromChat({
 }
 
 function buildSummaryPrompt({
+  lastMemoryContent,
   lorebook,
   messages,
 }: BuildSummaryPromptParams): BuilderChatMessage[] {
+  const promptSkeleton: BuilderFragment[] = [
+    { content: summaryInstructions, role: "system", type: "CONTENT" },
+    { content: `<lore>`, role: "system", type: "CONTENT" },
+    {
+      content: "",
+      injectTag: "LOREBOOK_ENTRIES",
+      role: "system",
+      type: "INJECT",
+    },
+    ...(lastMemoryContent
+      ? [
+          {
+            content: lastMemoryContent,
+            role: "system" as const,
+            type: "CONTENT" as const,
+          },
+        ]
+      : []),
+    { content: "</lore>\n<scene>", role: "system", type: "CONTENT" },
+    { type: "CHAT_HISTORY" },
+    { content: "</scene>", role: "user", type: "CONTENT" },
+  ];
+
   const promptBuilder = new PromptBuilder({
     maxTokens: SIDE_PROMPT_TOKEN_LIMIT,
-    promptSkeleton: [
-      {
-        content: summaryInstructions,
-        role: "system",
-        type: "CONTENT",
-      },
-      {
-        content: `<lore>`,
-        role: "system",
-        type: "CONTENT",
-      },
-      {
-        content: "",
-        injectTag: "LOREBOOK_ENTRIES",
-        role: "system",
-        type: "INJECT",
-      },
-      {
-        content: "</lore>\n<scene>",
-        role: "system",
-        type: "CONTENT",
-      },
-      {
-        type: "CHAT_HISTORY",
-      },
-      {
-        content: "</scene>",
-        role: "user",
-        type: "CONTENT",
-      },
-    ],
+    promptSkeleton,
   });
 
   if (lorebook) {
