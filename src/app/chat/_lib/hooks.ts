@@ -1,6 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import { createId } from "@paralleldrive/cuid2";
 import { DefaultChatTransport } from "ai";
 import { useRef, useState, useTransition } from "react";
 import { useDebouncedCallback } from "use-debounce";
@@ -47,6 +48,7 @@ export function useChatMessages({
 
   const { messages, regenerate, sendMessage, setMessages, status, stop } =
     useChat<HookUIMessage>({
+      generateId: createId,
       messages: initialMessages.map((msg) => messageDtoToUIMessage(msg)),
       onFinish: ({ message }) => {
         if (isSwipeGenerateRef.current) {

@@ -84,6 +84,7 @@ export async function constructChatResponse({
         parts: message.parts,
         role: message.role,
       },
+      messageId: message.id,
     });
   }
 
