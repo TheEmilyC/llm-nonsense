@@ -12,7 +12,7 @@ import {
 import { Markdown } from "@/components/ui/markdown";
 
 interface MemoryResultsDrawerProps {
-  data: GenerateSummariesActionResponse | null;
+  data: GenerateSummariesActionResponse | undefined;
   onOpenChange: (open: boolean) => void;
   open: boolean;
 }
@@ -66,7 +66,6 @@ export function MemoryResultsDrawer({
                 </Markdown>
               </section>
             )}
-
           </div>
         )}
       </DrawerContent>
