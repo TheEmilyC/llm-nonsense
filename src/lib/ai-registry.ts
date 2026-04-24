@@ -25,7 +25,7 @@ export const chatModels = {
 
 export const taskModels = {
   castofCharacters: registry.languageModel(
-    "openrouter:anthropic/claude-haiku-4.5",
+    "openrouter:anthropic/claude-sonnet-4.6",
   ),
   lorebookUpdate: registry.languageModel(
     "openrouter:anthropic/claude-sonnet-4.6",
