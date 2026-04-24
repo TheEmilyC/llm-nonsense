@@ -22,6 +22,7 @@ import {
   UpdatePromptParams,
 } from "@/app/prompt/_lib/schema";
 import { ActionResponse, toActionResponseError } from "@/lib/action-utils";
+import { AppError } from "@/lib/error";
 import { logger, parseError } from "@/lib/logger";
 
 export async function createPromptAction(
@@ -77,6 +78,16 @@ export async function deletePromptAction(
   try {
     await deletePrompt(id);
   } catch (err) {
+    if (err instanceof AppError && err.code === "CONSTRAINT_ERROR") {
+      return {
+        error: {
+          code: err.code,
+          message: "Stories still use this prompt, can't delete",
+        },
+        success: false,
+      };
+    }
+
     logger.error("Failed to delete prompt", { id, ...parseError(err) });
     return toActionResponseError(err);
   }

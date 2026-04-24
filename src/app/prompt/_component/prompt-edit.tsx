@@ -24,7 +24,10 @@ export function PromptEdit({ prompt }: PromptEditProps) {
   const isPending = isDeletePending || isUpdatePending;
 
   async function deleteHandler() {
-    await deletePrompt(prompt.id);
+    const result = await deletePrompt(prompt.id);
+    if (!result.success) {
+      toast.error(result.error.message);
+    }
   }
 
   async function onSubmitHandler(

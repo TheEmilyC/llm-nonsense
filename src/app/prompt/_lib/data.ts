@@ -11,8 +11,9 @@ import {
   PromptListItemDto,
   UpdatePromptParams,
 } from "@/app/prompt/_lib/schema";
-import { Prompt, PromptFragment } from "@/generated/client";
-import { prisma } from "@/lib/prisma";
+import { Prisma, Prompt, PromptFragment } from "@/generated/client";
+import { AppError } from "@/lib/error";
+import { prisma, PrismaErrorCodes } from "@/lib/prisma";
 
 export async function createPrompt({
   maxOutputTokens,
@@ -46,7 +47,17 @@ export async function createPrompt({
 }
 
 export async function deletePrompt(id: string) {
-  await prisma.prompt.delete({ where: { id } });
+  try {
+    await prisma.prompt.delete({ where: { id } });
+  } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === PrismaErrorCodes.ForeignKeyConstraint
+    ) {
+      throw new AppError(err.message, "CONSTRAINT_ERROR", 2003);
+    }
+    throw err;
+  }
 }
 
 export async function getPromptById(id: string): Promise<PromptEntity> {

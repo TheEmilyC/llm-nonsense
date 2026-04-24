@@ -1,4 +1,5 @@
 export type ErrorCode =
+  | "CONSTRAINT_ERROR"
   | "INTERNAL_ERROR"
   | "LLM_ERROR"
   | "NOT_FOUND"
