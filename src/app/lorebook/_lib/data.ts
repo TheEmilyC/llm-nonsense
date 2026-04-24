@@ -85,13 +85,13 @@ export async function deleteLorebookEntity(id: string) {
   await prisma.lorebook.delete({ where: { id } });
 }
 
-export async function getLorebookById(id: string): Promise<Lorebook | null> {
+export async function getLorebookById(id: string): Promise<Lorebook> {
   "use cache";
   cacheTag(`${LOREBOOK_CACHE_KEY}-${id}`);
 
   // Get lorebook entity
   const entity = await getLorebookEntityById(id);
-  if (!entity) return null;
+  if (!entity) throw new NotFoundError("Lorebook", id);
 
   // Get file index
   const indexResult = await fetchLorebookIndex({ entity, id });

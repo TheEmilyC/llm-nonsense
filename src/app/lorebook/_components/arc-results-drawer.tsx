@@ -12,7 +12,7 @@ import {
 import { Markdown } from "@/components/ui/markdown";
 
 interface ArcResultsDrawerProps {
-  data: GenerateMemoryArcResult | null;
+  data: GenerateMemoryArcResult | undefined;
   onOpenChange: (open: boolean) => void;
   open: boolean;
 }

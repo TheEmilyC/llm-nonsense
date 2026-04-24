@@ -24,7 +24,7 @@ import {
   castOfCharactersPrompt,
   summaryInstructions,
 } from "@/app/lorebook/_lib/promps";
-import { Lorebook, LorebookReady } from "@/app/lorebook/_lib/schema";
+import { LorebookReady } from "@/app/lorebook/_lib/schema";
 import { makeGetLorebookEntriesTool } from "@/app/lorebook/_lib/tools";
 import {
   BuilderChatMessage,
@@ -292,29 +292,31 @@ export async function generateSummaries({
   const chat = await getChatForMemoryGen(chatId, messageIds);
   if (!chat) throw new NotFoundError("Chat", chatId);
 
-  let lorebook: Lorebook | null = null;
+  let lorebook: LorebookReady | undefined;
   let castContent: string | undefined;
   if (chat.lorebookId) {
-    lorebook = await getLorebookById(chat.lorebookId);
-    if (!lorebook) {
+    const lb = await getLorebookById(chat.lorebookId);
+    if (!lb) {
       throw new NotFoundError("Lorebook", chat.lorebookId);
     }
-    if (lorebook.status !== "READY") {
-      lorebook = null;
-    }
-    if (lorebook && lorebook.cast) {
-      const castEntity = await getLorebookEntry({
-        fileName: lorebook.cast.filename,
-        lorebookId: lorebook.id,
-      });
-      castContent = convertFilesToPrompt([
-        { ...castEntity, title: "previous_cast_of_characters" },
-      ]);
+    if (lb.status !== "READY") {
+      lorebook = undefined;
+    } else {
+      lorebook = lb;
+      if (lorebook && lorebook.cast) {
+        const castEntity = await getLorebookEntry({
+          fileName: lorebook.cast.filename,
+          lorebookId: lorebook.id,
+        });
+        castContent = convertFilesToPrompt([
+          { ...castEntity, title: "previous_cast_of_characters" },
+        ]);
+      }
     }
   }
 
   const [memory, cast] = await Promise.all([
-    generateMemorySummary(chat, lorebook ?? undefined),
+    generateMemorySummary(chat, lorebook),
     generateCastOfCharacters({
       messages: chat.messages,
       previousCast: castContent,

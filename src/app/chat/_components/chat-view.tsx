@@ -46,12 +46,13 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
   const { generateSummaries, isPending: isSummaryPending } =
     useGenerateChatSummaries();
   const { generateMemoryArc, isPending: isArcPending } = useGenerateMemoryArc();
-  const [memoryResults, setMemoryResults] =
-    useState<GenerateSummariesActionResponse | null>(null);
+  const [memoryResults, setMemoryResults] = useState<
+    GenerateSummariesActionResponse | undefined
+  >(undefined);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [arcResults, setArcResults] = useState<GenerateMemoryArcResult | null>(
-    null,
-  );
+  const [arcResults, setArcResults] = useState<
+    GenerateMemoryArcResult | undefined
+  >(undefined);
   const [arcDrawerOpen, setArcDrawerOpen] = useState(false);
   const [memoryStartIndex, _setMemoryStartIndex] = useState<
     number | undefined
@@ -81,7 +82,7 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
   }
 
   const lastMessage =
-    messages.length > 0 ? messages[messages.length - 1] : null;
+    messages.length > 0 ? messages[messages.length - 1] : undefined;
 
   async function onGenerateArc(filenames: string[]) {
     if (!chatSession.story.lorebookId) return;
@@ -93,7 +94,7 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
       toast.error(res.error.message);
       return;
     }
-    setArcResults(res.data ?? null);
+    setArcResults(res.data);
     setArcDrawerOpen(true);
   }
 
@@ -120,7 +121,7 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
       isHidden: true,
       messageId: memoryMessages,
     });
-    setMemoryResults(res.data ?? null);
+    setMemoryResults(res.data);
     setDrawerOpen(true);
   }
 
