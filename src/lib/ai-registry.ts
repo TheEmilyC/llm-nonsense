@@ -17,7 +17,7 @@ export const registry = createProviderRegistry({
 });
 
 export const chatModels = {
-  deepseek: registry.languageModel("deepseek:deepseek-reasoner"),
+  deepseek: registry.languageModel("deepseek:deepseek-v4-pro"),
   gemini: registry.languageModel("openrouter:google/gemini-3.1-pro-preview"),
   glm: registry.languageModel("openrouter:z-ai/glm-5"),
   opus: registry.languageModel("openrouter:anthropic/claude-opus-4.7"),
