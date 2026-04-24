@@ -30,5 +30,5 @@ export const taskModels = {
   lorebookUpdate: registry.languageModel(
     "openrouter:anthropic/claude-sonnet-4.6",
   ),
-  summary: registry.languageModel("openrouter:z-ai/glm-5"),
+  summary: registry.languageModel("deepseek:deepseek-reasoner"),
 };
