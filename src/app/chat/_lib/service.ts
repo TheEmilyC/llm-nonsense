@@ -120,6 +120,9 @@ export async function constructChatResponse({
     model: chatModels[model],
     prompt,
     providerOptions: {
+      deepseek: {
+        thinking: { enabled: true },
+      },
       openrouter: {
         reasoning: { effort: "high" },
       },
