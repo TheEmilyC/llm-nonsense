@@ -145,14 +145,29 @@ export async function generateSummariesAction(
   if (!parseResult.success) return toActionResponseError(parseResult.error);
   const { chatId, messageIds } = parseResult.data;
 
-  const { cast, memory } = await generateSummaries({ chatId, messageIds });
-
-  const suggestions: GenerateSummariesActionResponse = {
-    cast: cast,
-    content: memory.content,
-    summary: memory.synopsis,
+  let cast: string | undefined;
+  let memory;
+  try {
+    const result = await generateSummaries({ chatId, messageIds });
+    cast = result.cast;
+    memory = result.memory;
+  } catch (err) {
+    logger.error("Failed to generate summaries", {
+      chatId,
+      messageIds,
+      ...parseError(err),
+    });
+    return toActionResponseError(err);
+  }
+  updateTag(`${CHAT_CACHE_KEY}-${chatId}`);
+  return {
+    data: {
+      cast: cast,
+      content: memory.content,
+      summary: memory.synopsis,
+    },
+    success: true,
   };
-  return { data: suggestions, success: true };
 }
 
 export async function insertBlankAssistantMessageAction(
