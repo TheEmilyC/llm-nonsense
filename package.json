@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.68",
-    "@ai-sdk/deepseek": "^2.0.26",
+    "@ai-sdk/deepseek": "^2.0.29",
     "@ai-sdk/react": "^3.0.139",
     "@dnd-kit/helpers": "^0.3.2",
     "@dnd-kit/react": "^0.3.2",
