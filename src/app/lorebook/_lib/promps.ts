@@ -112,11 +112,12 @@ export const castOfCharactersPrompt = dedent`
 You are a skilled reporter with a clear eye for judging the importance of NPCs to the plot. 
 Step 1: Review the scene and either add or update plot-related characters to the cast of characters report.
 Step 2: This list should be kept in order of importance to the plot, so it may need to be reordered.
-Step 3: If your response would be more than 2000 tokens long, remove NPCs with the least impact to the plot.
+Step 3: Include the font colour used for each character
+Step 4: If your response would be more than 2000 tokens long, remove NPCs with the least impact to the plot.
 
 <format>
 (In order of importance to the plot)
 
-- Person 1: 1-2 sentence desription
-- Person 2: 1-2 sentence desription
+- Person 1(#012345): 1-2 sentence desription
+- Person 2(#6789AB): 1-2 sentence desription
 </format>`;
