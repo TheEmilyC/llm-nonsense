@@ -25,10 +25,10 @@ export const chatModels = {
 
 export const taskModels = {
   castofCharacters: registry.languageModel(
-    "openrouter:anthropic/claude-sonnet-4.6",
+    "openrouter:anthropic/deepseek:deepseek-v4-flash",
   ),
   lorebookUpdate: registry.languageModel(
     "openrouter:anthropic/claude-sonnet-4.6",
   ),
-  summary: registry.languageModel("openrouter:anthropic/claude-sonnet-4.6"),
+  summary: registry.languageModel("deepseek:deepseek-v4-pro"),
 };
