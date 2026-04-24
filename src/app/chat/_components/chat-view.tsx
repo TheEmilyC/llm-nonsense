@@ -121,6 +121,8 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
       isHidden: true,
       messageId: memoryMessages,
     });
+    setMemoryStartIndex(undefined);
+    setMemoryEndIndex(undefined);
     setMemoryResults(res.data);
     setDrawerOpen(true);
   }
