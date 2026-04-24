@@ -31,7 +31,7 @@ import {
 } from "@/lib/env-variables";
 import { NotFoundError, ObsidianError } from "@/lib/error";
 import { HttpStatus } from "@/lib/http";
-import { logger, parseError } from "@/lib/logger";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 
 export interface CreateLorebookEntityParams {
@@ -297,11 +297,7 @@ async function fetchLorebookIndex({
       index: result,
       success: true,
     };
-  } catch (err) {
-    logger.error("Failed to get lorebook file index", {
-      id,
-      ...parseError(err),
-    });
+  } catch {
     return { status: "SERVER_UNAVAILABLE", success: false };
   }
 }

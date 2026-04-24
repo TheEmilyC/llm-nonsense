@@ -1,6 +1,12 @@
 import { flattenError, ZodError } from "zod";
 
-import { AppError, ErrorCode, ValidationError } from "@/lib/error";
+import {
+  AppError,
+  ErrorCode,
+  LlmError,
+  ObsidianError,
+  ValidationError,
+} from "@/lib/error";
 
 export type ActionError = {
   code: ErrorCode;
@@ -39,7 +45,11 @@ export function toActionResponseError<T>(error: unknown): ActionResponse<T> {
       success: false,
     };
   }
-  if (error instanceof AppError) {
+  if (
+    error instanceof AppError ||
+    error instanceof LlmError ||
+    error instanceof ObsidianError
+  ) {
     return {
       error: { code: error.code, message: error.message },
       success: false,

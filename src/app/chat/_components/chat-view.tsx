@@ -43,7 +43,8 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
     swipe: { nextSwipe, ...restSwipe },
   } = useChatMessages(chatSession);
   const [chatModel, setChatModel] = useState<ChatModelKey>("opus");
-  const { generateSummaries, isPending: isSummaryPending } = useGenerateChatSummaries();
+  const { generateSummaries, isPending: isSummaryPending } =
+    useGenerateChatSummaries();
   const { generateMemoryArc, isPending: isArcPending } = useGenerateMemoryArc();
   const [memoryResults, setMemoryResults] =
     useState<GenerateSummariesActionResponse | null>(null);
@@ -114,6 +115,11 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
       toast.error(res.error.message);
       return;
     }
+    messageControl.setMessageHidden({
+      clientOnly: true,
+      isHidden: true,
+      messageId: memoryMessages,
+    });
     setMemoryResults(res.data ?? null);
     setDrawerOpen(true);
   }
@@ -185,7 +191,12 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
                       message.metadata?.contentId,
                     )
                   }
-                  onHide={() => messageControl.messageToggleHidden(message.id)}
+                  onHide={() =>
+                    messageControl.setMessageHidden({
+                      isHidden: !message.isHidden,
+                      messageId: message.id,
+                    })
+                  }
                   persona={chatSession.persona}
                 />
               ))}

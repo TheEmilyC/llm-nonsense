@@ -121,20 +121,33 @@ export function useChatMessages({
     });
   };
 
-  const messageToggleHidden = (messageId: string) => {
-    const message = messages.find((m) => m.id === messageId);
-    const newIsHidden = !(message?.isHidden ?? false);
+  const setMessageHidden = ({
+    clientOnly = false,
+    isHidden: isHidden,
+    messageId,
+  }: {
+    clientOnly?: boolean;
+    isHidden: boolean;
+    messageId: string | string[];
+  }) => {
+    const updateIds = Array.isArray(messageId) ? messageId : [messageId];
     setMessages(
       messages.map((m) =>
-        m.id === messageId ? { ...m, isHidden: newIsHidden } : m,
+        updateIds.some((mesId) => mesId === m.id)
+          ? { ...m, isHidden: isHidden }
+          : m,
       ),
     );
-    startTransition(async () => {
-      await updateChatMessageAction({
-        id: messageId,
-        update: { isHidden: newIsHidden },
+    if (!clientOnly) {
+      startTransition(async () => {
+        updateIds.forEach((mesId) => {
+          updateChatMessageAction({
+            id: mesId,
+            update: { isHidden: isHidden },
+          });
+        });
       });
-    });
+    }
   };
 
   const insertBlankAssistantMessage = async () => {
@@ -184,7 +197,7 @@ export function useChatMessages({
       editMessage,
       insertBlankAssistantMessage,
       messages,
-      messageToggleHidden,
+      setMessageHidden,
     },
     status,
     stop,
