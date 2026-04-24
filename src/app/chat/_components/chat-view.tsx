@@ -43,21 +43,26 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
     swipe: { nextSwipe, ...restSwipe },
   } = useChatMessages(chatSession);
   const [chatModel, setChatModel] = useState<ChatModelKey>("opus");
+
+  // Memory
   const { generateSummaries, isPending: isSummaryPending } =
     useGenerateChatSummaries();
-  const { generateMemoryArc, isPending: isArcPending } = useGenerateMemoryArc();
   const [memoryResults, setMemoryResults] = useState<
     GenerateSummariesActionResponse | undefined
   >(undefined);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [arcResults, setArcResults] = useState<
-    GenerateMemoryArcResult | undefined
-  >(undefined);
-  const [arcDrawerOpen, setArcDrawerOpen] = useState(false);
   const [memoryStartIndex, _setMemoryStartIndex] = useState<
     number | undefined
   >();
   const [memoryEndIndex, _setMemoryEndIndex] = useState<number | undefined>();
+  const [memoryDrawerOpen, setMemoryDrawerOpen] = useState(false);
+
+  // Arc
+  const { generateMemoryArc, isPending: isArcPending } = useGenerateMemoryArc();
+  const [arcResults, setArcResults] = useState<
+    GenerateMemoryArcResult | undefined
+  >(undefined);
+  const [arcGenFiles, setArcGenFiles] = useState<string[]>([]);
+  const [arcDrawerOpen, setArcDrawerOpen] = useState(false);
 
   function setMemoryStartIndex(i: number | undefined) {
     _setMemoryStartIndex(i);
@@ -85,6 +90,14 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
     messages.length > 0 ? messages[messages.length - 1] : undefined;
 
   async function onGenerateArc(filenames: string[]) {
+    if (
+      filenames.length === arcGenFiles.length &&
+      filenames.every((file, i) => file === arcGenFiles[i])
+    ) {
+      // If the arc has aleeady been generated reopen the drawer
+      setArcDrawerOpen(true);
+      return;
+    }
     if (!chatSession.story.lorebookId) return;
     const res = await generateMemoryArc({
       files: filenames,
@@ -94,11 +107,17 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
       toast.error(res.error.message);
       return;
     }
+    setArcGenFiles(filenames);
     setArcResults(res.data);
     setArcDrawerOpen(true);
   }
 
   async function onGenerateMemory() {
+    if (memoryResults && memoryStartIndex === undefined) {
+      // if memories have already been generated reopen the drawer
+      setMemoryDrawerOpen(true);
+      return;
+    }
     const memoryMessages =
       !memoryEndIndex && memoryStartIndex
         ? [messages[memoryStartIndex].id]
@@ -124,7 +143,7 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
     setMemoryStartIndex(undefined);
     setMemoryEndIndex(undefined);
     setMemoryResults(res.data);
-    setDrawerOpen(true);
+    setMemoryDrawerOpen(true);
   }
 
   function onContentEdit(
@@ -221,7 +240,10 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
           <ChatInput
             isLoading={status !== "ready"}
             isMemoryGenerating={isSummaryPending}
-            memoryDisable={memoryStartIndex === undefined || isSummaryPending}
+            memoryDisable={
+              (memoryStartIndex === undefined && memoryResults === undefined) ||
+              isSummaryPending
+            }
             onInsertAssistantMessage={
               messageControl.insertBlankAssistantMessage
             }
@@ -234,8 +256,8 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
         </ChatContainer>
         <MemoryResultsDrawer
           data={memoryResults}
-          onOpenChange={setDrawerOpen}
-          open={drawerOpen}
+          onOpenChange={setMemoryDrawerOpen}
+          open={memoryDrawerOpen}
         />
         <ArcResultsDrawer
           data={arcResults}
