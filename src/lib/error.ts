@@ -1,5 +1,6 @@
 export type ErrorCode =
   | "INTERNAL_ERROR"
+  | "LLM_ERROR"
   | "NOT_FOUND"
   | "OBSIDIAN_ERROR"
   | "VALIDATION_ERROR";
@@ -13,6 +14,13 @@ export class AppError extends Error {
     super(message);
     this.name = this.constructor.name;
     Object.setPrototypeOf(this, AppError.prototype);
+  }
+}
+
+export class LlmError extends AppError {
+  constructor(message: string) {
+    super(message, "LLM_ERROR");
+    Object.setPrototypeOf(this, LlmError.prototype);
   }
 }
 

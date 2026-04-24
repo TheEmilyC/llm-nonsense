@@ -33,7 +33,7 @@ import {
 } from "@/app/prompt/_lib/prompt-builder";
 import { chatModels, taskModels } from "@/lib/ai-registry";
 import { SIDE_PROMPT_TOKEN_LIMIT } from "@/lib/env-variables";
-import { AppError, NotFoundError } from "@/lib/error";
+import { AppError, LlmError, NotFoundError } from "@/lib/error";
 import { logger } from "@/lib/logger";
 
 interface BuildPromptFromChatParams {
@@ -208,17 +208,21 @@ export async function generateCastOfCharacters({
 
   const prompt = promptBuilder.build();
   logger.info("Cast of characters request", { prompt });
-  const { output } = await generateText({
-    model: taskModels.castofCharacters,
-    onFinish: (result) => {
-      logger.info("Cast of characters result", {
-        finishReason: result.finishReason,
-        result: result.content,
-      });
-    },
-    prompt,
-  });
-  return output;
+  try {
+    const { output } = await generateText({
+      model: taskModels.castofCharacters,
+      onFinish: (result) => {
+        logger.info("Cast of characters result", {
+          finishReason: result.finishReason,
+          result: result.content,
+        });
+      },
+      prompt,
+    });
+    return output;
+  } catch (err) {
+    throw new LlmError((err as Error).message);
+  }
 }
 
 export async function generateMemorySummary(
@@ -248,31 +252,37 @@ export async function generateMemorySummary(
   });
   logger.info("Memory generation request", { prompt });
 
-  const { output } = await generateText({
-    model: taskModels.summary,
-    onFinish: (result) => {
-      logger.info("Memory generation result", {
-        finishReason: result.finishReason,
-        result: result.content,
-      });
-    },
-    output: Output.object({
-      schema: z.object({
-        content: z.string(),
-        synopsis: z
-          .string()
-          .describe("One or two scentences to describe the scene in an index"),
+  try {
+    const { output } = await generateText({
+      model: taskModels.summary,
+      onFinish: (result) => {
+        logger.info("Memory generation result", {
+          finishReason: result.finishReason,
+          result: result.content,
+        });
+      },
+      output: Output.object({
+        schema: z.object({
+          content: z.string(),
+          synopsis: z
+            .string()
+            .describe(
+              "One or two scentences to describe the scene in an index",
+            ),
+        }),
       }),
-    }),
-    prompt,
-    stopWhen: stepCountIs(20),
-    tools: {
-      ...(lorebook && {
-        getLorebookEntries: makeGetLorebookEntriesTool(lorebook),
-      }),
-    },
-  });
-  return output;
+      prompt,
+      stopWhen: stepCountIs(20),
+      tools: {
+        ...(lorebook && {
+          getLorebookEntries: makeGetLorebookEntriesTool(lorebook),
+        }),
+      },
+    });
+    return output;
+  } catch (err) {
+    throw new LlmError((err as Error).message);
+  }
 }
 
 export async function generateSummaries({
