@@ -3,6 +3,7 @@
 import { move } from "@dnd-kit/helpers";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
+import { useRef } from "react";
 
 import { DragIcon } from "@/lib/icons";
 import { cn } from "@/lib/utils";
@@ -29,12 +30,18 @@ export function SortableList<T>({
   onOrderChange,
   renderItem,
 }: SortableListProps<T>) {
+  const scrollYRef = useRef(0);
+
   return (
     <DragDropProvider
       onDragEnd={(event) => {
+        window.scrollTo({ top: scrollYRef.current });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- move requires an id property but uses references to move items
         const newItems = move(items as any, event) as T[];
         onOrderChange(newItems);
+      }}
+      onDragStart={() => {
+        scrollYRef.current = window.scrollY;
       }}
     >
       <div className="flex flex-col gap-1">
