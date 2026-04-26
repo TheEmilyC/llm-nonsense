@@ -101,15 +101,22 @@ export function PromptForm({
     name: "promptFragments",
   });
 
-  const { append, fields, remove, replace } = useFieldArray({
+  const { append, fields, move, remove } = useFieldArray({
     control: form.control,
     keyName: "_rhfId",
     name: "promptFragments",
   });
 
   function handleOrderChange(newFields: typeof fields) {
-    const currentValues = form.getValues("promptFragments");
-    replace(newFields.map((f) => currentValues[fields.indexOf(f)]));
+    for (let newIndex = 0; newIndex < newFields.length; newIndex++) {
+      const oldIndex = fields.findIndex(
+        (f) => f._rhfId === newFields[newIndex]._rhfId,
+      );
+      if (oldIndex !== newIndex) {
+        move(oldIndex, newIndex);
+        return;
+      }
+    }
   }
 
   const editingFragment = editingIndex !== null ? fields[editingIndex] : null;
