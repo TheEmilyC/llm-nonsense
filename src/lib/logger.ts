@@ -25,7 +25,7 @@ function formatMessage(level: string, message: string, context?: LogContext) {
     timeStamp: new Date().toISOString(),
     ...context,
   };
-  return JSON.stringify(entry);
+  return entry;
 }
 
 export const logger = {
