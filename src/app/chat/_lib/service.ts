@@ -18,10 +18,17 @@ import {
   ChatSession,
   LlmnUIMessage,
 } from "@/app/chat/_lib/schema";
-import { getLorebookById, getLorebookEntry } from "@/app/lorebook/_lib/data";
+import {
+  getLorebookById,
+  getLorebookEntry,
+  getLorebookEntryList,
+} from "@/app/lorebook/_lib/data";
 import { convertFilesToPrompt } from "@/app/lorebook/_lib/lorebook-scanning";
 import {
   castOfCharactersPrompt,
+  lorebookEntriesContextPrompt,
+  lorebookMemoriesContextPrompt,
+  prefetchPrompt,
   summaryInstructions,
 } from "@/app/lorebook/_lib/promps";
 import { LorebookReady } from "@/app/lorebook/_lib/schema";
@@ -372,7 +379,42 @@ async function buildPromptFromChat({
     promptBuilder.addToPrompt("WORLD_DESCRIPTION", chat.world.description);
   }
   if (lorebook) {
-    await promptBuilder.addLorebookToPrompt(lorebook);
+    const entriesToFetch = await prefetchLorebook(lorebook, chatHistory);
+    const fetchedFilenames = new Set(entriesToFetch?.map((e) => e.file) ?? []);
+
+    if (entriesToFetch && entriesToFetch.length > 0) {
+      const prefetchedFiles = await getLorebookEntryList({
+        files: entriesToFetch.map((e) => e.file),
+        lorebookId: lorebook.id,
+      });
+
+      const entryFiles: typeof prefetchedFiles = [];
+      const memoryFiles: typeof prefetchedFiles = [];
+      for (let i = 0; i < entriesToFetch.length; i++) {
+        if (entriesToFetch[i].type === "entry")
+          entryFiles.push(prefetchedFiles[i]);
+        else memoryFiles.push(prefetchedFiles[i]);
+      }
+
+      const entryContent = convertFilesToPrompt(entryFiles);
+      const memoryContent = convertFilesToPrompt(memoryFiles);
+      if (entryContent)
+        promptBuilder.addToPrompt("LOREBOOK_ENTRIES", entryContent);
+      if (memoryContent)
+        promptBuilder.addToPrompt("LOREBOOK_MEMORIES", memoryContent);
+    }
+
+    const filteredLorebook: LorebookReady = {
+      ...lorebook,
+      entries: lorebook.entries.filter(
+        (e) => !fetchedFilenames.has(e.filename),
+      ),
+      memories: lorebook.memories.filter(
+        (m) => !fetchedFilenames.has(m.filename),
+      ),
+    };
+
+    await promptBuilder.addLorebookToPrompt(filteredLorebook);
   }
   promptBuilder.injectChatHistory(chatHistory);
 
@@ -418,4 +460,91 @@ async function buildSummaryPrompt({
 
   promptBuilder.injectChatHistory(messages);
   return promptBuilder.build();
+}
+
+async function prefetchLorebook(
+  lorebook: LorebookReady,
+  messages: BuilderChatMessage[],
+) {
+  const promptBuilder = new PromptBuilder({
+    maxTokens: SIDE_PROMPT_TOKEN_LIMIT,
+    promptSkeleton: [
+      {
+        content: prefetchPrompt,
+        role: "system",
+        type: "CONTENT",
+      },
+      { content: `<lore>`, role: "system", type: "CONTENT" },
+      {
+        content: `<lorebook_entries>`,
+        role: "system",
+        type: "CONTENT",
+      },
+      {
+        content: lorebookEntriesContextPrompt,
+        role: "system",
+        type: "CONTENT",
+      },
+      {
+        content: "",
+        injectTag: "LOREBOOK_ENTRIES",
+        role: "system",
+        type: "INJECT",
+      },
+      {
+        content: `</lorebook_entries>`,
+        role: "system",
+        type: "CONTENT",
+      },
+      {
+        content: `<lorebook_memories>`,
+        role: "system",
+        type: "CONTENT",
+      },
+      {
+        content: lorebookMemoriesContextPrompt,
+        role: "system",
+        type: "CONTENT",
+      },
+      {
+        content: "",
+        injectTag: "LOREBOOK_MEMORIES",
+        role: "system",
+        type: "INJECT",
+      },
+      {
+        content: `</lorebook_memories>`,
+        role: "system",
+        type: "CONTENT",
+      },
+      { content: "</lore>\n<scene>", role: "system", type: "CONTENT" },
+      { type: "CHAT_HISTORY" },
+      { content: "</scene>", role: "user", type: "CONTENT" },
+    ],
+  });
+  await promptBuilder.addLorebookToPrompt(lorebook);
+  promptBuilder.injectChatHistory(messages);
+  const prompt = promptBuilder.build();
+
+  logger.info("Prefetch lorebook entries request", { prompt });
+  const { output } = await generateText({
+    model: taskModels.lorebookPrefetch,
+    onFinish: (result) => {
+      logger.info("Prefetch lorebook entries result", {
+        finishReason: result.finishReason,
+        result: result.content,
+      });
+    },
+    output: Output.object({
+      schema: z
+        .object({
+          file: z.string().describe("The lorebook entry or memory file"),
+          reason: z.string().describe("The reason this file was chosen"),
+          type: z.enum(["entry", "memory"]),
+        })
+        .array(),
+    }),
+    prompt,
+  });
+  return output;
 }

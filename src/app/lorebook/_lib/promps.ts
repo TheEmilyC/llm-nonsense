@@ -95,7 +95,7 @@ export const summaryInstructions = dedent`
     Write compactly but completely — every line should add new information or insight. Synthesize redundant actions or dialogue into unified cause-effect-emotion beats.
     Favor compression over coverage whenever the two conflict; omit anything that can be inferred from context or established characterization.
 
-    Also create a short scentence describing the scene for the synopsis IE: 'Luke Skywalker in his X-Wing blows up the death star in the nick of time, saving the rebellion'"
+    Also create a short sentence describing the scene for the synopsis IE: 'Luke Skywalker in his X-Wing blows up the death star in the nick of time, saving the rebellion'"
     </summary_creation>
 </instructions>`;
 
@@ -103,8 +103,8 @@ export const lorebookUpdatePrompt = dedent`
 <instructions>
 Your job is to examine the text and produce update suggestions to existing lorebook files or new lorebook suggestions if the revelation is significant. Only incude new information in the following format:
 # [Entry Title]
-    - New information revealed or changed by reveleations in the scene
-    - Include enough detail that it can be incorporated into the lorebook entry without needing the origonal text as context
+    - New information revealed or changed by revelations in the scene
+    - Include enough detail that it can be incorporated into the lorebook entry without needing the original text as context
     - Also include suggestions of information that could be removed from the lorebook based on the scene revelations
 </instructions>`;
 
@@ -118,6 +118,11 @@ Step 4: If your response would be more than 2000 tokens long, remove NPCs with t
 <format>
 (In order of importance to the plot)
 
-- Person 1(#012345): 1-2 sentence desription
-- Person 2(#6789AB): 1-2 sentence desription
+- Person 1(#012345): 1-2 sentence description
+- Person 2(#6789AB): 1-2 sentence description
 </format>`;
+
+export const prefetchPrompt = dedent`Examine the following chat history and fetch relevant entries from the list provided`;
+
+export const lorebookEntriesContextPrompt = dedent`Contains general information about the world, characters, world mechanics, ect:`;
+export const lorebookMemoriesContextPrompt = dedent`Summaries of previous story beats:`
