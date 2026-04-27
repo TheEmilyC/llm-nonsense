@@ -379,7 +379,10 @@ async function buildPromptFromChat({
     promptBuilder.addToPrompt("WORLD_DESCRIPTION", chat.world.description);
   }
   if (lorebook) {
-    const entriesToFetch = await prefetchLorebook(lorebook, chat.messages);
+    const entriesToFetch = await prefetchLorebook(lorebook, [
+      lastMessage,
+      ...chatHistory,
+    ]);
     const fetchedFilenames = new Set(entriesToFetch?.map((e) => e.file) ?? []);
 
     if (entriesToFetch && entriesToFetch.length > 0) {
