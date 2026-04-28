@@ -59,7 +59,7 @@ export async function createStoryAction(
   try {
     story = await createStory(newStory);
   } catch (err) {
-    logger.error("Failed to create strory", { data, ...parseError(err) });
+    logger.error("Failed to create story", { data, ...parseError(err) });
     return toActionResponseError(err);
   }
   logger.info("Story created", { id: story.id });

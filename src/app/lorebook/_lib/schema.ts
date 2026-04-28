@@ -10,7 +10,7 @@ const lorebookStatusSchema = z.enum([
   "READY",
   "SERVER_UNAVAILABLE",
   "UNAUTHORIZED",
-  "ERRROR",
+  "ERROR",
   "NONE_SELECTED",
 ]);
 export type LorebookStatus = z.infer<typeof lorebookStatusSchema>;
@@ -64,7 +64,7 @@ const lorebookUnavailableSchema = z.object({
 
 const lorebookErrorSchema = z.object({
   error: obsidianError,
-  status: lorebookStatusSchema.extract(["ERRROR"]),
+  status: lorebookStatusSchema.extract(["ERROR"]),
 });
 
 export const lorebookNotReadySchema = z.discriminatedUnion("status", [
@@ -144,12 +144,12 @@ export const obsidianIndexSchema = z.object({
 });
 export type ObsidianIndex = z.infer<typeof obsidianIndexSchema>;
 
-export const getObsidianIndexResposneSchema = z.union([
+export const getObsidianIndexResponseSchema = z.union([
   obsidianIndexSchema.array(),
   obsidianError,
 ]);
-export type GetLorebookIndexResposne = z.infer<
-  typeof getObsidianIndexResposneSchema
+export type GetLorebookIndexResponse = z.infer<
+  typeof getObsidianIndexResponseSchema
 >;
 
 export const obsidianFileSchema = z.object({

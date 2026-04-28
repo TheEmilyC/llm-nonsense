@@ -191,7 +191,7 @@ export async function getChatSession({
   skip = 0,
   take = 50,
 }: GetChatSessionParams): Promise<ChatSession | null> {
-  // Itentionally not cached, serves old messages to the chat service if it is
+  // Intentionally not cached, serves old messages to the chat service if it is
 
   const chat = await prisma.chat.findUnique({
     include: {

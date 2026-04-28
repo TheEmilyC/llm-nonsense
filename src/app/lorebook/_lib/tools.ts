@@ -7,7 +7,7 @@ import { LorebookReady } from "@/app/lorebook/_lib/schema";
 
 export function makeGetLorebookEntriesTool(lorebook: LorebookReady) {
   return tool({
-    description: "Retrive lore and character information from the lorebook",
+    description: "Retrieve lore and character information from the lorebook",
     execute: async ({ entries }) => {
       const files = await getLorebookEntryList({
         files: entries,
@@ -19,7 +19,7 @@ export function makeGetLorebookEntriesTool(lorebook: LorebookReady) {
       entries: z
         .string()
         .array()
-        .describe("A list of lorebook entry paths to retrive"),
+        .describe("A list of lorebook entry paths to retrieve"),
     }),
   });
 }

@@ -63,14 +63,14 @@ export class PromptBuilder {
         });
       }
       if (fragment.type === "CONTENT") {
-        const hydreatedContent = hydratePrompt(
+        const hydratedContent = hydratePrompt(
           fragment.content,
           this.variables,
         );
-        const tokens = estimateTokens(hydreatedContent);
+        const tokens = estimateTokens(hydratedContent);
         if (!this.canAffordTokens(tokens))
           throw new Error("Prompt skeleton exceeds token limit");
-        this.prompt.push({ ...fragment, content: hydreatedContent, tokens });
+        this.prompt.push({ ...fragment, content: hydratedContent, tokens });
         this.currentTokens += tokens;
       }
     }
@@ -104,11 +104,11 @@ export class PromptBuilder {
       (frag) => frag.type === "INJECT" && frag.injectTag === injectTag,
     );
     if (!fragment || fragment.type !== "INJECT") return;
-    const hydreatedContent = hydratePrompt(content, this.variables);
-    const tokens = estimateTokens(hydreatedContent);
+    const hydratedContent = hydratePrompt(content, this.variables);
+    const tokens = estimateTokens(hydratedContent);
     if (this.currentTokens + tokens > this.maxTokens)
       throw new Error("Content exceeds token limit");
-    fragment.content += `\n${hydreatedContent}`;
+    fragment.content += `\n${hydratedContent}`;
     fragment.tokens += tokens;
     this.currentTokens += tokens;
   }
