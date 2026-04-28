@@ -14,7 +14,7 @@ export const characterCardSchema = z.looseObject({
   avatar: z.string(),
   chat: z.string(),
   create_date: z.coerce.date(),
-  creator_notes: z.string(),
+  creator_notes: z.string().optional(),
   creatorcomment: z.string(),
   description: z.string(),
   fav: z.boolean(),
