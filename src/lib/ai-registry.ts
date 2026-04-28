@@ -24,8 +24,10 @@ export const chatModels = {
 };
 
 export const taskModels = {
-  castofCharacters: registry.languageModel("deepseek:deepseek-v4-pro"),
-  lorebookPrefetch: registry.languageModel("deepseek:deepseek-v4-flash"),
+  castOfCharacters: registry.languageModel("deepseek:deepseek-v4-pro"),
+  lorebookPrefetch: registry.languageModel(
+    "openrouter:~anthropic/claude-haiku-latest",
+  ),
   lorebookUpdate: registry.languageModel(
     "openrouter:anthropic/claude-sonnet-4.6",
   ),
