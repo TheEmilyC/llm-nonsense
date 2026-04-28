@@ -61,7 +61,7 @@ Time period: What timeframe the arc covers (e.g. "March 3-10, 2024", "Week of Ju
 </instructions>
 `;
 
-export const lorebookToolPrompt = dedent`The following entries are available via toolcall`;
+export const lorebookToolPrompt = dedent`The following entries are available via tool call`;
 
 export const summaryInstructions = dedent`
 <instructions>
@@ -101,7 +101,7 @@ export const summaryInstructions = dedent`
 
 export const lorebookUpdatePrompt = dedent`
 <instructions>
-Your job is to examine the text and produce update suggestions to existing lorebook files or new lorebook suggestions if the revelation is significant. Only incude new information in the following format:
+Your job is to examine the text and produce update suggestions to existing lorebook files or new lorebook suggestions if the revelation is significant. Only include new information in the following format:
 # [Entry Title]
     - New information revealed or changed by revelations in the scene
     - Include enough detail that it can be incorporated into the lorebook entry without needing the original text as context
@@ -123,6 +123,7 @@ Step 4: If your response would be more than 2000 tokens long, remove NPCs with t
 </format>`;
 
 export const prefetchPrompt = dedent`Examine the following chat history and fetch relevant entries from the list provided`;
+export const prefetchTaskPrompt = dedent`<task>Your task is to examine this scene and select the most relevant lorebook entries</task>`;
 
 export const lorebookEntriesContextPrompt = dedent`Contains general information about the world, characters, world mechanics, ect:`;
-export const lorebookMemoriesContextPrompt = dedent`Summaries of previous story beats:`
+export const lorebookMemoriesContextPrompt = dedent`Summaries of previous story beats:`;

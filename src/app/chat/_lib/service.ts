@@ -29,6 +29,7 @@ import {
   lorebookEntriesContextPrompt,
   lorebookMemoriesContextPrompt,
   prefetchPrompt,
+  prefetchTaskPrompt,
   summaryInstructions,
 } from "@/app/lorebook/_lib/promps";
 import { LorebookReady } from "@/app/lorebook/_lib/schema";
@@ -221,7 +222,7 @@ export async function generateCastOfCharacters({
   logger.info("Cast of characters request", { prompt });
   try {
     const { output } = await generateText({
-      model: taskModels.castofCharacters,
+      model: taskModels.castOfCharacters,
       onFinish: (result) => {
         logger.info("Cast of characters result", {
           finishReason: result.finishReason,
@@ -277,9 +278,7 @@ export async function generateMemorySummary(
           content: z.string(),
           synopsis: z
             .string()
-            .describe(
-              "One or two scentences to describe the scene in an index",
-            ),
+            .describe("One or two sentences to describe the scene in an index"),
         }),
       }),
       prompt,
@@ -386,18 +385,27 @@ async function buildPromptFromChat({
     const fetchedFilenames = new Set(entriesToFetch?.map((e) => e.file) ?? []);
 
     if (entriesToFetch && entriesToFetch.length > 0) {
-      const prefetchedFiles = await getLorebookEntryList({
-        files: entriesToFetch.map((e) => e.file),
-        lorebookId: lorebook.id,
-      });
+      const entryFilenames = entriesToFetch
+        .filter((e) => e.type === "entry")
+        .map((e) => e.file);
+      const memoryFilenames = entriesToFetch
+        .filter((e) => e.type === "memory")
+        .map((e) => e.file);
 
-      const entryFiles: typeof prefetchedFiles = [];
-      const memoryFiles: typeof prefetchedFiles = [];
-      for (let i = 0; i < entriesToFetch.length; i++) {
-        if (entriesToFetch[i].type === "entry")
-          entryFiles.push(prefetchedFiles[i]);
-        else memoryFiles.push(prefetchedFiles[i]);
-      }
+      const [entryFiles, memoryFiles] = await Promise.all([
+        entryFilenames.length > 0
+          ? getLorebookEntryList({
+              files: entryFilenames,
+              lorebookId: lorebook.id,
+            })
+          : [],
+        memoryFilenames.length > 0
+          ? getLorebookEntryList({
+              files: memoryFilenames,
+              lorebookId: lorebook.id,
+            })
+          : [],
+      ]);
 
       const entryContent = convertFilesToPrompt(entryFiles);
       const memoryContent = convertFilesToPrompt(memoryFiles);
@@ -523,6 +531,7 @@ async function prefetchLorebook(
       { content: "</lore>\n<scene>", role: "system", type: "CONTENT" },
       { type: "CHAT_HISTORY" },
       { content: "</scene>", role: "user", type: "CONTENT" },
+      { content: prefetchTaskPrompt, role: "user", type: "CONTENT" },
     ],
   });
   await promptBuilder.addLorebookToPrompt(lorebook);
