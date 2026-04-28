@@ -28,7 +28,7 @@ interface CurrentLorebookProps {
 }
 
 const STATUS_DOT_CLASS: Record<string, string> = {
-  ERRROR: "bg-destructive",
+  ERROR: "bg-destructive",
   NONE_SELECTED: "bg-muted-foreground/40",
   READY: "bg-green-500",
   SERVER_UNAVAILABLE: "bg-destructive",
@@ -102,7 +102,7 @@ export function CurrentLorebook({
   const tooltipContent =
     lorebook.status === "UNAUTHORIZED"
       ? "Your API key may be wrong."
-      : lorebook.status === "ERRROR"
+      : lorebook.status === "ERROR"
         ? `Code: ${lorebook.error.errorCode} — ${lorebook.error.message}`
         : null;
 

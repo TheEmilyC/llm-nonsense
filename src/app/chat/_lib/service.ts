@@ -31,7 +31,7 @@ import {
   prefetchPrompt,
   prefetchTaskPrompt,
   summaryInstructions,
-} from "@/app/lorebook/_lib/promps";
+} from "@/app/lorebook/_lib/prompts";
 import { LorebookReady } from "@/app/lorebook/_lib/schema";
 import { makeGetLorebookEntriesTool } from "@/app/lorebook/_lib/tools";
 import {

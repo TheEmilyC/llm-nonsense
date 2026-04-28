@@ -136,7 +136,7 @@ export async function testConnectionAction(
 
   // Shouldn't reach this, either the test works or throws
   return {
-    error: { code: "INTERNAL_ERROR", message: "An error occured" },
+    error: { code: "INTERNAL_ERROR", message: "An error occurred" },
     success: false,
   };
 }

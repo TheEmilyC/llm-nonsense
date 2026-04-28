@@ -8,6 +8,6 @@ export type MessageRole = z.infer<typeof messageRoleSchema>;
 export const entityProfileSchema = z.object({
   id: dbIdValidator,
   imageSrc: z.string().min(1, "Image source is required"),
-  name: z.string().min(1, "Name is requierd"),
+  name: z.string().min(1, "Name is required"),
 });
 export type EntityProfile = z.infer<typeof entityProfileSchema>;

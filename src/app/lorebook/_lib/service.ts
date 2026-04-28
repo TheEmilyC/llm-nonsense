@@ -9,7 +9,7 @@ import { convertFilesToPrompt } from "@/app/lorebook/_lib/lorebook-scanning";
 import {
   lorebookToolPrompt,
   memoryArcInstructionPrompt,
-} from "@/app/lorebook/_lib/promps";
+} from "@/app/lorebook/_lib/prompts";
 import { makeGetLorebookEntriesTool } from "@/app/lorebook/_lib/tools";
 import { PromptBuilder } from "@/app/prompt/_lib/prompt-builder";
 import { taskModels } from "@/lib/ai-registry";
@@ -85,7 +85,7 @@ export async function generateMemoryArc(lorebookId: string, files: string[]) {
               synopsis: z
                 .string()
                 .describe(
-                  "One or two scentences to describe the arc in an index",
+                  "One or two sentences to describe the arc in an index",
                 ),
             })
             .array(),

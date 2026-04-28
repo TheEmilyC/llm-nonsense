@@ -3,7 +3,7 @@
 import { cacheTag } from "next/cache";
 
 import {
-  getObsidianIndexResposneSchema,
+  getObsidianIndexResponseSchema,
   Lorebook,
   LOREBOOK_CACHE_KEY,
   LorebookEntityDto,
@@ -172,7 +172,7 @@ export async function getLorebookEntry({
   lorebookId,
 }: GetLorebookEntryParams) {
   const lorebookEntity = await getLorebookEntityById(lorebookId);
-  if (!lorebookEntity) throw new NotFoundError("Loreook", lorebookId);
+  if (!lorebookEntity) throw new NotFoundError("Lorebook", lorebookId);
   return fetchLorebookEntry({
     apiKey: lorebookEntity.apiKey,
     fileName,
@@ -187,7 +187,7 @@ export async function getLorebookEntryList({
 }: GetLorebookEntryListParams): Promise<ObsidianFile[]> {
   const lorebookEntity = await getLorebookEntityById(lorebookId);
   if (!lorebookEntity) throw new NotFoundError("Lorebook", lorebookId);
-  return Promise.all(
+  const results = await Promise.allSettled(
     files.map((fileName) =>
       fetchLorebookEntry({
         apiKey: lorebookEntity.apiKey,
@@ -197,6 +197,16 @@ export async function getLorebookEntryList({
       }),
     ),
   );
+  return results.flatMap((result, i) => {
+    if (result.status === "rejected") {
+      logger.info("Failed to fetch lorebook entry", {
+        file: files[i],
+        reason: result.reason,
+      });
+      return [];
+    }
+    return [result.value];
+  });
 }
 
 export async function getLorebookStatusDto(
@@ -287,11 +297,11 @@ async function fetchLorebookIndex({
     if (rawResponse.status === HttpStatus.UNAUTHORIZED) {
       return { status: "UNAUTHORIZED", success: false };
     }
-    const result = getObsidianIndexResposneSchema.parse(
+    const result = getObsidianIndexResponseSchema.parse(
       await rawResponse.json(),
     );
     if ("errorCode" in result) {
-      return { error: result, status: "ERRROR", success: false };
+      return { error: result, status: "ERROR", success: false };
     }
     return {
       index: result,

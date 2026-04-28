@@ -94,7 +94,7 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
       filenames.length === arcGenFiles.length &&
       filenames.every((file, i) => file === arcGenFiles[i])
     ) {
-      // If the arc has aleeady been generated reopen the drawer
+      // If the arc has already been generated reopen the drawer
       setArcDrawerOpen(true);
       return;
     }
