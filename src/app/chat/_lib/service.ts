@@ -22,11 +22,7 @@ import {
   ChatSession,
   LlmnUIMessage,
 } from "@/app/chat/_lib/schema";
-import {
-  getLorebookById,
-  getLorebookEntry,
-  getLorebookEntryList,
-} from "@/app/lorebook/_lib/data";
+import { getLorebookById, getLorebookEntry } from "@/app/lorebook/_lib/data";
 import { convertFilesToPrompt } from "@/app/lorebook/_lib/lorebook-scanning";
 import {
   castOfCharactersPrompt,
@@ -381,54 +377,51 @@ async function buildPromptFromChat({
     promptBuilder.addToPrompt("WORLD_DESCRIPTION", chat.world.description);
   }
   if (lorebook) {
-    const entriesToFetch = await prefetchLorebook(lorebook, [
-      lastMessage,
-      ...chatHistory,
-    ]);
-    const fetchedFilenames = new Set(entriesToFetch?.map((e) => e.file) ?? []);
-
-    if (entriesToFetch && entriesToFetch.length > 0) {
-      const entryFilenames = entriesToFetch
-        .filter((e) => e.type === "entry")
-        .map((e) => e.file);
-      const memoryFilenames = entriesToFetch
-        .filter((e) => e.type === "memory")
-        .map((e) => e.file);
-
-      const [entryFiles, memoryFiles] = await Promise.all([
-        entryFilenames.length > 0
-          ? getLorebookEntryList({
-              files: entryFilenames,
-              lorebookId: lorebook.id,
-            })
-          : [],
-        memoryFilenames.length > 0
-          ? getLorebookEntryList({
-              files: memoryFilenames,
-              lorebookId: lorebook.id,
-            })
-          : [],
-      ]);
-
-      const entryContent = convertFilesToPrompt(entryFiles);
-      const memoryContent = convertFilesToPrompt(memoryFiles);
-      if (entryContent)
-        promptBuilder.addToPrompt("LOREBOOK_ENTRIES", entryContent);
-      if (memoryContent)
-        promptBuilder.addToPrompt("LOREBOOK_MEMORIES", memoryContent);
-    }
-
-    const filteredLorebook: LorebookReady = {
-      ...lorebook,
-      entries: lorebook.entries.filter(
-        (e) => !fetchedFilenames.has(e.filename),
-      ),
-      memories: lorebook.memories.filter(
-        (m) => !fetchedFilenames.has(m.filename),
-      ),
-    };
-
-    await promptBuilder.addLorebookToPrompt(filteredLorebook);
+    await promptBuilder.addLorebookToPrompt(lorebook);
+    // INFO: Disabled prefetching for testing, current implementation changes system prompt and interferes with LLM side caching
+    // const entriesToFetch = await prefetchLorebook(lorebook, [
+    //   lastMessage,
+    //   ...chatHistory,
+    // ]);
+    // const fetchedFilenames = new Set(entriesToFetch?.map((e) => e.file) ?? []);
+    // if (entriesToFetch && entriesToFetch.length > 0) {
+    //   const entryFilenames = entriesToFetch
+    //     .filter((e) => e.type === "entry")
+    //     .map((e) => e.file);
+    //   const memoryFilenames = entriesToFetch
+    //     .filter((e) => e.type === "memory")
+    //     .map((e) => e.file);
+    //   const [entryFiles, memoryFiles] = await Promise.all([
+    //     entryFilenames.length > 0
+    //       ? getLorebookEntryList({
+    //           files: entryFilenames,
+    //           lorebookId: lorebook.id,
+    //         })
+    //       : [],
+    //     memoryFilenames.length > 0
+    //       ? getLorebookEntryList({
+    //           files: memoryFilenames,
+    //           lorebookId: lorebook.id,
+    //         })
+    //       : [],
+    //   ]);
+    //   const entryContent = convertFilesToPrompt(entryFiles);
+    //   const memoryContent = convertFilesToPrompt(memoryFiles);
+    //   if (entryContent)
+    //     promptBuilder.addToPrompt("LOREBOOK_ENTRIES", entryContent);
+    //   if (memoryContent)
+    //     promptBuilder.addToPrompt("LOREBOOK_MEMORIES", memoryContent);
+    // }
+    // const filteredLorebook: LorebookReady = {
+    //   ...lorebook,
+    //   entries: lorebook.entries.filter(
+    //     (e) => !fetchedFilenames.has(e.filename),
+    //   ),
+    //   memories: lorebook.memories.filter(
+    //     (m) => !fetchedFilenames.has(m.filename),
+    //   ),
+    // };
+    //await promptBuilder.addLorebookToPrompt(filteredLorebook);
   }
   promptBuilder.injectChatHistory(chatHistory);
 
