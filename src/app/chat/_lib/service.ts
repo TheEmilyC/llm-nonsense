@@ -13,6 +13,10 @@ import {
   hideChatMessages,
 } from "@/app/chat/_lib/data";
 import {
+  chatSummaryInstructions,
+  lorebookSummaryTask,
+} from "@/app/chat/_lib/prompts";
+import {
   ChatForMemoryGen,
   ChatModelKey,
   ChatSession,
@@ -30,7 +34,6 @@ import {
   lorebookMemoriesContextPrompt,
   prefetchPrompt,
   prefetchTaskPrompt,
-  summaryInstructions,
 } from "@/app/lorebook/_lib/prompts";
 import { LorebookReady } from "@/app/lorebook/_lib/schema";
 import { makeGetLorebookEntriesTool } from "@/app/lorebook/_lib/tools";
@@ -438,7 +441,7 @@ async function buildSummaryPrompt({
   messages,
 }: BuildSummaryPromptParams): Promise<BuilderChatMessage[]> {
   const promptSkeleton: BuilderFragment[] = [
-    { content: summaryInstructions, role: "system", type: "CONTENT" },
+    { content: chatSummaryInstructions, role: "system", type: "CONTENT" },
     { content: `<lore>`, role: "system", type: "CONTENT" },
     {
       content: "",
@@ -458,6 +461,7 @@ async function buildSummaryPrompt({
     { content: "</lore>\n<scene>", role: "system", type: "CONTENT" },
     { type: "CHAT_HISTORY" },
     { content: "</scene>", role: "user", type: "CONTENT" },
+    { content: lorebookSummaryTask, role: "user", type: "CONTENT" },
   ];
 
   const promptBuilder = new PromptBuilder({
