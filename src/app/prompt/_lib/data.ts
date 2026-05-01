@@ -20,6 +20,7 @@ export async function createPrompt({
   maxSteps,
   maxTokens,
   name,
+  prefetch,
   promptFragments,
   temperature,
   topK,
@@ -31,6 +32,7 @@ export async function createPrompt({
       maxSteps,
       maxTokens,
       name,
+      prefetch,
       promptFragments: promptFragments
         ? {
             createMany: {
@@ -106,6 +108,7 @@ export async function updatePrompt({
       maxSteps: update.maxSteps,
       maxTokens: update.maxTokens,
       name: update.name,
+      prefetch: update.prefetch,
       promptFragments: update.promptFragments
         ? {
             deleteMany: {

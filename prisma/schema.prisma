@@ -125,6 +125,7 @@ model Prompt {
   temperature     Float            @default(0.9)
   topK            Int              @default(64)
   topP            Float            @default(0.95)
+  prefetch        Boolean          @default(false)
   promptFragments PromptFragment[]
   createdAt       DateTime         @default(now())
   modifiedAt      DateTime         @default(now()) @updatedAt

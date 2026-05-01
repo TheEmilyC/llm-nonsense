@@ -37,6 +37,7 @@ export async function createPromptAction(
     maxSteps,
     maxTokens,
     name,
+    prefetch,
     promptFragments: rawFragments,
     temperature,
     topK,
@@ -47,6 +48,7 @@ export async function createPromptAction(
     maxSteps,
     maxTokens,
     name,
+    prefetch,
     promptFragments: promptFragmentCreateSchema
       .array()
       .parse(rawFragments.map((frag, idx) => ({ ...frag, order: idx }))),
@@ -110,6 +112,7 @@ export async function updatePromptAction(
       maxSteps,
       maxTokens,
       name,
+      prefetch,
       promptFragments: rawFragments,
       temperature,
       topK,
@@ -124,6 +127,7 @@ export async function updatePromptAction(
       maxSteps,
       maxTokens,
       name,
+      prefetch,
       promptFragments: promptFragmentUpdateSchema
         .array()
         .parse(rawFragments.map((frag, idx) => ({ ...frag, order: idx }))),

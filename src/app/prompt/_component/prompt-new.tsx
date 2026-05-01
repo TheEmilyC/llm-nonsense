@@ -17,6 +17,7 @@ const DEFAULT_PROMPT: PromptFormValues = {
   maxSteps: 20,
   maxTokens: 80000,
   name: "",
+  prefetch: false,
   promptFragments: [
     {
       content:

@@ -87,6 +87,7 @@ export function PromptForm({
       maxSteps: 20,
       maxTokens: 80000,
       name: "",
+      prefetch: false,
       promptFragments: [],
       temperature: 0.9,
       topK: 64,
@@ -164,6 +165,18 @@ export function PromptForm({
           name="topP"
           type="number"
         />
+        <Field>
+          <div className="flex items-center justify-between">
+            <FieldLabel>Prefetch Lorebook Entries</FieldLabel>
+            <Controller
+              control={form.control}
+              name="prefetch"
+              render={({ field: f }) => (
+                <Switch checked={f.value} onCheckedChange={f.onChange} />
+              )}
+            />
+          </div>
+        </Field>
       </FieldGroup>
       <FieldSet className="mt-6">
         <div className="flex items-center justify-between">
