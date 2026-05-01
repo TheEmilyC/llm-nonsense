@@ -63,10 +63,7 @@ export class PromptBuilder {
         });
       }
       if (fragment.type === "CONTENT") {
-        const hydratedContent = hydratePrompt(
-          fragment.content,
-          this.variables,
-        );
+        const hydratedContent = hydratePrompt(fragment.content, this.variables);
         const tokens = estimateTokens(hydratedContent);
         if (!this.canAffordTokens(tokens))
           throw new Error("Prompt skeleton exceeds token limit");
@@ -173,7 +170,7 @@ function buildLorePromptTable(entries: LorebookEntryIndex[]): string {
     entriesPrompt += entries
       .map(
         (ent) =>
-          `| ${ent.filename} | ${ent.aliases?.join(", ")} | ${ent.characters?.join(", ")} | ${ent.summary} |`,
+          `| ${ent.filename} | ${ent.aliases?.join(", ")} | ${ent.characters?.map((char) => (typeof char === "string" ? char : char.display)).join(", ")} | ${ent.summary} |`,
       )
       .join("\n");
   }

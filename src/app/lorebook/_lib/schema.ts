@@ -33,9 +33,19 @@ export const lorebookIndexSchema = z.object({
 });
 export type LorebookIndex = z.infer<typeof lorebookIndexSchema>;
 
+const obsidianLinkedTagSchema = z.union([
+  z.string(),
+  z.object({
+    display: z.string(),
+    embed: z.boolean(),
+    path: z.string(),
+    type: z.string(),
+  }),
+]);
+
 const lorebookEntryIndexSchema = lorebookIndexSchema.extend({
   aliases: z.string().array().optional(),
-  characters: z.string().array().optional(),
+  characters: obsidianLinkedTagSchema.array().optional(),
   summary: z.string(),
 });
 export type LorebookEntryIndex = z.infer<typeof lorebookEntryIndexSchema>;
@@ -120,7 +130,7 @@ export type GenerateMemoryArcActionParams = z.infer<
 
 const lorebookFrontmatterSchema = z.object({
   aliases: z.string().array().optional().nullable(),
-  characters: z.string().array().optional().nullable(),
+  characters: obsidianLinkedTagSchema.array().optional().nullable(),
   keys: z.string().array().optional().nullable(),
   order: z.coerce.number().optional().nullable(),
   summary: z.string().optional().nullable(),
