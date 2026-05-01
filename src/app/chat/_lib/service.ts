@@ -386,7 +386,9 @@ async function buildPromptFromChat({
         lastMessage,
         ...chatHistory,
       ]);
-      const fetchedFilenames = new Set(entriesToFetch?.map((e) => e.file) ?? []);
+      const fetchedFilenames = new Set(
+        entriesToFetch?.map((e) => e.file) ?? [],
+      );
       if (entriesToFetch && entriesToFetch.length > 0) {
         const entryFilenames = entriesToFetch
           .filter((e) => e.type === "entry")
