@@ -4,7 +4,11 @@ import { UseFormSetError } from "react-hook-form";
 import { toast } from "sonner";
 
 import { PromptForm } from "@/app/prompt/_component/prompt-form";
-import { useDeletePrompt, useUpdatePrompt } from "@/app/prompt/_lib/hooks";
+import {
+  useCopyPrompt,
+  useDeletePrompt,
+  useUpdatePrompt,
+} from "@/app/prompt/_lib/hooks";
 import { PromptDto, PromptFormValues } from "@/app/prompt/_lib/schema";
 import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Content } from "@/components/content";
@@ -18,10 +22,18 @@ interface PromptEditProps {
 }
 
 export function PromptEdit({ prompt }: PromptEditProps) {
+  const { copyPrompt, isPending: isCopyPending } = useCopyPrompt();
   const { deletePrompt, isPending: isDeletePending } = useDeletePrompt();
   const { isPending: isUpdatePending, updatePrompt } = useUpdatePrompt();
 
-  const isPending = isDeletePending || isUpdatePending;
+  const isPending = isCopyPending || isDeletePending || isUpdatePending;
+
+  async function copyHandler() {
+    const result = await copyPrompt(prompt.id);
+    if (!result.success) {
+      toast.error(result.error.message);
+    }
+  }
 
   async function deleteHandler() {
     const result = await deletePrompt(prompt.id);
@@ -56,6 +68,16 @@ export function PromptEdit({ prompt }: PromptEditProps) {
         backLinkLabel="Prompts"
         pageTitle={prompt.name}
       >
+        <Button
+          disabled={isPending}
+          onClick={copyHandler}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          {isCopyPending ? "Duplicating..." : "Duplicate"}
+        </Button>
+
         <ConfirmDialog
           description={`Delete ${prompt.name}? This can not be undone`}
           onConfirm={deleteHandler}

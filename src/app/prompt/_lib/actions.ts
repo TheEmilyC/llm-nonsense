@@ -7,6 +7,7 @@ import { dbIdValidator } from "@/app/_shared/schema";
 import {
   createPrompt,
   deletePrompt,
+  getPromptDto,
   updatePrompt,
 } from "@/app/prompt/_lib/data";
 import {
@@ -64,6 +65,47 @@ export async function createPromptAction(
     return toActionResponseError(err);
   }
   logger.info("Prompt created", { id: prompt.id });
+
+  updateTag(PROMPT_CACHE_KEY);
+  redirect(`/prompt/${prompt.id}`);
+}
+
+export async function copyPromptAction(
+  promptId: string,
+): Promise<ActionResponse> {
+  const idParseResult = dbIdValidator.safeParse(promptId);
+  if (!idParseResult.success) {
+    return toActionResponseError(idParseResult.error);
+  }
+  const id = idParseResult.data;
+
+  const source = await getPromptDto(id);
+  if (!source) {
+    return toActionResponseError(new Error("Prompt not found"));
+  }
+
+  const newPrompt: CreatePromptParams = {
+    maxOutputTokens: source.maxOutputTokens,
+    maxSteps: source.maxSteps,
+    maxTokens: source.maxTokens,
+    name: `Copy of ${source.name}`,
+    prefetch: source.prefetch,
+    promptFragments: promptFragmentCreateSchema
+      .array()
+      .parse(source.promptFragments),
+    temperature: source.temperature,
+    topK: source.topK,
+    topP: source.topP,
+  };
+
+  let prompt: PromptEntity;
+  try {
+    prompt = await createPrompt(newPrompt);
+  } catch (err) {
+    logger.error("Failed to copy prompt", { id, ...parseError(err) });
+    return toActionResponseError(err);
+  }
+  logger.info("Prompt copied", { newId: prompt.id, sourceId: id });
 
   updateTag(PROMPT_CACHE_KEY);
   redirect(`/prompt/${prompt.id}`);
