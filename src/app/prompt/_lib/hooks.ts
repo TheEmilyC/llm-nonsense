@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 
 import {
+  copyPromptAction,
   createPromptAction,
   deletePromptAction,
   updatePromptAction,
@@ -27,6 +28,25 @@ export function useCreatePrompt(onError?: (error: ActionError) => void) {
   }
   return {
     createPrompt,
+    isPending,
+  };
+}
+
+export function useCopyPrompt(onError?: (error: ActionError) => void) {
+  const [isPending, startTransition] = useTransition();
+
+  function copyPrompt(id: string): Promise<ActionResponse> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const res = await copyPromptAction(id);
+        if (!res.success) onError?.(res.error);
+        resolve(res);
+      });
+    });
+  }
+
+  return {
+    copyPrompt,
     isPending,
   };
 }
