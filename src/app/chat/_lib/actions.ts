@@ -207,6 +207,24 @@ export async function insertBlankAssistantMessageAction(
   }
 }
 
+export async function replaceChatFactsAction(
+  params: SaveChatFactsActionParams,
+): Promise<ActionResponse> {
+  const parseResult = saveChatFactsActionParamsSchema.safeParse(params);
+  if (!parseResult.success) return toActionResponseError(parseResult.error);
+  const { chatId, facts } = parseResult.data;
+
+  try {
+    await updateChat({ id: chatId, update: { facts } });
+  } catch (err) {
+    logger.error("Failed to replace chat facts", { chatId, ...parseError(err) });
+    return toActionResponseError(err);
+  }
+  logger.info("Chat facts replaced", { chatId });
+  updateTag(`${CHAT_CACHE_KEY}-${chatId}`);
+  return { success: true };
+}
+
 export async function saveChatFactsAction(
   params: SaveChatFactsActionParams,
 ): Promise<ActionResponse> {

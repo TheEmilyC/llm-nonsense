@@ -199,6 +199,7 @@ export type ChatMessageDto = z.infer<typeof chatMessageDtoSchema>;
 
 export const chatSessionDtoSchema = chatEntitySchema
   .pick({
+    facts: true,
     id: true,
     name: true,
   })

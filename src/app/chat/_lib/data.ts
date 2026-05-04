@@ -296,6 +296,7 @@ export async function getChatSessionDto({
       imageSrc: buildCharacterImageUrl(character.id, character.pngHash),
       name: character.name,
     },
+    facts: chat.facts ?? [],
     id: chat.id,
     messages: chat.messages.reverse().map((msg) => ({
       contents: msg.contents.map((con) => ({

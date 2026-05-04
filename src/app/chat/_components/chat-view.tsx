@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { FactsDrawer } from "@/app/chat/_components/facts-drawer";
 import { MemoryResultsDrawer } from "@/app/chat/_components/memory-results-drawer";
 import {
   useChatMessages,
@@ -28,10 +29,9 @@ import {
 } from "@/components/chat";
 import { Header } from "@/components/header";
 import { Button } from "@/components/ui/button";
+import { PromptInputAction } from "@/components/ui/prompt-input";
 import {
-  PromptInputAction,
-} from "@/components/ui/prompt-input";
-import {
+  FactsIcon,
   InsertAssistantMessageIcon,
   LorebookIcon,
   MemoryIcon,
@@ -64,6 +64,10 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
   >();
   const [memoryEndIndex, _setMemoryEndIndex] = useState<number | undefined>();
   const [memoryDrawerOpen, setMemoryDrawerOpen] = useState(false);
+
+  // Facts
+  const [facts, setFacts] = useState(chatSession.facts);
+  const [factsDrawerOpen, setFactsDrawerOpen] = useState(false);
 
   // Arc
   const { generateMemoryArc, isPending: isArcPending } = useGenerateMemoryArc();
@@ -270,13 +274,21 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
                     />
                   </Button>
                 </PromptInputAction>
+                <PromptInputAction tooltip={`Facts (${facts.length})`}>
+                  <Button
+                    className="h-8 w-8 rounded-full"
+                    onClick={() => setFactsDrawerOpen(true)}
+                    size="sm"
+                  >
+                    <FactsIcon className="h-4 w-4" />
+                  </Button>
+                </PromptInputAction>
                 <PromptInputAction tooltip="Insert blank assistant message">
                   <Button
                     className="h-8 w-8 rounded-full"
                     disabled={status !== "ready"}
                     onClick={messageControl.insertBlankAssistantMessage}
                     size="sm"
-                    suppressHydrationWarning
                   >
                     <InsertAssistantMessageIcon className="h-4 w-4" />
                   </Button>
@@ -289,6 +301,13 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
             selectedModel={chatModel}
           />
         </ChatContainer>
+        <FactsDrawer
+          chatId={chatSession.id}
+          facts={facts}
+          onFactsChange={setFacts}
+          onOpenChange={setFactsDrawerOpen}
+          open={factsDrawerOpen}
+        />
         <MemoryResultsDrawer
           chatId={chatSession.id}
           data={memoryResults}

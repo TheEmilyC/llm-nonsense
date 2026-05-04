@@ -15,6 +15,7 @@ import {
   GripVertical,
   Home,
   Library,
+  ListChecks,
   ListEnd,
   ListStart,
   Lock,
@@ -42,6 +43,7 @@ export const StoryIcon = BookOpen;
 export const LorebookIcon = Library;
 export const PromptIcon = MessageSquareCode;
 export const MemoryIcon = Brain;
+export const FactsIcon = ListChecks;
 
 // Action icons
 export const CopyIcon = Clipboard;
