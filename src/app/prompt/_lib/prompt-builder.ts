@@ -170,7 +170,7 @@ function buildLorePromptTable(entries: LorebookEntryIndex[]): string {
     entriesPrompt += entries
       .map(
         (ent) =>
-          `| ${ent.filename} | ${ent.aliases?.join(", ")} | ${ent.characters?.map((char) => (typeof char === "string" ? char : char.display)).join(", ")} | ${ent.summary} |`,
+          `| ${ent.filename} | ${ent.aliases?.join(", ")} | ${ent.characters?.join(", ")} | ${ent.summary} |`,
       )
       .join("\n");
   }
