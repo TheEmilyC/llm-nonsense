@@ -53,6 +53,11 @@ export interface GetChatSessionViewParams {
   take?: number;
 }
 
+export interface UpdateChatFactsParams {
+  facts: { claim: string; confidence: "explicit" | "implied" }[];
+  id: string;
+}
+
 export interface UpdateChatMessageParams {
   id: string;
   update: Partial<Pick<ChatMessage, "isHidden">>;
@@ -350,6 +355,13 @@ export async function hideChatMessages(ids: string[]): Promise<void> {
     data: { isHidden: true },
     where: { id: { in: ids } },
   });
+}
+
+export async function updateChatFacts({
+  facts,
+  id,
+}: UpdateChatFactsParams): Promise<void> {
+  await prisma.chat.update({ data: { facts }, where: { id } });
 }
 
 export async function updateChatMessage({

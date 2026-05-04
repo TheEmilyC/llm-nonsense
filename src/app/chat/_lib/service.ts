@@ -14,6 +14,7 @@ import {
 } from "@/app/chat/_lib/data";
 import {
   chatSummaryInstructions,
+  lorebookFactExtractionPrompt,
   lorebookSummaryTask,
 } from "@/app/chat/_lib/prompts";
 import {
@@ -46,6 +47,11 @@ import { chatModels, taskModels } from "@/lib/ai-registry";
 import { SIDE_PROMPT_TOKEN_LIMIT } from "@/lib/env-variables";
 import { AppError, LlmError, NotFoundError } from "@/lib/error";
 import { logger } from "@/lib/logger";
+
+export interface GenerateLorebookFactsParams {
+  messages: BuilderChatMessage[];
+  previousScene: string;
+}
 
 interface BuildPromptFromChatParams {
   character: CharacterRecord;
@@ -240,6 +246,56 @@ export async function generateCastOfCharacters({
   }
 }
 
+export async function generateLorebookFacts({
+  messages,
+  previousScene,
+}: GenerateLorebookFactsParams) {
+  const promptBuilder = new PromptBuilder({
+    maxTokens: SIDE_PROMPT_TOKEN_LIMIT,
+    promptSkeleton: [
+      {
+        content: lorebookFactExtractionPrompt,
+        role: "system",
+        type: "CONTENT",
+      },
+      { content: `<previous_scene_summary>`, role: "system", type: "CONTENT" },
+      { content: previousScene, role: "system", type: "CONTENT" },
+      { content: `</previous_scene_summary>`, role: "system", type: "CONTENT" },
+      { content: `<scene>`, role: "system", type: "CONTENT" },
+      { type: "CHAT_HISTORY" },
+      { content: `</scene>`, role: "user", type: "CONTENT" },
+    ],
+  });
+  promptBuilder.injectChatHistory(messages);
+  const prompt = promptBuilder.build();
+  logger.info("Lorebook facts request", { prompt });
+  try {
+    const { output } = await generateText({
+      model: taskModels.lorebookFactExtraction,
+      onFinish: (result) => {
+        logger.info("Lorebook facts response", {
+          finishReason: result.finishReason,
+          result: result.content,
+        });
+      },
+      output: Output.object({
+        schema: z.object({
+          facts: z
+            .object({
+              claim: z.string(),
+              confidence: z.enum(["explicit", "implied"]),
+            })
+            .array(),
+        }),
+      }),
+      prompt,
+    });
+    return output?.facts;
+  } catch (err) {
+    throw new LlmError((err as Error).message);
+  }
+}
+
 export async function generateMemorySummary(
   chat: ChatForMemoryGen,
   lorebook?: LorebookReady,
@@ -307,6 +363,7 @@ export async function generateSummaries({
 
   let lorebook: LorebookReady | undefined;
   let castContent: string | undefined;
+  let previousScene: string | undefined;
   if (chat.lorebookId) {
     const lb = await getLorebookById(chat.lorebookId);
     if (!lb) {
@@ -316,27 +373,45 @@ export async function generateSummaries({
       lorebook = undefined;
     } else {
       lorebook = lb;
-      if (lorebook && lorebook.cast) {
-        const castEntity = await getLorebookEntry({
-          fileName: lorebook.cast.filename,
-          lorebookId: lorebook.id,
-        });
-        castContent = convertFilesToPrompt([
-          { ...castEntity, title: "previous_cast_of_characters" },
-        ]);
+      if (lorebook) {
+        if (lorebook.cast) {
+          const castEntity = await getLorebookEntry({
+            fileName: lorebook.cast.filename,
+            lorebookId: lorebook.id,
+          });
+          castContent = convertFilesToPrompt([
+            { ...castEntity, title: "previous_cast_of_characters" },
+          ]);
+        }
+        if (lorebook.memories.length > 0) {
+          const previousSceneEntry = await getLorebookEntry({
+            fileName: lorebook.memories[lorebook.memories.length - 1].filename,
+            lorebookId: lorebook.id,
+          });
+          previousScene = convertFilesToPrompt([previousSceneEntry]);
+        }
       }
     }
   }
 
-  const [memory, cast] = await Promise.all([
+  const [memoryResult, castResult, factsResult] = await Promise.allSettled([
     generateMemorySummary(chat, lorebook),
     generateCastOfCharacters({
       messages: chat.messages,
       previousCast: castContent,
     }),
+    generateLorebookFacts({
+      messages: chat.messages,
+      previousScene: previousScene ?? "No previous scene available",
+    }),
   ]);
   await hideChatMessages(messageIds);
-  return { cast, memory };
+  return {
+    cast: castResult.status === "fulfilled" ? castResult.value : undefined,
+    facts: factsResult.status === "fulfilled" ? factsResult.value : undefined,
+    memory:
+      memoryResult.status === "fulfilled" ? memoryResult.value : undefined,
+  };
 }
 
 async function buildPromptFromChat({

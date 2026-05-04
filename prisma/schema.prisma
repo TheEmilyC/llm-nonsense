@@ -61,6 +61,8 @@ model Chat {
   storyId    String
   story      Story         @relation(fields: [storyId], references: [id])
   messages   ChatMessage[]
+  /// [ChatFacts]
+  facts      Json?
   createdAt  DateTime      @default(now())
   modifiedAt DateTime      @default(now()) @updatedAt
 }

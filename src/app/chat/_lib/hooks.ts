@@ -12,6 +12,7 @@ import {
   deleteMessageAction,
   generateSummariesAction,
   insertBlankAssistantMessageAction,
+  saveChatFactsAction,
   updateChatMessageAction,
   updateMessageContentAction,
 } from "@/app/chat/_lib/actions";
@@ -22,6 +23,7 @@ import {
   GenerateSummariesActionParams,
   GenerateSummariesActionResponse,
   LlmnUIMessage,
+  SaveChatFactsActionParams,
 } from "@/app/chat/_lib/schema";
 import { ActionError, ActionResponse } from "@/lib/action-utils";
 
@@ -265,6 +267,24 @@ export function useGenerateChatSummaries(
   }
 
   return { generateSummaries, isPending };
+}
+
+export function useSaveChatFacts(onError?: (error: ActionError) => void) {
+  const [isPending, startTransition] = useTransition();
+
+  function saveFacts(
+    params: SaveChatFactsActionParams,
+  ): Promise<ActionResponse> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const res = await saveChatFactsAction(params);
+        if (!res.success) onError?.(res.error);
+        resolve(res);
+      });
+    });
+  }
+
+  return { isPending, saveFacts };
 }
 
 function getMessageSwipes(message: ChatMessageDto): HookUIMessage[] {

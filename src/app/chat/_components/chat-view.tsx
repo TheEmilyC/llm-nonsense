@@ -255,6 +255,7 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
           />
         </ChatContainer>
         <MemoryResultsDrawer
+          chatId={chatSession.id}
           data={memoryResults}
           onOpenChange={setMemoryDrawerOpen}
           open={memoryDrawerOpen}

@@ -119,6 +119,20 @@ export type GenerateSummariesActionParams = z.infer<
   typeof generateSummariesActionParamsSchema
 >;
 
+export const lorebookFactSchema = z.object({
+  claim: z.string(),
+  confidence: z.enum(["explicit", "implied"]),
+});
+export type LorebookFact = z.infer<typeof lorebookFactSchema>;
+
+export const saveChatFactsActionParamsSchema = z.object({
+  chatId: dbIdValidator,
+  facts: lorebookFactSchema.array(),
+});
+export type SaveChatFactsActionParams = z.infer<
+  typeof saveChatFactsActionParamsSchema
+>;
+
 export const chatSessionSchema = chatEntitySchema
   .pick({
     id: true,
@@ -148,6 +162,7 @@ export type ChatForMemoryGen = z.infer<typeof chatForMemoryGenSchema>;
 export const generateSummariesActionResponseSchema = z.object({
   cast: z.string().optional(),
   content: z.string(),
+  facts: lorebookFactSchema.array().optional(),
   summary: z.string(),
 });
 export type GenerateSummariesActionResponse = z.infer<
