@@ -22,6 +22,7 @@ import {
   ChatModelKey,
   ChatSession,
   LlmnUIMessage,
+  LorebookFact,
 } from "@/app/chat/_lib/schema";
 import {
   getLorebookById,
@@ -49,6 +50,7 @@ import { AppError, LlmError, NotFoundError } from "@/lib/error";
 import { logger } from "@/lib/logger";
 
 export interface GenerateLorebookFactsParams {
+  existingFacts?: LorebookFact[];
   messages: BuilderChatMessage[];
   previousScene: string;
 }
@@ -247,9 +249,25 @@ export async function generateCastOfCharacters({
 }
 
 export async function generateLorebookFacts({
+  existingFacts,
   messages,
   previousScene,
 }: GenerateLorebookFactsParams) {
+  const existingFactsBlock: BuilderFragment[] =
+    existingFacts && existingFacts.length > 0
+      ? [
+          { content: `<existing_facts>`, role: "system", type: "CONTENT" },
+          {
+            content: existingFacts
+              .map((f, i) => `${i + 1}. [${f.confidence}] ${f.claim}`)
+              .join("\n"),
+            role: "system",
+            type: "CONTENT",
+          },
+          { content: `</existing_facts>`, role: "system", type: "CONTENT" },
+        ]
+      : [];
+
   const promptBuilder = new PromptBuilder({
     maxTokens: SIDE_PROMPT_TOKEN_LIMIT,
     promptSkeleton: [
@@ -261,6 +279,7 @@ export async function generateLorebookFacts({
       { content: `<previous_scene_summary>`, role: "system", type: "CONTENT" },
       { content: previousScene, role: "system", type: "CONTENT" },
       { content: `</previous_scene_summary>`, role: "system", type: "CONTENT" },
+      ...existingFactsBlock,
       { content: `<scene>`, role: "system", type: "CONTENT" },
       { type: "CHAT_HISTORY" },
       { content: `</scene>`, role: "user", type: "CONTENT" },
@@ -401,6 +420,7 @@ export async function generateSummaries({
       previousCast: castContent,
     }),
     generateLorebookFacts({
+      existingFacts: chat.facts,
       messages: chat.messages,
       previousScene: previousScene ?? "No previous scene available",
     }),

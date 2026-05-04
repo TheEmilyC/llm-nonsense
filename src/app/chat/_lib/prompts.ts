@@ -77,4 +77,8 @@ If the scene is purely transitional, atmospheric, or contains no durable world i
 ## Previous context
 
 You will be given the previous scene's summary as context. Use it to resolve references (pronouns, "the city", "her brother") so that your extracted claims are concrete and self-contained. Do not extract facts from the previous summary itself — only from the current scene.
+
+## Existing facts
+
+When existing facts are provided in an \`<existing_facts>\` block, do not re-extract them. Use them only for disambiguation. If the current scene contradicts or meaningfully extends an existing fact, extract the updated claim as a new entry.
 </instructions>`;

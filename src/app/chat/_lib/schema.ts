@@ -30,8 +30,15 @@ export const messagePartSchema = z.custom<MessagePart>();
 export type LlmnUIMessage = UIMessage<MessageMetadata>;
 export type MessagePart = UIMessagePart<UIDataTypes, UITools>;
 
+export const lorebookFactSchema = z.object({
+  claim: z.string(),
+  confidence: z.enum(["explicit", "implied"]),
+});
+export type LorebookFact = z.infer<typeof lorebookFactSchema>;
+
 export const chatEntitySchema = z.object({
   createdAt: z.date(),
+  facts: lorebookFactSchema.array(),
   id: dbIdValidator,
   modifiedAt: z.date(),
   name: z.string().min(1),
@@ -119,12 +126,6 @@ export type GenerateSummariesActionParams = z.infer<
   typeof generateSummariesActionParamsSchema
 >;
 
-export const lorebookFactSchema = z.object({
-  claim: z.string(),
-  confidence: z.enum(["explicit", "implied"]),
-});
-export type LorebookFact = z.infer<typeof lorebookFactSchema>;
-
 export const saveChatFactsActionParamsSchema = z.object({
   chatId: dbIdValidator,
   facts: lorebookFactSchema.array(),
@@ -154,6 +155,7 @@ export const chatForMemoryGenSchema = chatEntitySchema
     id: true,
   })
   .extend({
+    facts: lorebookFactSchema.array().optional(),
     lorebookId: dbIdValidator.optional(),
     messages: chatMessageForLLMSchema.array(),
   });

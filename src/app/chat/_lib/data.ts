@@ -14,7 +14,7 @@ import {
   MessageMetadata,
 } from "@/app/chat/_lib/schema";
 import { promptWithFragmentsSchema } from "@/app/prompt/_lib/schema";
-import { Chat, ChatMessage, MessageContent } from "@/generated/client";
+import { Chat, ChatMessage, MessageContent, Prisma } from "@/generated/client";
 import { buildCharacterImageUrl, buildPersonaImageUrl } from "@/lib/image";
 import { prisma } from "@/lib/prisma";
 
@@ -53,14 +53,14 @@ export interface GetChatSessionViewParams {
   take?: number;
 }
 
-export interface UpdateChatFactsParams {
-  facts: { claim: string; confidence: "explicit" | "implied" }[];
-  id: string;
-}
-
 export interface UpdateChatMessageParams {
   id: string;
   update: Partial<Pick<ChatMessage, "isHidden">>;
+}
+
+export interface UpdateChatParams {
+  id: string;
+  update: Prisma.ChatUpdateInput;
 }
 
 export interface UpdateMessageContentParams {
@@ -80,7 +80,7 @@ export async function createChat({
     },
   });
 
-  return chat;
+  return { ...chat, facts: chat.facts ?? [] };
 }
 
 export async function createChatMessageContent({
@@ -142,7 +142,7 @@ export async function getChatById(id: string): Promise<ChatEntity | null> {
 
   const chat = await prisma.chat.findUnique({ where: { id } });
   if (!chat) return null;
-  return chat;
+  return { ...chat, facts: chat.facts ?? [] };
 }
 
 export async function getChatForMemoryGen(
@@ -166,6 +166,7 @@ export async function getChatForMemoryGen(
   if (!chat) return null;
 
   return {
+    facts: chat.facts ?? undefined,
     id: chat.id,
     lorebookId: chat.story.lorebookId ?? undefined,
     messages: chat.messages.map((msg) => ({
@@ -357,11 +358,11 @@ export async function hideChatMessages(ids: string[]): Promise<void> {
   });
 }
 
-export async function updateChatFacts({
-  facts,
+export async function updateChat({
   id,
-}: UpdateChatFactsParams): Promise<void> {
-  await prisma.chat.update({ data: { facts }, where: { id } });
+  update,
+}: UpdateChatParams): Promise<void> {
+  await prisma.chat.update({ data: update, where: { id } });
 }
 
 export async function updateChatMessage({

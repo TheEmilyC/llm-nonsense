@@ -13,7 +13,7 @@ import {
   deleteChatMessage,
   getChatById,
   getChatMessageById,
-  updateChatFacts,
+  updateChat,
   updateChatMessage,
   updateMessageContent,
 } from "@/app/chat/_lib/data";
@@ -215,7 +215,9 @@ export async function saveChatFactsAction(
   const { chatId, facts } = parseResult.data;
 
   try {
-    await updateChatFacts({ facts, id: chatId });
+    const chat = await getChatById(chatId);
+    const existing = chat?.facts ?? [];
+    await updateChat({ id: chatId, update: { facts: [...existing, ...facts] } });
   } catch (err) {
     logger.error("Failed to save chat facts", { chatId, ...parseError(err) });
     return toActionResponseError(err);
