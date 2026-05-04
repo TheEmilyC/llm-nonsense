@@ -50,9 +50,7 @@ import {
   DeleteIcon,
   EditIcon,
   HideIcon,
-  InsertAssistantMessageIcon,
   LorebookIcon,
-  MemoryIcon,
   MoveLeftIcon,
   MoveRightIcon,
   RangeEndIcon,
@@ -80,10 +78,7 @@ const MODEL_LABELS: Record<ChatModelKey, string> = {
 
 interface ChatInputParams {
   isLoading: boolean;
-  isMemoryGenerating: boolean;
-  memoryDisable: boolean;
-  onInsertAssistantMessage: () => void;
-  onMemoryGenerate: () => void;
+  leftActions?: ReactNode;
   onModelChange: (model: ChatModelKey) => void;
   onStop: () => void;
   onSubmit: (text: string, model: ChatModelKey) => void;
@@ -144,10 +139,7 @@ export function ChatHistory({ children }: ChatHistoryProps) {
 
 export function ChatInput({
   isLoading,
-  isMemoryGenerating,
-  memoryDisable,
-  onInsertAssistantMessage,
-  onMemoryGenerate,
+  leftActions,
   onModelChange,
   onStop,
   onSubmit,
@@ -172,33 +164,7 @@ export function ChatInput({
         <PromptInputTextarea placeholder="Send a message…" />
         <PromptInputActions className="flex items-center justify-between gap-2 pt-2">
           <div className="flex items-center gap-2">
-            <PromptInputAction tooltip="Generate Memory">
-              <Button
-                className="h-8 w-8 rounded-full"
-                disabled={memoryDisable}
-                onClick={onMemoryGenerate}
-                size="sm"
-                suppressHydrationWarning
-              >
-                <MemoryIcon
-                  className={cn(
-                    "h-4 w-4",
-                    isMemoryGenerating && "animate-spin",
-                  )}
-                />
-              </Button>
-            </PromptInputAction>
-            <PromptInputAction tooltip="Insert blank assistant message">
-              <Button
-                className="h-8 w-8 rounded-full"
-                disabled={isLoading}
-                onClick={onInsertAssistantMessage}
-                size="sm"
-                suppressHydrationWarning
-              >
-                <InsertAssistantMessageIcon className="h-4 w-4" />
-              </Button>
-            </PromptInputAction>
+            {leftActions}
           </div>
           <div className="flex items-center gap-2">
             <Select

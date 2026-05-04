@@ -27,7 +27,16 @@ import {
   ChatSwipe,
 } from "@/components/chat";
 import { Header } from "@/components/header";
-import { LorebookIcon } from "@/lib/icons";
+import { Button } from "@/components/ui/button";
+import {
+  PromptInputAction,
+} from "@/components/ui/prompt-input";
+import {
+  InsertAssistantMessageIcon,
+  LorebookIcon,
+  MemoryIcon,
+} from "@/lib/icons";
+import { cn } from "@/lib/utils";
 
 export interface ChatViewParams {
   chatSession: ChatSessionDto;
@@ -239,15 +248,41 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
           </ChatHistory>
           <ChatInput
             isLoading={status !== "ready"}
-            isMemoryGenerating={isSummaryPending}
-            memoryDisable={
-              (memoryStartIndex === undefined && memoryResults === undefined) ||
-              isSummaryPending
+            leftActions={
+              <>
+                <PromptInputAction tooltip="Generate Memory">
+                  <Button
+                    className="h-8 w-8 rounded-full"
+                    disabled={
+                      (memoryStartIndex === undefined &&
+                        memoryResults === undefined) ||
+                      isSummaryPending
+                    }
+                    onClick={onGenerateMemory}
+                    size="sm"
+                    suppressHydrationWarning
+                  >
+                    <MemoryIcon
+                      className={cn(
+                        "h-4 w-4",
+                        isSummaryPending && "animate-spin",
+                      )}
+                    />
+                  </Button>
+                </PromptInputAction>
+                <PromptInputAction tooltip="Insert blank assistant message">
+                  <Button
+                    className="h-8 w-8 rounded-full"
+                    disabled={status !== "ready"}
+                    onClick={messageControl.insertBlankAssistantMessage}
+                    size="sm"
+                    suppressHydrationWarning
+                  >
+                    <InsertAssistantMessageIcon className="h-4 w-4" />
+                  </Button>
+                </PromptInputAction>
+              </>
             }
-            onInsertAssistantMessage={
-              messageControl.insertBlankAssistantMessage
-            }
-            onMemoryGenerate={onGenerateMemory}
             onModelChange={setChatModel}
             onStop={stop}
             onSubmit={handleSubmit}
