@@ -278,7 +278,7 @@ async function fetchLorebookIndex({
 }): Promise<FetchLorebookIndexResult> {
   try {
     const rawResponse = await fetch(`${OBSIDIAN_URL}:${entity.port}/search`, {
-      body: `TABLE title, tags, summary, order, file.ctime as "ctime" FROM #${LOREBOOK_TAG} and !#${LOREBOOK_NEVER_TAG} and !"${LOREBOOK_TEMPLATES_FOLDER}"`,
+      body: `TABLE title, tags, characters, summary, order, file.ctime as "ctime" FROM #${LOREBOOK_TAG} and !#${LOREBOOK_NEVER_TAG} and !"${LOREBOOK_TEMPLATES_FOLDER}"`,
       headers: {
         Authorization: `Bearer ${entity.apiKey}`,
         "Content-type": "application/vnd.olrapi.dataview.dql+txt",
@@ -330,7 +330,11 @@ function toLorebookEntityListDto(
 function toLorebookEntryIndex(index: ObsidianIndex): LorebookEntryIndex {
   return {
     ...toLorebookIndex(index),
-    characters: index.result.characters ?? [],
+    aliases: index.result.aliases ?? [],
+    characters:
+      index.result.characters?.map((char) =>
+        typeof char === "string" ? char : char.display,
+      ) ?? [],
     summary: index.result.summary ?? "",
   };
 }

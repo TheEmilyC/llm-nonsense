@@ -44,8 +44,8 @@ const obsidianLinkedTagSchema = z.union([
 ]);
 
 const lorebookEntryIndexSchema = lorebookIndexSchema.extend({
-  aliases: z.string().array().optional(),
-  characters: obsidianLinkedTagSchema.array().optional(),
+  aliases: z.string().array(),
+  characters: z.string().array(),
   summary: z.string(),
 });
 export type LorebookEntryIndex = z.infer<typeof lorebookEntryIndexSchema>;
