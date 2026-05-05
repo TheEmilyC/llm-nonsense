@@ -30,5 +30,6 @@ export const taskModels = {
     "openrouter:~anthropic/claude-haiku-latest",
   ),
   lorebookUpdateDiscovery: registry.languageModel("deepseek:deepseek-v4-flash"),
+  lorebookUpdateSuggestion: registry.languageModel("deepseek:deepseek-v4-pro"),
   summary: registry.languageModel("deepseek:deepseek-v4-pro"),
 };

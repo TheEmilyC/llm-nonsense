@@ -1,17 +1,26 @@
-import { generateText, Output, stepCountIs } from "ai";
+import { generateText, NoObjectGeneratedError, Output, stepCountIs } from "ai";
 import z from "zod";
 
 import {
   getLorebookById,
+  getLorebookEntry,
   getLorebookEntryList,
 } from "@/app/lorebook/_lib/data";
 import { convertFilesToPrompt } from "@/app/lorebook/_lib/lorebook-scanning";
 import {
   lorebookToolPrompt,
   lorebookUpdateDiscoveryPrompt,
+  lorebookUpdateSuggestionPrompt,
   memoryArcInstructionPrompt,
 } from "@/app/lorebook/_lib/prompts";
-import { LorebookFact, LorebookReady } from "@/app/lorebook/_lib/schema";
+import {
+  LorebookFact,
+  LorebookReady,
+  LorebookUpdateDiscoveryResult,
+  lorebookUpdateDiscoveryResultSchema,
+  LorebookUpdateSuggestion,
+  lorebookUpdateSuggestionSchema,
+} from "@/app/lorebook/_lib/schema";
 import { makeGetLorebookEntriesTool } from "@/app/lorebook/_lib/tools";
 import { PromptBuilder } from "@/app/prompt/_lib/prompt-builder";
 import { taskModels } from "@/lib/ai-registry";
@@ -35,6 +44,13 @@ export interface GenerateMemoryArcResult {
   };
 }
 
+interface GenerateUpdateSuggestionParams {
+  applicableFacts: string[];
+  lorebook: LorebookReady;
+  lorebookEntryFile: string;
+  previousError?: NoObjectGeneratedError;
+}
+
 export async function generateLorebookUpdates({
   facts,
   lorebookId,
@@ -46,6 +62,40 @@ export async function generateLorebookUpdates({
   const discoveredEntities = await generateLorebookUpdateDiscovery({
     facts,
     lorebook,
+  });
+
+  const results = await Promise.allSettled(
+    discoveredEntities.entries.map((entry) => {
+      const applicableFacts = entry.relevantFactIndices.map(
+        (i) => `(${facts[i].confidence}) ${facts[i].claim}`,
+      );
+      const params = {
+        applicableFacts,
+        lorebook,
+        lorebookEntryFile: entry.entryFilename,
+      };
+      return generateUpdateSuggestion(params)
+        .catch((err) => {
+          if (NoObjectGeneratedError.isInstance(err)) {
+            return generateUpdateSuggestion({ ...params, previousError: err });
+          }
+          throw err;
+        })
+        .then((suggestions) => ({
+          entryFilename: entry.entryFilename,
+          suggestions,
+        }));
+    }),
+  );
+
+  return results.flatMap((result) => {
+    if (result.status === "rejected") {
+      logger.error("Failed to generate update suggestion", {
+        reason: result.reason,
+      });
+      return [];
+    }
+    return [result.value];
   });
 }
 
@@ -144,7 +194,7 @@ async function generateLorebookUpdateDiscovery({
 }: {
   facts: LorebookFact[];
   lorebook: LorebookReady;
-}) {
+}): Promise<LorebookUpdateDiscoveryResult> {
   const promptBuilder = new PromptBuilder({
     maxTokens: SIDE_PROMPT_TOKEN_LIMIT,
     promptSkeleton: [
@@ -201,35 +251,82 @@ async function generateLorebookUpdateDiscovery({
         });
       },
       output: Output.object({
-        schema: z.object({
-          entries: z
-            .object({
-              entryFilename: z
-                .string()
-                .describe("The filename of the entry to update"),
-              relevantFactIndices: z
-                .number()
-                .array()
-                .describe("The index of the facts that apply to this entry"),
-            })
-            .array(),
-          newEntryNeeded: z.array(
-            z.object({
-              proposedTopic: z
-                .string()
-                .describe("The topic for a new lorebook entry"),
-              relevantFactIndices: z
-                .number()
-                .array()
-                .describe("The index of the facts that apply to this entry"),
-            }),
-          ),
-        }),
+        schema: lorebookUpdateDiscoveryResultSchema,
       }),
       prompt,
     });
     return output;
   } catch (err) {
+    throw new LlmError((err as Error).message);
+  }
+}
+
+async function generateUpdateSuggestion({
+  applicableFacts,
+  lorebook,
+  lorebookEntryFile,
+  previousError,
+}: GenerateUpdateSuggestionParams): Promise<LorebookUpdateSuggestion[]> {
+  const lorebookEntry = await getLorebookEntry({
+    fileName: lorebookEntryFile,
+    lorebookId: lorebook.id,
+  });
+  const content = convertFilesToPrompt([lorebookEntry]);
+  const promptBuilder = new PromptBuilder({
+    maxTokens: SIDE_PROMPT_TOKEN_LIMIT,
+    promptSkeleton: [
+      {
+        content: lorebookUpdateSuggestionPrompt,
+        role: "system",
+        type: "CONTENT",
+      },
+      {
+        content: `<existing_entry>${content}</existing_entry>`,
+        role: "user",
+        type: "CONTENT",
+      },
+      {
+        content: `<discoverd_facts>${applicableFacts.map((fact) => `- ${fact}`).join("\n")}</discoverd_facts>`,
+        role: "user",
+        type: "CONTENT",
+      },
+      ...(previousError
+        ? [
+            {
+              content: `Your previous response failed validation with this error: ${previousError.message}. The raw response was: ${previousError.text}. Try again, ensuring the output matches the schema.`,
+              role: "user" as const,
+              type: "CONTENT" as const,
+            },
+          ]
+        : []),
+    ],
+  });
+  const prompt = promptBuilder.build();
+  logger.info("Lorebook update suggestion request", { prompt });
+  try {
+    const { output } = await generateText({
+      model: taskModels.lorebookUpdateSuggestion,
+      onFinish: (result) => {
+        logger.info("Lorebook update suggestion result", {
+          finisReasons: result.finishReason,
+          result: result.content,
+        });
+      },
+      output: Output.object({
+        schema: z.object({
+          suggestions: lorebookUpdateSuggestionSchema.array(),
+        }),
+      }),
+      prompt,
+      stopWhen: stepCountIs(5),
+      tools: {
+        getLorebookEntries: makeGetLorebookEntriesTool(lorebook),
+      },
+    });
+
+    return output.suggestions;
+  } catch (err) {
+    if (NoObjectGeneratedError.isInstance(err)) throw err;
     throw new LlmError((err as Error).message);
   }
 }

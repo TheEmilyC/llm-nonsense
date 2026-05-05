@@ -206,6 +206,77 @@ export const lorebookEntryFileSchema = obsidianFileSchema.extend({
 });
 export type LorebookEntryFile = z.infer<typeof lorebookEntryFileSchema>;
 
+// -- LLM schemas
+export const lorebookUpdateSuggestionSchema = z.discriminatedUnion(
+  "updateType",
+  [
+    z.object({
+      proposedContent: z.string().describe("The new content to add"),
+      reasoning: z.string(),
+      section: z
+        .string()
+        .optional()
+        .describe("Which section of the entry to append to, if applicable"),
+      sourceFactIndices: z.array(z.number()),
+      updateType: z.literal("append"),
+    }),
+    z.object({
+      currentContent: z
+        .string()
+        .describe("The exact text currently in the entry that should change"),
+      proposedContent: z.string().describe("What that text should become"),
+      reasoning: z.string(),
+      sourceFactIndices: z.array(z.number()),
+      updateType: z.literal("modify"),
+    }),
+    z.object({
+      existingContent: z
+        .string()
+        .describe("The existing content that conflicts"),
+      factDescription: z
+        .string()
+        .describe("How the fact contradicts existing content"),
+      reasoning: z.string(),
+      sourceFactIndices: z.array(z.number()),
+      updateType: z.literal("conflict"),
+    }),
+    z.object({
+      reasoning: z
+        .string()
+        .describe("Why no update is warranted despite the fact being flagged"),
+      sourceFactIndices: z.array(z.number()),
+      updateType: z.literal("no_change"),
+    }),
+  ],
+);
+export type LorebookUpdateSuggestion = z.infer<
+  typeof lorebookUpdateSuggestionSchema
+>;
+
+export const lorebookUpdateDiscoveryResultSchema = z.object({
+  entries: z
+    .object({
+      entryFilename: z.string().describe("The filename of the entry to update"),
+      relevantFactIndices: z
+        .number()
+        .array()
+        .describe("The index of the facts that apply to this entry"),
+    })
+    .array(),
+  newEntryNeeded: z.array(
+    z.object({
+      proposedTopic: z.string().describe("The topic for a new lorebook entry"),
+      relevantFactIndices: z
+        .number()
+        .array()
+        .describe("The index of the facts that apply to this entry"),
+    }),
+  ),
+});
+export type LorebookUpdateDiscoveryResult = z.infer<
+  typeof lorebookUpdateDiscoveryResultSchema
+>;
+
 // -- DTOs
 
 export const lorebookEntityListDtoSchema = lorebookEntitySchema.pick({

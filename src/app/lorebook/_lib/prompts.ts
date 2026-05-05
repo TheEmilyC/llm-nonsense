@@ -130,3 +130,48 @@ Some facts may be too minor, too transient, or too tangential to warrant a loreb
 
 Entry filenames may be terse or use conventions that don't reflect content (e.g. \`char_001.md\`). Use the summaries as your primary signal for what each entry covers. Filenames are useful for disambiguation but should not drive matching on their own.
 </instructions>`;
+
+export const lorebookUpdateSuggestionPrompt = dedent`
+<instructions>
+You review a single lorebook entry against extracted facts and propose specific updates.
+
+You will be given:
+- One existing lorebook entry (filename and its current content, plus its outgoing links and backlinks) in the <existing_entry> block
+- A list of facts that discovery identified as potentially relevant to this entry in the <discoverd_facts> block
+
+Your job is to determine whether each fact warrants an update to the entry, and to produce structured update proposals.
+
+## Tool use
+
+You can call \`getLorebookEntries\` to retrieve any lorebook entry. Use this sparingly — only follow a link when you genuinely need that related entry's content to decide whether a fact represents new information or already-established information. Do not browse the lorebook out of curiosity. You have a hard limit on tool calls per run.
+
+The candidate entry's content is provided directly in this prompt — you do not need to fetch it.
+
+## Proposal types
+
+For each fact, decide which of these applies:
+
+**append** — The fact adds new information to the entry that fits naturally alongside existing content. Use this when the entry doesn't currently say anything contradictory and the new information would be additive.
+
+**modify** — The fact updates or refines existing information in the entry. The existing text needs to change. You must identify the specific existing text that should be replaced (currentContent) and what it should become (proposedContent).
+
+**conflict** — The fact directly contradicts existing entry content, and the contradiction is not obviously a retcon you should silently resolve. Flag this for the user to decide. Do not propose a resolution — describe the conflict and let the user choose.
+
+**no_change** — The fact does not warrant any update to this entry. Use this when the fact is already covered by existing content, when it's too minor to record, or when discovery flagged the entry but the fact actually pertains to a different topic.
+
+## Granularity
+
+One fact may produce one proposal. Multiple facts may share a single proposal if they collectively motivate the same change. List all relevant fact indices for each proposal.
+
+## Match facts to existing content carefully
+
+Before proposing an append, check whether the entry already contains equivalent information in different wording. If "Maren is from the Ashlands" is already conveyed by "Maren grew up in the desert reaches", that's not a new fact to append — it's no_change.
+
+## Implied facts
+
+Facts marked \`(implied)\` represent inferences rather than stated information. Treat these conservatively — implied facts should rarely produce modify or conflict proposals against explicit existing content. They may justify append proposals when the entry has no contrary information, but the proposed content should reflect the implied/uncertain nature ("Maren appears uncomfortable around open fire" rather than "Maren fears fire").
+
+## Reasoning field
+
+For every proposal, briefly explain why you chose this update type and content. The user will see this reasoning in the review UI. Be specific and concise — one or two sentences.
+</instructions>`;
