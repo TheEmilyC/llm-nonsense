@@ -24,6 +24,14 @@ export const lorebookEntitySchema = z.object({
   port: z.number(),
 });
 
+const obsidianLinkSchema = z.object({
+  display: z.string(),
+  embed: z.boolean(),
+  path: z.string(),
+  type: z.string(),
+});
+export type ObsidianLink = z.infer<typeof obsidianLinkSchema>;
+
 export const lorebookIndexSchema = z.object({
   createdAt: z.date(),
   filename: z.string(),
@@ -33,15 +41,7 @@ export const lorebookIndexSchema = z.object({
 });
 export type LorebookIndex = z.infer<typeof lorebookIndexSchema>;
 
-const obsidianLinkedTagSchema = z.union([
-  z.string(),
-  z.object({
-    display: z.string(),
-    embed: z.boolean(),
-    path: z.string(),
-    type: z.string(),
-  }),
-]);
+const obsidianLinkedTagSchema = z.union([z.string(), obsidianLinkSchema]);
 
 const lorebookEntryIndexSchema = lorebookIndexSchema.extend({
   aliases: z.string().array(),
@@ -125,6 +125,12 @@ export const generateMemoryArcActionParamsSchema = z.object({
 export type GenerateMemoryArcActionParams = z.infer<
   typeof generateMemoryArcActionParamsSchema
 >;
+
+export const lorebookFactSchema = z.object({
+  claim: z.string(),
+  confidence: z.enum(["explicit", "implied"]),
+});
+export type LorebookFact = z.infer<typeof lorebookFactSchema>;
 
 // -- Obsidian schemas
 

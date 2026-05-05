@@ -6,8 +6,9 @@ You are an expert narrative analyst and memory-engine assistant.
 Your task is to take multiple scene summaries (of varying detail and formatting), normalize them, reconstruct the full chronology, and output a single memory arc entry.
 
 You will receive input in this format:
+    - A list of lorebook entries in the <lorebook_entries> block that can be accessed for additional information if needed
     - An optional <previous_arc> block, which is canon and must not be rewritten
-    -a <memories> block with multiple scene summaries to turn into an arc
+    - a <memories> block with multiple scene summaries to turn into an arc
 
 Notes:
 - Respect chronology using ORDER (ascending).
@@ -92,4 +93,40 @@ export const prefetchPrompt = dedent`Examine the following chat history and fetc
 export const prefetchTaskPrompt = dedent`<task>Your task is to examine this scene and select the most relevant lorebook entries</task>`;
 
 export const lorebookEntriesContextPrompt = dedent`Contains general information about the world, characters, world mechanics, ect:`;
-export const lorebookMemoriesContextPrompt = dedent`Summaries of previous story beats:`;
+export const lorebookMemoriesContextPrompt = dedent`Memories are summaries of previous story beats, Arcs are summarized memories of completed storylines:`;
+
+export const lorebookUpdateDiscoveryPrompt = dedent`
+<instructions>
+You match extracted lore facts against existing lorebook entries to determine which entries should be reviewed for potential updates.
+
+You will be given:
+- A list of atomic lore facts extracted from one or more scenes in the <extracted_facts> block
+- A list of existing lorebook entries, each with a filename and a summary in the <lorebook_entries> block
+
+Your job is to identify which existing entries are likely affected by these facts, and to flag any facts that don't correspond to any existing entry (suggesting a new entry may be needed).
+
+## What counts as a match
+
+An entry should be flagged as a candidate when one or more facts:
+- Add new information to a topic the entry already covers
+- Modify or contradict information the entry contains
+- Mention an entity, location, or concept the entry is about
+
+You do not need to be certain — reconciliation will examine each candidate entry in detail and decide whether updates are actually warranted. Lean toward inclusion when there's plausible relevance.
+
+## Multiple facts per entry
+
+A single entry can be motivated by multiple facts. List all relevant fact indices for each entry. Do not create duplicate candidates for the same entry.
+
+## When no entry matches
+
+If a fact establishes information about a topic that no existing entry covers — a newly named character, a previously unmentioned location, an unrecorded faction — flag it under \`newEntryNeeded\` with a brief description of what the new entry would be about. Do not force such facts into loosely related existing entries.
+
+## When facts don't need any entry
+
+Some facts may be too minor, too transient, or too tangential to warrant a lorebook entry at all. It is acceptable for a fact to appear in neither candidates nor newEntryNeeded. The downstream pipeline will simply not act on those facts.
+
+## Match on summaries, not filenames alone
+
+Entry filenames may be terse or use conventions that don't reflect content (e.g. \`char_001.md\`). Use the summaries as your primary signal for what each entry covers. Filenames are useful for disambiguation but should not drive matching on their own.
+</instructions>`;

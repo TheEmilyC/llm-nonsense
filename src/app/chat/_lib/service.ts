@@ -22,7 +22,6 @@ import {
   ChatModelKey,
   ChatSession,
   LlmnUIMessage,
-  LorebookFact,
 } from "@/app/chat/_lib/schema";
 import {
   getLorebookById,
@@ -37,7 +36,7 @@ import {
   prefetchPrompt,
   prefetchTaskPrompt,
 } from "@/app/lorebook/_lib/prompts";
-import { LorebookReady } from "@/app/lorebook/_lib/schema";
+import { LorebookFact, LorebookReady } from "@/app/lorebook/_lib/schema";
 import { makeGetLorebookEntriesTool } from "@/app/lorebook/_lib/tools";
 import {
   BuilderChatMessage,

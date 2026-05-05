@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useSaveChatFacts } from "@/app/chat/_lib/hooks";
-import { GenerateSummariesActionResponse, LorebookFact } from "@/app/chat/_lib/schema";
+import { GenerateSummariesActionResponse } from "@/app/chat/_lib/schema";
+import { LorebookFact } from "@/app/lorebook/_lib/schema";
 import { CopyButton } from "@/components/copy-button";
 import { Button } from "@/components/ui/button";
 import {
@@ -48,7 +49,10 @@ export function MemoryResultsDrawer({
   }
 
   function addFact() {
-    setEditableFacts((prev) => [...prev, { claim: "", confidence: "explicit" }]);
+    setEditableFacts((prev) => [
+      ...prev,
+      { claim: "", confidence: "explicit" },
+    ]);
   }
 
   async function handleSaveFacts() {
@@ -124,14 +128,18 @@ export function MemoryResultsDrawer({
                 </div>
               </div>
               {editableFacts.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No facts extracted.</p>
+                <p className="text-sm text-muted-foreground">
+                  No facts extracted.
+                </p>
               ) : (
                 <ul className="space-y-2">
                   {editableFacts.map((fact, i) => (
-                    <li key={i} className="flex items-center gap-2">
+                    <li className="flex items-center gap-2" key={i}>
                       <Input
                         className="flex-1 text-sm"
-                        onChange={(e) => updateFact(i, { claim: e.target.value })}
+                        onChange={(e) =>
+                          updateFact(i, { claim: e.target.value })
+                        }
                         value={fact.claim}
                       />
                       <button

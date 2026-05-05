@@ -163,19 +163,26 @@ export function hydratePrompt(
 }
 
 function buildLorePromptTable(entries: LorebookEntryIndex[]): string {
-  let entriesPrompt = "";
-  if (entries.length > 0) {
-    entriesPrompt +=
-      "| File Name | Aliases | Relevant Characters | Summary |\n| --- | --- | --- | --- |\n";
-    entriesPrompt += entries
-      .map(
-        (ent) =>
-          `| ${ent.filename} | ${ent.aliases?.join(", ")} | ${ent.characters?.join(", ")} | ${ent.summary} |`,
-      )
-      .join("\n");
-  }
+  if (entries.length === 0) return "";
 
-  return entriesPrompt;
+  const rows = entries.map((ent) => {
+    const alias = ent.aliases?.[0] ?? "—";
+    const characters =
+      ent.characters && ent.characters.length > 0
+        ? ent.characters.join(", ")
+        : "(none)";
+    return `| ${ent.filename} | ${alias} | ${characters} |`;
+  });
+
+  const table =
+    "| Filename | Alias | Characters |\n|----------|-------|------------|\n" +
+    rows.join("\n");
+
+  const details = entries
+    .map((ent) => `### ${ent.filename}\n${ent.summary}`)
+    .join("\n\n");
+
+  return table + "\n\n" + details;
 }
 
 function estimateTokens(text: string): number {

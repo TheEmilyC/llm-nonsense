@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { useReplaceChatFacts } from "@/app/chat/_lib/hooks";
-import { LorebookFact } from "@/app/chat/_lib/schema";
+import { LorebookFact } from "@/app/lorebook/_lib/schema";
 import { Button } from "@/components/ui/button";
 import {
   Drawer,
@@ -49,7 +49,10 @@ export function FactsDrawer({
   }
 
   function addFact() {
-    setEditableFacts((prev) => [...prev, { claim: "", confidence: "explicit" }]);
+    setEditableFacts((prev) => [
+      ...prev,
+      { claim: "", confidence: "explicit" },
+    ]);
   }
 
   async function handleSave() {
@@ -67,9 +70,7 @@ export function FactsDrawer({
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>Chat Facts</DrawerTitle>
-          <DrawerDescription>
-            Facts extracted from this chat.
-          </DrawerDescription>
+          <DrawerDescription>Facts extracted from this chat.</DrawerDescription>
         </DrawerHeader>
         <div className="no-scrollbar overflow-y-auto px-4 pb-6">
           <div className="flex items-center justify-between mb-3">
@@ -90,7 +91,7 @@ export function FactsDrawer({
           ) : (
             <ul className="space-y-2">
               {editableFacts.map((fact, i) => (
-                <li key={i} className="flex items-center gap-2">
+                <li className="flex items-center gap-2" key={i}>
                   <Input
                     className="flex-1 text-sm"
                     onChange={(e) => updateFact(i, { claim: e.target.value })}
@@ -101,7 +102,9 @@ export function FactsDrawer({
                     onClick={() =>
                       updateFact(i, {
                         confidence:
-                          fact.confidence === "explicit" ? "implied" : "explicit",
+                          fact.confidence === "explicit"
+                            ? "implied"
+                            : "explicit",
                       })
                     }
                     type="button"

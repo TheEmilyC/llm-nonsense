@@ -7,6 +7,7 @@ import {
   messageRoleSchema,
 } from "@/app/_shared/schema";
 import { characterEntitySchema } from "@/app/character/_lib/schema";
+import { lorebookFactSchema } from "@/app/lorebook/_lib/schema";
 import { personaEntitySchema } from "@/app/persona/_lib/schema";
 import { promptWithFragmentsSchema } from "@/app/prompt/_lib/schema";
 import { storyEntitySchema } from "@/app/story/_lib/schema";
@@ -29,12 +30,6 @@ export type MessageMetadata = z.infer<typeof messageMetadataSchema>;
 export const messagePartSchema = z.custom<MessagePart>();
 export type LlmnUIMessage = UIMessage<MessageMetadata>;
 export type MessagePart = UIMessagePart<UIDataTypes, UITools>;
-
-export const lorebookFactSchema = z.object({
-  claim: z.string(),
-  confidence: z.enum(["explicit", "implied"]),
-});
-export type LorebookFact = z.infer<typeof lorebookFactSchema>;
 
 export const chatEntitySchema = z.object({
   createdAt: z.date(),
