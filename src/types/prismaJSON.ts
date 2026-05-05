@@ -1,6 +1,7 @@
 import { UIDataTypes, UIMessagePart, UITools } from "ai";
 
-import { LorebookFact, MessageMetadata } from "@/app/chat/_lib/schema";
+import { MessageMetadata } from "@/app/chat/_lib/schema";
+import { LorebookFact } from "@/app/lorebook/_lib/schema";
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace

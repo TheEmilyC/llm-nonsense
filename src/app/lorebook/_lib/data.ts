@@ -1,5 +1,6 @@
 "use server";
 
+import dedent from "dedent";
 import { cacheTag } from "next/cache";
 
 import {
@@ -8,13 +9,14 @@ import {
   LOREBOOK_CACHE_KEY,
   LorebookEntityDto,
   LorebookEntityListDto,
+  LorebookEntryFile,
   LorebookEntryIndex,
   LorebookIndex,
   LorebookNotReady,
   LorebookStatusDto,
   lorebookStatusDtoSchema,
   ObsidianApiConnection,
-  ObsidianFile,
+  obsidianFileLinksResponseSchema,
   obsidianFileResponseSchema,
   ObsidianIndex,
 } from "@/app/lorebook/_lib/schema";
@@ -170,7 +172,7 @@ export async function getLorebookEntityDtoList(): Promise<
 export async function getLorebookEntry({
   fileName,
   lorebookId,
-}: GetLorebookEntryParams) {
+}: GetLorebookEntryParams): Promise<LorebookEntryFile> {
   const lorebookEntity = await getLorebookEntityById(lorebookId);
   if (!lorebookEntity) throw new NotFoundError("Lorebook", lorebookId);
   return fetchLorebookEntry({
@@ -184,7 +186,7 @@ export async function getLorebookEntry({
 export async function getLorebookEntryList({
   files,
   lorebookId,
-}: GetLorebookEntryListParams): Promise<ObsidianFile[]> {
+}: GetLorebookEntryListParams): Promise<LorebookEntryFile[]> {
   const lorebookEntity = await getLorebookEntityById(lorebookId);
   if (!lorebookEntity) throw new NotFoundError("Lorebook", lorebookId);
   const results = await Promise.allSettled(
@@ -250,23 +252,50 @@ async function fetchLorebookEntry({
   fileName,
   lorebookId,
   port,
-}: FetchLorebookEntryParams): Promise<ObsidianFile> {
+}: FetchLorebookEntryParams): Promise<LorebookEntryFile> {
   "use cache";
   cacheTag(`${LOREBOOK_CACHE_KEY}-${lorebookId}`);
 
-  const response = await fetch(`${OBSIDIAN_URL}:${port}/vault/${fileName}`, {
-    headers: {
-      Accept: "application/vnd.olrapi.note+json",
-      Authorization: `Bearer ${apiKey}`,
+  const contentResponse = await fetch(
+    `${OBSIDIAN_URL}:${port}/vault/${fileName}`,
+    {
+      headers: {
+        Accept: "application/vnd.olrapi.note+json",
+        Authorization: `Bearer ${apiKey}`,
+      },
     },
-  });
+  );
 
-  const file = obsidianFileResponseSchema.parse(await response.json());
+  const file = obsidianFileResponseSchema.parse(await contentResponse.json());
   if ("errorCode" in file) {
-    throw new ObsidianError(response.statusText, response.status);
+    throw new ObsidianError(contentResponse.statusText, contentResponse.status);
   }
 
-  return file;
+  const linkResponse = await fetch(`${OBSIDIAN_URL}:${port}/search`, {
+    body: dedent`
+      TABLE 
+        unique(filter(file.inlinks, (l) => contains(l.tags, "${LOREBOOK_TAG}") AND !contains(l.tags, "${LOREBOOK_NEVER_TAG}"))) as inlinks,
+        unique(filter(file.outlinks, (l) => contains(l.tags, "${LOREBOOK_TAG}") AND !contains(l.tags, "${LOREBOOK_NEVER_TAG}"))) as outlinks 
+      FROM "${fileName}"`,
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-type": "application/vnd.olrapi.dataview.dql+txt",
+    },
+    method: "POST",
+  });
+
+  const links = obsidianFileLinksResponseSchema.parse(
+    await linkResponse.json(),
+  );
+  if ("errorCode" in links) {
+    throw new ObsidianError(linkResponse.statusText, linkResponse.status);
+  }
+
+  return {
+    ...file,
+    inlinks: links.length > 0 ? links[0].result.inlinks : [],
+    outlinks: links.length > 0 ? links[0].result.outlinks : [],
+  };
 }
 
 async function fetchLorebookIndex({
@@ -278,7 +307,9 @@ async function fetchLorebookIndex({
 }): Promise<FetchLorebookIndexResult> {
   try {
     const rawResponse = await fetch(`${OBSIDIAN_URL}:${entity.port}/search`, {
-      body: `TABLE title, tags, characters, summary, order, file.ctime as "ctime" FROM #${LOREBOOK_TAG} and !#${LOREBOOK_NEVER_TAG} and !"${LOREBOOK_TEMPLATES_FOLDER}"`,
+      body: dedent`
+      TABLE title, tags, characters, summary, order, file.ctime as "ctime"
+      FROM #${LOREBOOK_TAG} and !#${LOREBOOK_NEVER_TAG} and !"${LOREBOOK_TEMPLATES_FOLDER}"`,
       headers: {
         Authorization: `Bearer ${entity.apiKey}`,
         "Content-type": "application/vnd.olrapi.dataview.dql+txt",

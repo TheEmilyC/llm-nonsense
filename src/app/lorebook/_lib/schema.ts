@@ -186,6 +186,26 @@ export const obsidianFileResponseSchema = z.union([
   obsidianError,
 ]);
 
+export const obsidianFileLinksSchema = z.object({
+  filename: z.string(),
+  result: z.object({
+    inlinks: obsidianLinkSchema.array(),
+    outlinks: obsidianLinkSchema.array(),
+  }),
+});
+export type ObsidianFileLinks = z.infer<typeof obsidianFileLinksSchema>;
+
+export const obsidianFileLinksResponseSchema = z.union([
+  obsidianFileLinksSchema.array(),
+  obsidianError,
+]);
+
+export const lorebookEntryFileSchema = obsidianFileSchema.extend({
+  inlinks: obsidianLinkSchema.array(),
+  outlinks: obsidianLinkSchema.array(),
+});
+export type LorebookEntryFile = z.infer<typeof lorebookEntryFileSchema>;
+
 // -- DTOs
 
 export const lorebookEntityListDtoSchema = lorebookEntitySchema.pick({

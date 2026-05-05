@@ -22,9 +22,7 @@ TABLE
   characters, 
   summary, 
   order, 
-  file.ctime as "ctime",
-  unique(filter(file.inlinks, (l) => contains(l.tags, "lorebook") AND !contains(l.tags, "lorebook-never"))) as inlinks,
-  unique(filter(file.outlinks, (l) => contains(l.tags, "lorebook") AND !contains(l.tags, "lorebook-never"))) as outlinks
+  file.ctime as "ctime"
 FROM #lorebook AND !#lorebook-never AND !"system/templates"
 
 ### Link fetch query
@@ -32,7 +30,10 @@ POST http://127.0.0.1:27123/search/
 Authorization: Bearer 315608501d039714d6139d5da6e0ccd0636e195dc900457210de9124c5c63194
 Content-Type: application/vnd.olrapi.dataview.dql+txt
 
-TABLE FROM ([[lorebook/characters/lucia/lucia.md]] or outgoing([[lorebook/characters/lucia/lucia.md]])) and #lorebook and !#lorebook-never and !"system/templates"
+TABLE
+  unique(filter(file.inlinks, (l) => contains(l.tags, "lorebook") AND !contains(l.tags, "lorebook-never"))) as inlinks,
+  unique(filter(file.outlinks, (l) => contains(l.tags, "lorebook") AND !contains(l.tags, "lorebook-never"))) as outlinks 
+FROM "lorebook/characters/lucia/lucia.md"
 
 ### Write file test
 

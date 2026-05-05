@@ -199,7 +199,7 @@ export async function generateCastOfCharacters({
   ];
   if (previousCast) {
     promptSkeleton.push({
-      content: previousCast,
+      content: `<previous_cast>\n${previousCast}\n</previous_cast>`,
       role: "system",
       type: "CONTENT",
     });
@@ -397,9 +397,7 @@ export async function generateSummaries({
             fileName: lorebook.cast.filename,
             lorebookId: lorebook.id,
           });
-          castContent = convertFilesToPrompt([
-            { ...castEntity, title: "previous_cast_of_characters" },
-          ]);
+          castContent = convertFilesToPrompt([castEntity]);
         }
         if (lorebook.memories.length > 0) {
           const previousSceneEntry = await getLorebookEntry({
