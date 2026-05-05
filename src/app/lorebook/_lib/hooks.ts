@@ -4,12 +4,15 @@ import { useState, useTransition } from "react";
 
 import {
   createLorebookAction,
+  generateLorebookUpdatesAction,
   generateMemoryArcAction,
   getLorebookAction,
   testConnectionAction,
   updateLorebookAction,
 } from "@/app/lorebook/_lib/actions";
 import {
+  GenerateLorebookUpdatesActionParams,
+  GenerateLorebookUpdatesResult,
   GenerateMemoryArcActionParams,
   LorebookFormValues,
   LorebookStatusDto,
@@ -60,6 +63,26 @@ export function useDeleteLorebook(onError?: (error: ActionError) => void) {
     deleteLorebook,
     isPending,
   };
+}
+
+export function useGenerateLorebookUpdates(
+  onError?: (error: ActionError) => void,
+) {
+  const [isPending, startTransition] = useTransition();
+
+  function generateLorebookUpdates(
+    params: GenerateLorebookUpdatesActionParams,
+  ): Promise<ActionResponse<GenerateLorebookUpdatesResult>> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const res = await generateLorebookUpdatesAction(params);
+        if (!res.success) onError?.(res.error);
+        resolve(res);
+      });
+    });
+  }
+
+  return { generateLorebookUpdates, isPending };
 }
 
 export function useGenerateMemoryArc(onError?: (error: ActionError) => void) {

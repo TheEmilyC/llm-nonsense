@@ -18,7 +18,10 @@ import { Input } from "@/components/ui/input";
 interface FactsDrawerProps {
   chatId: string;
   facts: LorebookFact[];
+  hasLorebook: boolean;
+  isGeneratingUpdates: boolean;
   onFactsChange: (facts: LorebookFact[]) => void;
+  onGenerateUpdates: () => void;
   onOpenChange: (open: boolean) => void;
   open: boolean;
 }
@@ -26,7 +29,10 @@ interface FactsDrawerProps {
 export function FactsDrawer({
   chatId,
   facts,
+  hasLorebook,
+  isGeneratingUpdates,
   onFactsChange,
+  onGenerateUpdates,
   onOpenChange,
   open,
 }: FactsDrawerProps) {
@@ -78,6 +84,18 @@ export function FactsDrawer({
               {editableFacts.length} fact{editableFacts.length !== 1 ? "s" : ""}
             </span>
             <div className="flex items-center gap-2">
+              {hasLorebook && (
+                <Button
+                  disabled={
+                    editableFacts.length === 0 || isGeneratingUpdates || isSaving
+                  }
+                  onClick={onGenerateUpdates}
+                  size="sm"
+                  variant="outline"
+                >
+                  {isGeneratingUpdates ? "Generating…" : "Generate updates"}
+                </Button>
+              )}
               <Button onClick={addFact} size="sm" variant="outline">
                 Add fact
               </Button>

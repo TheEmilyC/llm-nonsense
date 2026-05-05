@@ -8,6 +8,7 @@ import { MemoryResultsDrawer } from "@/app/chat/_components/memory-results-drawe
 import {
   useChatMessages,
   useGenerateChatSummaries,
+  useReplaceChatFacts,
 } from "@/app/chat/_lib/hooks";
 import {
   ChatModelKey,
@@ -16,8 +17,15 @@ import {
 } from "@/app/chat/_lib/schema";
 import { ArcResultsDrawer } from "@/app/lorebook/_components/arc-results-drawer";
 import { CurrentLorebook } from "@/app/lorebook/_components/current-lorebook";
-import { useGenerateMemoryArc } from "@/app/lorebook/_lib/hooks";
-import { LorebookStatusDto } from "@/app/lorebook/_lib/schema";
+import { LorebookUpdatesDrawer } from "@/app/lorebook/_components/lorebook-updates-drawer";
+import {
+  useGenerateLorebookUpdates,
+  useGenerateMemoryArc,
+} from "@/app/lorebook/_lib/hooks";
+import {
+  GenerateLorebookUpdatesResult,
+  LorebookStatusDto,
+} from "@/app/lorebook/_lib/schema";
 import { GenerateMemoryArcResult } from "@/app/lorebook/_lib/service";
 import {
   ChatContainer,
@@ -68,6 +76,15 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
   // Facts
   const [facts, setFacts] = useState(chatSession.facts);
   const [factsDrawerOpen, setFactsDrawerOpen] = useState(false);
+
+  // Lorebook updates
+  const { generateLorebookUpdates, isPending: isUpdatesPending } =
+    useGenerateLorebookUpdates();
+  const { isPending: isAcceptingUpdates, replaceFacts } = useReplaceChatFacts();
+  const [lorebookUpdates, setLorebookUpdates] = useState<
+    GenerateLorebookUpdatesResult | undefined
+  >(undefined);
+  const [updatesDrawerOpen, setUpdatesDrawerOpen] = useState(false);
 
   // Arc
   const { generateMemoryArc, isPending: isArcPending } = useGenerateMemoryArc();
@@ -157,6 +174,26 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
     setMemoryEndIndex(undefined);
     setMemoryResults(res.data);
     setMemoryDrawerOpen(true);
+  }
+
+  async function onGenerateLorebookUpdates() {
+    const res = await generateLorebookUpdates({ chatId: chatSession.id });
+    if (!res.success) {
+      toast.error(res.error.message);
+      return;
+    }
+    setLorebookUpdates(res.data);
+    setUpdatesDrawerOpen(true);
+  }
+
+  async function onAcceptLorebookUpdates() {
+    const res = await replaceFacts({ chatId: chatSession.id, facts: [] });
+    if (!res.success) {
+      toast.error(res.error.message);
+      return;
+    }
+    setFacts([]);
+    setUpdatesDrawerOpen(false);
   }
 
   function onContentEdit(
@@ -304,7 +341,10 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
         <FactsDrawer
           chatId={chatSession.id}
           facts={facts}
+          hasLorebook={!!chatSession.story.lorebookId}
+          isGeneratingUpdates={isUpdatesPending}
           onFactsChange={setFacts}
+          onGenerateUpdates={onGenerateLorebookUpdates}
           onOpenChange={setFactsDrawerOpen}
           open={factsDrawerOpen}
         />
@@ -318,6 +358,13 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
           data={arcResults}
           onOpenChange={setArcDrawerOpen}
           open={arcDrawerOpen}
+        />
+        <LorebookUpdatesDrawer
+          data={lorebookUpdates}
+          isAccepting={isAcceptingUpdates}
+          onAccept={onAcceptLorebookUpdates}
+          onOpenChange={setUpdatesDrawerOpen}
+          open={updatesDrawerOpen}
         />
       </div>
     </div>

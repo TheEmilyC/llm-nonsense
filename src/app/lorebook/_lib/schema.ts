@@ -126,6 +126,13 @@ export type GenerateMemoryArcActionParams = z.infer<
   typeof generateMemoryArcActionParamsSchema
 >;
 
+export const generateLorebookUpdatesActionParamsSchema = z.object({
+  chatId: dbIdValidator,
+});
+export type GenerateLorebookUpdatesActionParams = z.infer<
+  typeof generateLorebookUpdatesActionParamsSchema
+>;
+
 export const lorebookFactSchema = z.object({
   claim: z.string(),
   confidence: z.enum(["explicit", "implied"]),
@@ -276,6 +283,13 @@ export const lorebookUpdateDiscoveryResultSchema = z.object({
 export type LorebookUpdateDiscoveryResult = z.infer<
   typeof lorebookUpdateDiscoveryResultSchema
 >;
+
+export const lorebookUpdateResultSchema = z.object({
+  entryFilename: z.string(),
+  suggestions: lorebookUpdateSuggestionSchema.array(),
+});
+export type GenerateLorebookUpdatesResult = LorebookUpdateResult[];
+export type LorebookUpdateResult = z.infer<typeof lorebookUpdateResultSchema>;
 
 // -- DTOs
 
