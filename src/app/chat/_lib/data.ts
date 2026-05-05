@@ -14,7 +14,7 @@ import {
   MessageMetadata,
 } from "@/app/chat/_lib/schema";
 import { promptWithFragmentsSchema } from "@/app/prompt/_lib/schema";
-import { Chat, ChatMessage, MessageContent } from "@/generated/client";
+import { Chat, ChatMessage, MessageContent, Prisma } from "@/generated/client";
 import { buildCharacterImageUrl, buildPersonaImageUrl } from "@/lib/image";
 import { prisma } from "@/lib/prisma";
 
@@ -58,6 +58,11 @@ export interface UpdateChatMessageParams {
   update: Partial<Pick<ChatMessage, "isHidden">>;
 }
 
+export interface UpdateChatParams {
+  id: string;
+  update: Prisma.ChatUpdateInput;
+}
+
 export interface UpdateMessageContentParams {
   id: string;
   update: Partial<
@@ -75,7 +80,7 @@ export async function createChat({
     },
   });
 
-  return chat;
+  return { ...chat, facts: chat.facts ?? [] };
 }
 
 export async function createChatMessageContent({
@@ -137,7 +142,7 @@ export async function getChatById(id: string): Promise<ChatEntity | null> {
 
   const chat = await prisma.chat.findUnique({ where: { id } });
   if (!chat) return null;
-  return chat;
+  return { ...chat, facts: chat.facts ?? [] };
 }
 
 export async function getChatForMemoryGen(
@@ -161,6 +166,7 @@ export async function getChatForMemoryGen(
   if (!chat) return null;
 
   return {
+    facts: chat.facts ?? undefined,
     id: chat.id,
     lorebookId: chat.story.lorebookId ?? undefined,
     messages: chat.messages.map((msg) => ({
@@ -290,6 +296,7 @@ export async function getChatSessionDto({
       imageSrc: buildCharacterImageUrl(character.id, character.pngHash),
       name: character.name,
     },
+    facts: chat.facts ?? [],
     id: chat.id,
     messages: chat.messages.reverse().map((msg) => ({
       contents: msg.contents.map((con) => ({
@@ -350,6 +357,13 @@ export async function hideChatMessages(ids: string[]): Promise<void> {
     data: { isHidden: true },
     where: { id: { in: ids } },
   });
+}
+
+export async function updateChat({
+  id,
+  update,
+}: UpdateChatParams): Promise<void> {
+  await prisma.chat.update({ data: update, where: { id } });
 }
 
 export async function updateChatMessage({

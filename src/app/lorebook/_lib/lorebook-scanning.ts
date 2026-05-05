@@ -1,5 +1,4 @@
-import path from "path";
-
+import { LorebookEntryFile } from "@/app/lorebook/_lib/schema";
 import {
   LOREBOOK_CASE_SENSITIVE,
   LOREBOOK_MATCH_WHOLE_WORDS,
@@ -14,26 +13,31 @@ export interface IndexEntry {
   summary: string;
 }
 
-interface ConvertFilesToPromptFile {
-  content: string;
-  path: string;
-  title?: string;
-}
-
 interface ScanLorebookIndexParams {
   index: IndexEntry[];
   scanText: string;
 }
 
-export function convertFilesToPrompt(files: ConvertFilesToPromptFile[]) {
-  const lorebookPrompt = files.reduce((acc, file) => {
-    const fileText = stripFrontMatter(file.content);
-    const { cleanedText, header } = extractHeader(fileText);
-    const title = file.title || header || path.basename(file.path);
-    return acc + `<${title}>${cleanedText}</${title}>`;
-  }, "");
+export function convertFilesToPrompt(files: LorebookEntryFile[]) {
+  return files
+    .map((file) => {
+      const content = stripFrontMatter(file.content);
+      const outlinks = file.outlinks
+        .map((l) => `${l.display}(${l.path})`)
+        .join(", ");
+      const inlinks = file.inlinks
+        .map((l) => `${l.display}(${l.path})`)
+        .join(", ");
 
-  return lorebookPrompt;
+      return [
+        `# ${file.path}`,
+        content,
+        "---",
+        `**Outgoing links:** ${outlinks}`,
+        `**Backlinks:** ${inlinks}`,
+      ].join("\n\n");
+    })
+    .join("\n\n");
 }
 
 export function scanLorebookIndex({

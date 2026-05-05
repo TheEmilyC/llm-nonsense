@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { FactsDrawer } from "@/app/chat/_components/facts-drawer";
 import { MemoryResultsDrawer } from "@/app/chat/_components/memory-results-drawer";
 import {
   useChatMessages,
   useGenerateChatSummaries,
+  useReplaceChatFacts,
 } from "@/app/chat/_lib/hooks";
 import {
   ChatModelKey,
@@ -15,8 +17,15 @@ import {
 } from "@/app/chat/_lib/schema";
 import { ArcResultsDrawer } from "@/app/lorebook/_components/arc-results-drawer";
 import { CurrentLorebook } from "@/app/lorebook/_components/current-lorebook";
-import { useGenerateMemoryArc } from "@/app/lorebook/_lib/hooks";
-import { LorebookStatusDto } from "@/app/lorebook/_lib/schema";
+import { LorebookUpdatesDrawer } from "@/app/lorebook/_components/lorebook-updates-drawer";
+import {
+  useGenerateLorebookUpdates,
+  useGenerateMemoryArc,
+} from "@/app/lorebook/_lib/hooks";
+import {
+  GenerateLorebookUpdatesResult,
+  LorebookStatusDto,
+} from "@/app/lorebook/_lib/schema";
 import { GenerateMemoryArcResult } from "@/app/lorebook/_lib/service";
 import {
   ChatContainer,
@@ -27,7 +36,15 @@ import {
   ChatSwipe,
 } from "@/components/chat";
 import { Header } from "@/components/header";
-import { LorebookIcon } from "@/lib/icons";
+import { Button } from "@/components/ui/button";
+import { PromptInputAction } from "@/components/ui/prompt-input";
+import {
+  FactsIcon,
+  InsertAssistantMessageIcon,
+  LorebookIcon,
+  MemoryIcon,
+} from "@/lib/icons";
+import { cn } from "@/lib/utils";
 
 export interface ChatViewParams {
   chatSession: ChatSessionDto;
@@ -55,6 +72,19 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
   >();
   const [memoryEndIndex, _setMemoryEndIndex] = useState<number | undefined>();
   const [memoryDrawerOpen, setMemoryDrawerOpen] = useState(false);
+
+  // Facts
+  const [facts, setFacts] = useState(chatSession.facts);
+  const [factsDrawerOpen, setFactsDrawerOpen] = useState(false);
+
+  // Lorebook updates
+  const { generateLorebookUpdates, isPending: isUpdatesPending } =
+    useGenerateLorebookUpdates();
+  const { isPending: isAcceptingUpdates, replaceFacts } = useReplaceChatFacts();
+  const [lorebookUpdates, setLorebookUpdates] = useState<
+    GenerateLorebookUpdatesResult | undefined
+  >(undefined);
+  const [updatesDrawerOpen, setUpdatesDrawerOpen] = useState(false);
 
   // Arc
   const { generateMemoryArc, isPending: isArcPending } = useGenerateMemoryArc();
@@ -144,6 +174,26 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
     setMemoryEndIndex(undefined);
     setMemoryResults(res.data);
     setMemoryDrawerOpen(true);
+  }
+
+  async function onGenerateLorebookUpdates() {
+    const res = await generateLorebookUpdates({ chatId: chatSession.id });
+    if (!res.success) {
+      toast.error(res.error.message);
+      return;
+    }
+    setLorebookUpdates(res.data);
+    setUpdatesDrawerOpen(true);
+  }
+
+  async function onAcceptLorebookUpdates() {
+    const res = await replaceFacts({ chatId: chatSession.id, facts: [] });
+    if (!res.success) {
+      toast.error(res.error.message);
+      return;
+    }
+    setFacts([]);
+    setUpdatesDrawerOpen(false);
   }
 
   function onContentEdit(
@@ -239,22 +289,67 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
           </ChatHistory>
           <ChatInput
             isLoading={status !== "ready"}
-            isMemoryGenerating={isSummaryPending}
-            memoryDisable={
-              (memoryStartIndex === undefined && memoryResults === undefined) ||
-              isSummaryPending
+            leftActions={
+              <>
+                <PromptInputAction tooltip="Generate Memory">
+                  <Button
+                    className="h-8 w-8 rounded-full"
+                    disabled={
+                      (memoryStartIndex === undefined &&
+                        memoryResults === undefined) ||
+                      isSummaryPending
+                    }
+                    onClick={onGenerateMemory}
+                    size="sm"
+                    suppressHydrationWarning
+                  >
+                    <MemoryIcon
+                      className={cn(
+                        "h-4 w-4",
+                        isSummaryPending && "animate-spin",
+                      )}
+                    />
+                  </Button>
+                </PromptInputAction>
+                <PromptInputAction tooltip={`Facts (${facts.length})`}>
+                  <Button
+                    className="h-8 w-8 rounded-full"
+                    onClick={() => setFactsDrawerOpen(true)}
+                    size="sm"
+                  >
+                    <FactsIcon className="h-4 w-4" />
+                  </Button>
+                </PromptInputAction>
+                <PromptInputAction tooltip="Insert blank assistant message">
+                  <Button
+                    className="h-8 w-8 rounded-full"
+                    disabled={status !== "ready"}
+                    onClick={messageControl.insertBlankAssistantMessage}
+                    size="sm"
+                  >
+                    <InsertAssistantMessageIcon className="h-4 w-4" />
+                  </Button>
+                </PromptInputAction>
+              </>
             }
-            onInsertAssistantMessage={
-              messageControl.insertBlankAssistantMessage
-            }
-            onMemoryGenerate={onGenerateMemory}
             onModelChange={setChatModel}
             onStop={stop}
             onSubmit={handleSubmit}
             selectedModel={chatModel}
           />
         </ChatContainer>
+        <FactsDrawer
+          chatId={chatSession.id}
+          facts={facts}
+          hasLorebook={!!chatSession.story.lorebookId}
+          isGeneratingUpdates={isUpdatesPending}
+          onFactsChange={setFacts}
+          onGenerateUpdates={onGenerateLorebookUpdates}
+          onOpenChange={setFactsDrawerOpen}
+          open={factsDrawerOpen}
+        />
         <MemoryResultsDrawer
+          chatId={chatSession.id}
           data={memoryResults}
           onOpenChange={setMemoryDrawerOpen}
           open={memoryDrawerOpen}
@@ -263,6 +358,13 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
           data={arcResults}
           onOpenChange={setArcDrawerOpen}
           open={arcDrawerOpen}
+        />
+        <LorebookUpdatesDrawer
+          data={lorebookUpdates}
+          isAccepting={isAcceptingUpdates}
+          onAccept={onAcceptLorebookUpdates}
+          onOpenChange={setUpdatesDrawerOpen}
+          open={updatesDrawerOpen}
         />
       </div>
     </div>

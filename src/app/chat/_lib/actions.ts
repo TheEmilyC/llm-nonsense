@@ -13,6 +13,7 @@ import {
   deleteChatMessage,
   getChatById,
   getChatMessageById,
+  updateChat,
   updateChatMessage,
   updateMessageContent,
 } from "@/app/chat/_lib/data";
@@ -23,6 +24,8 @@ import {
   GenerateSummariesActionParams,
   generateSummariesActionParamsSchema,
   GenerateSummariesActionResponse,
+  SaveChatFactsActionParams,
+  saveChatFactsActionParamsSchema,
   UpdateChatMessageActionParams,
   updateChatMessageActionParamsSchema,
   UpdateContentActionParams,
@@ -146,11 +149,15 @@ export async function generateSummariesAction(
   const { chatId, messageIds } = parseResult.data;
 
   let cast: string | undefined;
-  let memory;
+  let memory: undefined | { content: string; synopsis: string };
+  let facts:
+    | undefined
+    | { claim: string; confidence: "explicit" | "implied" }[];
   try {
     const result = await generateSummaries({ chatId, messageIds });
     cast = result.cast;
     memory = result.memory;
+    facts = result.facts;
   } catch (err) {
     logger.error("Failed to generate summaries", {
       chatId,
@@ -162,9 +169,10 @@ export async function generateSummariesAction(
   updateTag(`${CHAT_CACHE_KEY}-${chatId}`);
   return {
     data: {
-      cast: cast,
-      content: memory.content,
-      summary: memory.synopsis,
+      cast: cast ? cast : "Failed to generate",
+      content: memory ? memory.content : "Failed to generate",
+      facts,
+      summary: memory ? memory.synopsis : "Failed to generate",
     },
     success: true,
   };
@@ -197,6 +205,44 @@ export async function insertBlankAssistantMessageAction(
     });
     return toActionResponseError(err);
   }
+}
+
+export async function replaceChatFactsAction(
+  params: SaveChatFactsActionParams,
+): Promise<ActionResponse> {
+  const parseResult = saveChatFactsActionParamsSchema.safeParse(params);
+  if (!parseResult.success) return toActionResponseError(parseResult.error);
+  const { chatId, facts } = parseResult.data;
+
+  try {
+    await updateChat({ id: chatId, update: { facts } });
+  } catch (err) {
+    logger.error("Failed to replace chat facts", { chatId, ...parseError(err) });
+    return toActionResponseError(err);
+  }
+  logger.info("Chat facts replaced", { chatId });
+  updateTag(`${CHAT_CACHE_KEY}-${chatId}`);
+  return { success: true };
+}
+
+export async function saveChatFactsAction(
+  params: SaveChatFactsActionParams,
+): Promise<ActionResponse> {
+  const parseResult = saveChatFactsActionParamsSchema.safeParse(params);
+  if (!parseResult.success) return toActionResponseError(parseResult.error);
+  const { chatId, facts } = parseResult.data;
+
+  try {
+    const chat = await getChatById(chatId);
+    const existing = chat?.facts ?? [];
+    await updateChat({ id: chatId, update: { facts: [...existing, ...facts] } });
+  } catch (err) {
+    logger.error("Failed to save chat facts", { chatId, ...parseError(err) });
+    return toActionResponseError(err);
+  }
+  logger.info("Chat facts saved", { chatId });
+  updateTag(`${CHAT_CACHE_KEY}-${chatId}`);
+  return { success: true };
 }
 
 export async function updateChatMessageAction(

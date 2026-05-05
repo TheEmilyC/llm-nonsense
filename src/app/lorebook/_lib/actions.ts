@@ -4,6 +4,7 @@ import { updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { dbIdValidator } from "@/app/_shared/schema";
+import { getChatForMemoryGen } from "@/app/chat/_lib/data";
 import {
   createLorebookEntity,
   deleteLorebookEntity,
@@ -12,6 +13,9 @@ import {
   updateLorebookEntity,
 } from "@/app/lorebook/_lib/data";
 import {
+  GenerateLorebookUpdatesActionParams,
+  generateLorebookUpdatesActionParamsSchema,
+  GenerateLorebookUpdatesResult,
   GenerateMemoryArcActionParams,
   generateMemoryArcActionParamsSchema,
   GetLorebookActionParams,
@@ -27,11 +31,12 @@ import {
   updateLorebookActionParamsSchema,
 } from "@/app/lorebook/_lib/schema";
 import {
+  generateLorebookUpdates,
   generateMemoryArc,
   GenerateMemoryArcResult,
 } from "@/app/lorebook/_lib/service";
 import { ActionResponse, toActionResponseError } from "@/lib/action-utils";
-import { NotFoundError } from "@/lib/error";
+import { AppError, NotFoundError } from "@/lib/error";
 import { logger, parseError } from "@/lib/logger";
 
 export async function createLorebookAction(
@@ -73,6 +78,39 @@ export async function deleteLorebookAction(
   updateTag(`${LOREBOOK_CACHE_KEY}-${lorebookId}`);
   updateTag(LOREBOOK_CACHE_KEY);
   redirect("/lorebook");
+}
+
+export async function generateLorebookUpdatesAction(
+  params: GenerateLorebookUpdatesActionParams,
+): Promise<ActionResponse<GenerateLorebookUpdatesResult>> {
+  const parseResult =
+    generateLorebookUpdatesActionParamsSchema.safeParse(params);
+  if (!parseResult.success) return toActionResponseError(parseResult.error);
+  const { chatId } = parseResult.data;
+
+  const chat = await getChatForMemoryGen(chatId, []);
+  if (!chat) return toActionResponseError(new NotFoundError("Chat", chatId));
+  if (!chat.lorebookId)
+    return toActionResponseError(
+      new AppError("Chat has no lorebook", "INTERNAL_ERROR"),
+    );
+
+  const facts = chat.facts ?? [];
+  let result: GenerateLorebookUpdatesResult;
+  try {
+    result = await generateLorebookUpdates({
+      facts,
+      lorebookId: chat.lorebookId,
+    });
+  } catch (err) {
+    logger.error("Failed to generate lorebook updates", {
+      chatId,
+      ...parseError(err),
+    });
+    return toActionResponseError(err);
+  }
+  logger.info("Lorebook updates generated", { chatId });
+  return { data: result, success: true };
 }
 
 export async function generateMemoryArcAction(

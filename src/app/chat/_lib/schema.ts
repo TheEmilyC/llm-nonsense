@@ -7,6 +7,7 @@ import {
   messageRoleSchema,
 } from "@/app/_shared/schema";
 import { characterEntitySchema } from "@/app/character/_lib/schema";
+import { lorebookFactSchema } from "@/app/lorebook/_lib/schema";
 import { personaEntitySchema } from "@/app/persona/_lib/schema";
 import { promptWithFragmentsSchema } from "@/app/prompt/_lib/schema";
 import { storyEntitySchema } from "@/app/story/_lib/schema";
@@ -32,6 +33,7 @@ export type MessagePart = UIMessagePart<UIDataTypes, UITools>;
 
 export const chatEntitySchema = z.object({
   createdAt: z.date(),
+  facts: lorebookFactSchema.array(),
   id: dbIdValidator,
   modifiedAt: z.date(),
   name: z.string().min(1),
@@ -119,6 +121,14 @@ export type GenerateSummariesActionParams = z.infer<
   typeof generateSummariesActionParamsSchema
 >;
 
+export const saveChatFactsActionParamsSchema = z.object({
+  chatId: dbIdValidator,
+  facts: lorebookFactSchema.array(),
+});
+export type SaveChatFactsActionParams = z.infer<
+  typeof saveChatFactsActionParamsSchema
+>;
+
 export const chatSessionSchema = chatEntitySchema
   .pick({
     id: true,
@@ -140,6 +150,7 @@ export const chatForMemoryGenSchema = chatEntitySchema
     id: true,
   })
   .extend({
+    facts: lorebookFactSchema.array().optional(),
     lorebookId: dbIdValidator.optional(),
     messages: chatMessageForLLMSchema.array(),
   });
@@ -148,6 +159,7 @@ export type ChatForMemoryGen = z.infer<typeof chatForMemoryGenSchema>;
 export const generateSummariesActionResponseSchema = z.object({
   cast: z.string().optional(),
   content: z.string(),
+  facts: lorebookFactSchema.array().optional(),
   summary: z.string(),
 });
 export type GenerateSummariesActionResponse = z.infer<
@@ -182,6 +194,7 @@ export type ChatMessageDto = z.infer<typeof chatMessageDtoSchema>;
 
 export const chatSessionDtoSchema = chatEntitySchema
   .pick({
+    facts: true,
     id: true,
     name: true,
   })
