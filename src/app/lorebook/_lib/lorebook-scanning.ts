@@ -23,10 +23,10 @@ export function convertFilesToPrompt(files: LorebookEntryFile[]) {
     .map((file) => {
       const content = stripFrontMatter(file.content);
       const outlinks = file.outlinks
-        .map((l) => `${l.display}(${l.path})`)
+        .map((l) => `${l.display ?? l.path}(${l.path})`)
         .join(", ");
       const inlinks = file.inlinks
-        .map((l) => `${l.display}(${l.path})`)
+        .map((l) => `${l.display ?? l.path}(${l.path})`)
         .join(", ");
 
       return [
