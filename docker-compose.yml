@@ -9,5 +9,6 @@ services:
       # The actual file lives in the 'db-data' volume below so it persists
       # across restarts and container rebuilds.
       DATABASE_URL: "file:/app/data/llm-nonsense.db"
+    restart: unless-stopped
     volumes:
       - ./data:/app/data
