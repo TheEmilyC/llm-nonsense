@@ -12,7 +12,8 @@
     "prisma": "pnpm dlx prisma",
     "db-generate": "pnpm dlx prisma generate",
     "db-migrate": "pnpm dlx prisma migrate dev --name",
-    "errorCheck": "npx tsc --noEmit 2>&1"
+    "errorCheck": "npx tsc --noEmit 2>&1",
+    "test": "vitest"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.68",
@@ -77,6 +78,7 @@
     "prisma": "^7.5.0",
     "prisma-json-types-generator": "^4.1.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.5"
   }
 }
