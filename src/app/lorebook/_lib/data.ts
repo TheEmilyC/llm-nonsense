@@ -364,7 +364,7 @@ function toLorebookEntryIndex(index: ObsidianIndex): LorebookEntryIndex {
     aliases: index.result.aliases ?? [],
     characters:
       index.result.characters?.map((char) =>
-        typeof char === "string" ? char : char.display,
+        typeof char === "string" ? char : (char.display ?? char.path),
       ) ?? [],
     summary: index.result.summary ?? "",
   };

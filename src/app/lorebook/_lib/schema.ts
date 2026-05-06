@@ -25,7 +25,7 @@ export const lorebookEntitySchema = z.object({
 });
 
 const obsidianLinkSchema = z.object({
-  display: z.string(),
+  display: z.string().optional(),
   embed: z.boolean(),
   path: z.string(),
   type: z.string(),
