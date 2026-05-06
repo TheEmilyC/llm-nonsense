@@ -111,7 +111,7 @@ model World {
 model Lorebook {
   id         String   @id @default(cuid())
   name       String
-  apiKey     String // Server is never available outside localhost, api key is a throw away
+  apiKey     String // API key for local Obsidian server, scoped to localhost only
   port       Int
   stories    Story[]
   createdAt  DateTime @default(now())
