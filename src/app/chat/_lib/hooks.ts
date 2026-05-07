@@ -35,6 +35,7 @@ export function useChatMessages({
   messages: initialMessages,
 }: ChatSessionDto) {
   const isSwipeGenerateRef = useRef(false);
+  const pendingUserContentIdRef = useRef<string | undefined>(undefined);
   const [messageSwipes, setMessageSwipes] = useState<HookUIMessage[]>(
     initialMessages.length > 0
       ? getMessageSwipes(initialMessages[initialMessages.length - 1])
@@ -54,6 +55,21 @@ export function useChatMessages({
       generateId: createId,
       messages: initialMessages.map((msg) => messageDtoToUIMessage(msg)),
       onFinish: ({ message }) => {
+        if (pendingUserContentIdRef.current) {
+          const contentId = pendingUserContentIdRef.current;
+          pendingUserContentIdRef.current = undefined;
+          setMessages((prev) => {
+            const lastUserIdx = prev.reduce(
+              (acc, m, i) => (m.role === "user" ? i : acc),
+              -1,
+            );
+            if (lastUserIdx === -1 || prev[lastUserIdx].metadata?.contentId)
+              return prev;
+            return prev.map((m, i) =>
+              i === lastUserIdx ? { ...m, metadata: { contentId } } : m,
+            );
+          });
+        }
         if (isSwipeGenerateRef.current) {
           setMessageSwipes((prev) => {
             _setSwipeIndex(prev.length);
@@ -75,6 +91,7 @@ export function useChatMessages({
               id,
               model: body?.model,
               trigger,
+              userContentId: body?.userContentId,
             },
           };
         },
@@ -109,8 +126,10 @@ export function useChatMessages({
 
   const handleSubmit = (text: string, model: ChatModelKey) => {
     if (text.trim()) {
+      const userContentId = createId();
+      pendingUserContentIdRef.current = userContentId;
       isSwipeGenerateRef.current = false;
-      sendMessage({ text }, { body: { model } });
+      sendMessage({ text }, { body: { model, userContentId } });
     }
   };
 

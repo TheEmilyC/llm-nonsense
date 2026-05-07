@@ -110,6 +110,7 @@ export const chatPostRequestBodySchema = z.object({
   id: z.string(),
   model: chatModelKeySchema,
   trigger: z.enum(["submit-message", "regenerate-message"]),
+  userContentId: dbIdValidator.optional(),
 });
 export type ChatPostRequestBody = z.infer<typeof chatPostRequestBodySchema>;
 
