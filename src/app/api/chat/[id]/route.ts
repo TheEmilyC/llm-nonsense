@@ -12,6 +12,7 @@ export async function POST(req: Request, { params }: Params) {
     content: message,
     model,
     trigger,
+    userContentId,
   } = chatPostRequestBodySchema.parse(body);
 
   return constructChatResponse({
@@ -19,5 +20,6 @@ export async function POST(req: Request, { params }: Params) {
     message: message,
     model,
     regenerate: trigger === "regenerate-message",
+    providedUserContentId: userContentId,
   });
 }

@@ -71,6 +71,7 @@ interface ConstructChatResponseParams {
   chatId: string;
   message: LlmnUIMessage;
   model: ChatModelKey;
+  providedUserContentId?: string;
   regenerate?: boolean;
 }
 
@@ -88,11 +89,12 @@ export async function constructChatResponse({
   chatId,
   message,
   model,
+  providedUserContentId,
   regenerate,
 }: ConstructChatResponseParams) {
   // the user message will already exist in the DB during regenerate
   if (!regenerate) {
-    const userContentId = createId();
+    const userContentId = providedUserContentId ?? createId();
     await createChatMessageContent({
       chatId: chatId,
       messageContent: {
