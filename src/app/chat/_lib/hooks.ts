@@ -24,7 +24,6 @@ import {
   GenerateSummariesActionResponse,
   LlmnUIMessage,
   SaveChatFactsActionParams,
-  StoryChatSessionDto,
 } from "@/app/chat/_lib/schema";
 import { ActionError, ActionResponse } from "@/lib/action-utils";
 
@@ -33,7 +32,10 @@ type HookUIMessage = LlmnUIMessage & { isHidden: boolean };
 export function useChatMessages({
   id: chatId,
   messages: initialMessages,
-}: StoryChatSessionDto) {
+}: {
+  id: string;
+  messages: ChatMessageDto[];
+}) {
   const isSwipeGenerateRef = useRef(false);
   const pendingUserContentIdRef = useRef<string | undefined>(undefined);
   const [messageSwipes, setMessageSwipes] = useState<HookUIMessage[]>(

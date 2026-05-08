@@ -19,6 +19,7 @@ import {
   ListEnd,
   ListStart,
   Lock,
+  MessageSquare,
   MessageSquareCode,
   MessageSquarePlus,
   Moon,
@@ -41,6 +42,7 @@ export const PersonaIcon = UserCircle;
 export const WorldIcon = Globe;
 export const StoryIcon = BookOpen;
 export const LorebookIcon = Library;
+export const ChatIcon = MessageSquare;
 export const PromptIcon = MessageSquareCode;
 export const MemoryIcon = Brain;
 export const FactsIcon = ListChecks;

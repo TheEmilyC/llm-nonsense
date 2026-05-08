@@ -86,7 +86,7 @@ interface ChatInputParams {
 }
 
 interface ChatMessageProps {
-  character: EntityProfile;
+  character?: EntityProfile;
   isHidden: boolean;
   isStreaming: boolean;
   memory?: {
@@ -99,11 +99,11 @@ interface ChatMessageProps {
   onDelete?: () => void;
   onEdit?: (newText: string) => void;
   onHide?: () => void;
-  persona: EntityProfile;
+  persona?: EntityProfile;
 }
 
 interface ChatMessageThinkingProps {
-  character: EntityProfile;
+  character?: EntityProfile;
 }
 
 interface ChatSwipeParams {
@@ -163,9 +163,7 @@ export function ChatInput({
       >
         <PromptInputTextarea placeholder="Send a message…" />
         <PromptInputActions className="flex items-center justify-between gap-2 pt-2">
-          <div className="flex items-center gap-2">
-            {leftActions}
-          </div>
+          <div className="flex items-center gap-2">{leftActions}</div>
           <div className="flex items-center gap-2">
             <Select
               onValueChange={(v) => onModelChange(v as ChatModelKey)}
@@ -245,13 +243,13 @@ export function ChatMessage({
         )}
       >
         <ChatAvatar
-          alt={isUser ? persona.name : character.name}
+          alt={isUser ? (persona?.name ?? "User") : (character?.name ?? "AI")}
           isUser={isUser}
-          src={isUser ? persona.imageSrc : character.imageSrc}
+          src={isUser ? persona?.imageSrc : character?.imageSrc}
         />
         <div className="flex flex-col gap-2 p-3 min-w-0 flex-1">
           <span className="text-xs font-semibold tracking-wide uppercase opacity-60">
-            {isUser ? persona.name : character.name}
+            {isUser ? (persona?.name ?? "User") : (character?.name ?? "AI")}
           </span>
           {message.parts.map((part, partIndex) => {
             if (part.type === "reasoning") {
@@ -422,10 +420,10 @@ export function ChatMessageThinking({ character }: ChatMessageThinkingProps) {
   return (
     <Message>
       <div className="flex flex-row-reverse w-full overflow-hidden rounded-lg bg-secondary shadow-lg ring-1 ring-black/10">
-        <ChatAvatar alt="AI" isUser={false} src={character.imageSrc} />
+        <ChatAvatar alt="AI" isUser={false} src={character?.imageSrc} />
         <div className="flex flex-col gap-2 p-3">
           <span className="text-xs font-semibold tracking-wide uppercase opacity-60">
-            {character.name}
+            {character?.name ?? "AI"}
           </span>
           <MessageContent className="rounded-none bg-transparent p-0 text-muted-foreground italic">
             Thinking…
@@ -469,8 +467,9 @@ function ChatAvatar({
 }: {
   alt: string;
   isUser: boolean;
-  src: string;
+  src: string | undefined;
 }) {
+  if (!src) return null;
   return (
     <div className="relative w-45 min-h-40 max-h-80 shrink-0 self-stretch">
       <Image alt={alt} className="object-cover" fill src={src} />

@@ -8,6 +8,8 @@ import {
   ChatForMemoryGen,
   ChatListDto,
   ChatMessageEntity,
+  ChatSession,
+  ChatSessionDto,
   MessageContentEntity,
   MessageMetadata,
   StoryChatSession,
@@ -37,7 +39,7 @@ export interface CreateChatMessageParams {
 export interface CreateChatParams {
   newChat: {
     name: string;
-    storyId: string;
+    storyId?: string;
   };
 }
 
@@ -140,6 +142,39 @@ export async function deleteChatMessage(
   return result;
 }
 
+export async function getBasicChatSession({
+  id,
+  skip = 0,
+  take = 50,
+}: GetChatSessionParams): Promise<ChatSession | null> {
+  const chat = await prisma.chat.findUnique({
+    include: {
+      messages: {
+        include: { contents: { where: { isActive: true } } },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take,
+        where: { isHidden: false },
+      },
+    },
+    where: { id },
+  });
+  if (!chat) return null;
+
+  return {
+    id: chat.id,
+    messages: chat.messages.map((msg) => ({
+      content: msg.contents[0].parts
+        .filter((part) => part.type === "text")
+        .map((part) => part.text)
+        .join("\n"),
+      id: msg.id,
+      role: msg.contents[0].role,
+    })),
+    name: chat.name,
+  };
+}
+
 export async function getChatById(id: string): Promise<ChatEntity | null> {
   "use cache";
   cacheTag(`${CHAT_CACHE_KEY}-${id}`);
@@ -188,6 +223,18 @@ export async function getChatForMemoryGen(
   };
 }
 
+export async function getChatListDto(): Promise<ChatListDto[]> {
+  "use cache";
+  cacheTag(CHAT_CACHE_KEY);
+
+  const result = await prisma.chat.findMany({
+    orderBy: { createdAt: "desc" },
+    where: { storyId: null },
+  });
+
+  return toChatListDto(result);
+}
+
 export async function getChatMessageById(
   id: string,
 ): Promise<ChatMessageEntity | null> {
@@ -198,6 +245,52 @@ export async function getChatMessageById(
 
   cacheTag(`${CHAT_CACHE_KEY}-${result.chatId}`);
   return result;
+}
+
+export async function getChatSessionDto({
+  id,
+  skip,
+  take,
+}: GetChatSessionViewParams): Promise<ChatSessionDto | null> {
+  "use cache";
+  cacheTag(`${CHAT_CACHE_KEY}-${id}`);
+  const chat = await prisma.chat.findUnique({
+    include: {
+      messages: {
+        include: { contents: { where: { isActive: true } } },
+        orderBy: { createdAt: "desc" },
+        skip,
+        take,
+      },
+    },
+    where: { id },
+  });
+  if (!chat) return null;
+
+  if (chat.messages.length > 0) {
+    const lastMessage = chat.messages[0];
+    const fullContents = await prisma.messageContent.findMany({
+      where: { messageId: lastMessage.id },
+    });
+    lastMessage.contents = fullContents;
+  }
+
+  return {
+    facts: chat.facts ?? [],
+    id: chat.id,
+    messages: chat.messages.reverse().map((msg) => ({
+      contents: msg.contents.map((con) => ({
+        id: con.id,
+        isActive: con.isActive,
+        metadata: con.metadata ?? { contentId: con.id },
+        parts: con.parts,
+        role: con.role,
+      })),
+      id: msg.id,
+      isHidden: msg.isHidden,
+    })),
+    name: chat.name,
+  };
 }
 
 export async function getChatsForStoryDto(

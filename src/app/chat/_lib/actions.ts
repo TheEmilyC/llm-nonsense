@@ -39,6 +39,19 @@ import { ActionResponse, toActionResponseError } from "@/lib/action-utils";
 import { NotFoundError } from "@/lib/error";
 import { logger, parseError } from "@/lib/logger";
 
+export async function createBasicChatAction(): Promise<ActionResponse> {
+  let chat: ChatEntity;
+  try {
+    chat = await createChat({ newChat: { name: new Date().toLocaleString() } });
+  } catch (err) {
+    logger.error("Failed to create basic chat", { ...parseError(err) });
+    return toActionResponseError(err);
+  }
+  logger.info("Basic chat created", { chatId: chat.id });
+  updateTag(CHAT_CACHE_KEY);
+  redirect(`/chat/${chat.id}`);
+}
+
 export async function createChatFromStoryAction(
   storyId: string,
 ): Promise<ActionResponse> {
@@ -118,7 +131,7 @@ export async function deleteChatAction(id: string): Promise<ActionResponse> {
 
   updateTag(CHAT_CACHE_KEY);
   updateTag(`${CHAT_CACHE_KEY}-${id}`);
-  redirect(`/story/${chat.storyId}`);
+  redirect(chat.storyId ? `/story/${chat.storyId}` : `/`);
 }
 
 export async function deleteMessageAction(
