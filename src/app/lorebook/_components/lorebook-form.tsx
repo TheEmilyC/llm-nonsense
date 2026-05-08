@@ -12,6 +12,7 @@ import {
 import { FieldInput } from "@/components/form-fields/field-input";
 import { Button } from "@/components/ui/button";
 import { FieldGroup } from "@/components/ui/field";
+import { RandomIcon } from "@/lib/icons";
 
 interface LorebookFormProps {
   defaultValues?: LorebookFormValues;
@@ -81,12 +82,30 @@ export function LorebookForm({
     <form id={formId} onSubmit={form.handleSubmit(handleSubmit)}>
       <FieldGroup>
         <FieldInput control={form.control} label="Name" name="name" />
-        <FieldInput
-          control={form.control}
-          label="Port"
-          name="port"
-          type="number"
-        />
+        <div className="flex items-end gap-2">
+          <div className="flex-1">
+            <FieldInput
+              control={form.control}
+              label="Port"
+              name="port"
+              type="number"
+            />
+          </div>
+          <Button
+            onClick={() => {
+              form.setValue(
+                "port",
+                Math.floor(Math.random() * (65535 - 49152 + 1)) + 49152,
+                { shouldValidate: true },
+              );
+            }}
+            size="sm"
+            type="button"
+            variant="outline"
+          >
+            <RandomIcon />
+          </Button>
+        </div>
         <FieldInput control={form.control} label="API Key" name="apiKey" />
         <div className="flex items-center gap-3">
           <Button
