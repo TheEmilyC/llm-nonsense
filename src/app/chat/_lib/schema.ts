@@ -37,7 +37,7 @@ export const chatEntitySchema = z.object({
   id: dbIdValidator,
   modifiedAt: z.date(),
   name: z.string().min(1),
-  storyId: dbIdValidator,
+  storyId: dbIdValidator.optional(),
 });
 export type ChatEntity = z.infer<typeof chatEntitySchema>;
 
@@ -130,7 +130,7 @@ export type SaveChatFactsActionParams = z.infer<
   typeof saveChatFactsActionParamsSchema
 >;
 
-export const chatSessionSchema = chatEntitySchema
+export const storyChatSessionSchema = chatEntitySchema
   .pick({
     id: true,
     name: true,
@@ -143,6 +143,16 @@ export const chatSessionSchema = chatEntitySchema
     prompt: promptWithFragmentsSchema,
     story: storyEntitySchema,
     world: worldEntitySchema.optional(),
+  });
+export type StoryChatSession = z.infer<typeof storyChatSessionSchema>;
+
+export const chatSessionSchema = chatEntitySchema
+  .pick({
+    id: true,
+    name: true,
+  })
+  .extend({
+    messages: chatMessageForLLMSchema.array(),
   });
 export type ChatSession = z.infer<typeof chatSessionSchema>;
 
@@ -193,7 +203,7 @@ export const chatMessageDtoSchema = chatMessageEntitySchema
   });
 export type ChatMessageDto = z.infer<typeof chatMessageDtoSchema>;
 
-export const chatSessionDtoSchema = chatEntitySchema
+export const storyChatSessionDtoSchema = chatEntitySchema
   .pick({
     facts: true,
     id: true,
@@ -204,5 +214,16 @@ export const chatSessionDtoSchema = chatEntitySchema
     messages: chatMessageDtoSchema.array(),
     persona: entityProfileSchema,
     story: storyEntitySchema.pick({ id: true, lorebookId: true, name: true }),
+  });
+export type StoryChatSessionDto = z.infer<typeof storyChatSessionDtoSchema>;
+
+export const chatSessionDtoSchema = chatEntitySchema
+  .pick({
+    facts: true,
+    id: true,
+    name: true,
+  })
+  .extend({
+    messages: chatMessageDtoSchema.array(),
   });
 export type ChatSessionDto = z.infer<typeof chatSessionDtoSchema>;

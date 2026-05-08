@@ -3,8 +3,12 @@ import { Suspense } from "react";
 import z from "zod";
 
 import { dbIdValidator } from "@/app/_shared/schema";
+import { BasicChatView } from "@/app/chat/_components/basic-chat-view";
 import { ChatView } from "@/app/chat/_components/chat-view";
-import { getChatSessionDto } from "@/app/chat/_lib/data";
+import {
+  getChatSessionDto,
+  getStoryChatSessionDto,
+} from "@/app/chat/_lib/data";
 import { getLorebookStatusDto } from "@/app/lorebook/_lib/data";
 import { LorebookStatusDto } from "@/app/lorebook/_lib/schema";
 
@@ -26,16 +30,23 @@ export default function ChatPage({ params }: Props) {
 
 async function ChatPageContent({ params }: Props) {
   const { id } = chatPageParamsSchema.parse(await params);
-  const chatSession = await getChatSessionDto({ id });
-  if (!chatSession) notFound();
-  let lorebook: LorebookStatusDto | null;
-  if (!chatSession.story.lorebookId) {
-    lorebook = { status: "NONE_SELECTED" };
-  } else {
-    lorebook = (await getLorebookStatusDto(chatSession.story.lorebookId)) ?? {
-      status: "SERVER_UNAVAILABLE",
-    };
+
+  const storyChatSession = await getStoryChatSessionDto({ id });
+  if (storyChatSession) {
+    let lorebook: LorebookStatusDto;
+    if (!storyChatSession.story.lorebookId) {
+      lorebook = { status: "NONE_SELECTED" };
+    } else {
+      lorebook = (await getLorebookStatusDto(
+        storyChatSession.story.lorebookId,
+      )) ?? {
+        status: "SERVER_UNAVAILABLE",
+      };
+    }
+    return <ChatView chatSession={storyChatSession} lorebook={lorebook} />;
   }
 
-  return <ChatView chatSession={chatSession} lorebook={lorebook} />;
+  const chatSession = await getChatSessionDto({ id });
+  if (!chatSession) notFound();
+  return <BasicChatView chatSession={chatSession} />;
 }

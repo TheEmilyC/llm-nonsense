@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/tooltip";
 import {
   CharacterIcon,
+  ChatIcon,
   HomeIcon,
   LorebookIcon,
   PersonaIcon,
@@ -21,6 +22,7 @@ import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/", icon: HomeIcon, label: "Home" },
+  { href: "/chat", icon: ChatIcon, label: "Chats" },
   { href: "/character", icon: CharacterIcon, label: "Characters" },
   { href: "/persona", icon: PersonaIcon, label: "Personas" },
   { href: "/world", icon: WorldIcon, label: "world" },

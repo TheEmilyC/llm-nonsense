@@ -1,3 +1,3 @@
-@AGENTS.md
+- Leave `Expected <item1> to come before <item2>` for the user to fix. When encountered ignore them.
 
-- don't worry about type sorting lint errors, the linter fixes them for you
+@AGENTS.md

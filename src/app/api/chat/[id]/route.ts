@@ -1,5 +1,9 @@
+import { getChatById } from "@/app/chat/_lib/data";
 import { chatPostRequestBodySchema } from "@/app/chat/_lib/schema";
-import { constructChatResponse } from "@/app/chat/_lib/service";
+import {
+  constructBasicChatResponse,
+  constructChatResponse,
+} from "@/app/chat/_lib/service";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -15,11 +19,14 @@ export async function POST(req: Request, { params }: Params) {
     userContentId,
   } = chatPostRequestBodySchema.parse(body);
 
-  return constructChatResponse({
+  const chat = await getChatById(id);
+  const handler = chat?.storyId ? constructChatResponse : constructBasicChatResponse;
+
+  return handler({
     chatId: id,
-    message: message,
+    message,
     model,
-    regenerate: trigger === "regenerate-message",
     providedUserContentId: userContentId,
+    regenerate: trigger === "regenerate-message",
   });
 }

@@ -8,8 +8,9 @@ import { getCharacterRecord } from "@/app/character/_lib/data";
 import { CharacterRecord } from "@/app/character/_lib/schema";
 import {
   createChatMessageContent,
+  getBasicChatSession,
   getChatForMemoryGen,
-  getChatSession,
+  getStoryChatSession,
   hideChatMessages,
 } from "@/app/chat/_lib/data";
 import {
@@ -20,8 +21,8 @@ import {
 import {
   ChatForMemoryGen,
   ChatModelKey,
-  ChatSession,
   LlmnUIMessage,
+  StoryChatSession,
 } from "@/app/chat/_lib/schema";
 import {
   getLorebookById,
@@ -56,7 +57,7 @@ export interface GenerateLorebookFactsParams {
 
 interface BuildPromptFromChatParams {
   character: CharacterRecord;
-  chat: ChatSession;
+  chat: StoryChatSession;
   lorebook?: LorebookReady;
   regenerate?: boolean;
 }
@@ -85,6 +86,76 @@ interface GenerateSummariesParams {
   messageIds: string[];
 }
 
+export async function constructBasicChatResponse({
+  chatId,
+  message,
+  model,
+  providedUserContentId,
+  regenerate,
+}: ConstructChatResponseParams) {
+  if (!regenerate) {
+    const userContentId = providedUserContentId ?? createId();
+    await createChatMessageContent({
+      chatId,
+      messageContent: {
+        id: userContentId,
+        isActive: true,
+        metadata: { contentId: userContentId },
+        parts: message.parts,
+        role: message.role,
+      },
+      messageId: message.id,
+    });
+  }
+
+  const chat = await getBasicChatSession({ id: chatId });
+  if (!chat) throw new NotFoundError("Chat", chatId);
+
+  // messages are in desc order; for regenerate, drop the stale assistant response at index 0
+  const historySlice = regenerate ? chat.messages.slice(1) : chat.messages;
+  const messagesForLlm = [...historySlice].reverse().map((msg) => ({
+    content: msg.content,
+    role: msg.role as "assistant" | "system" | "user",
+  }));
+
+  const messageId =
+    regenerate && chat.messages.length > 0 ? chat.messages[0].id : createId();
+  const contentId = createId();
+
+  logger.info("Basic chat generation request", { chatId, regenerate });
+  return streamText({
+    messages: messagesForLlm,
+    model: chatModels[model],
+  }).toUIMessageStreamResponse<LlmnUIMessage>({
+    generateMessageId: () => messageId,
+    messageMetadata: ({ part }) => {
+      if (part.type === "start") return { contentId };
+    },
+    onFinish: async ({ messages: finished }) => {
+      const sentMessage = finished[0];
+      logger.info("Basic chat completion response", {
+        chatId,
+        regenerate,
+        response: sentMessage,
+      });
+      if (!sentMessage.metadata) {
+        throw new AppError("Sent message missing metadata", "INTERNAL_ERROR");
+      }
+      await createChatMessageContent({
+        chatId,
+        messageContent: {
+          id: contentId,
+          isActive: true,
+          metadata: { ...sentMessage.metadata, model },
+          parts: sentMessage.parts,
+          role: sentMessage.role,
+        },
+        messageId,
+      });
+    },
+  });
+}
+
 export async function constructChatResponse({
   chatId,
   message,
@@ -108,7 +179,7 @@ export async function constructChatResponse({
     });
   }
 
-  const chat = await getChatSession({ id: chatId });
+  const chat = await getStoryChatSession({ id: chatId });
   if (!chat) throw new NotFoundError("Chat", chatId);
   const lorebookRaw = chat.lorebookId
     ? await getLorebookById(chat.lorebookId)

@@ -20,7 +20,6 @@ import {
 import {
   ChatMessageDto,
   ChatModelKey,
-  ChatSessionDto,
   GenerateSummariesActionParams,
   GenerateSummariesActionResponse,
   LlmnUIMessage,
@@ -33,7 +32,10 @@ type HookUIMessage = LlmnUIMessage & { isHidden: boolean };
 export function useChatMessages({
   id: chatId,
   messages: initialMessages,
-}: ChatSessionDto) {
+}: {
+  id: string;
+  messages: ChatMessageDto[];
+}) {
   const isSwipeGenerateRef = useRef(false);
   const pendingUserContentIdRef = useRef<string | undefined>(undefined);
   const [messageSwipes, setMessageSwipes] = useState<HookUIMessage[]>(
