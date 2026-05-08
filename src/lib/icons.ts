@@ -9,6 +9,7 @@ import {
   Clipboard,
   Clock,
   Cpu,
+  Dices,
   Eye,
   EyeOff,
   Globe,
@@ -64,6 +65,7 @@ export const SendIcon = ArrowUp;
 export const StopIcon = Square;
 export const MoveLeftIcon = ChevronLeft;
 export const MoveRightIcon = ChevronRight;
+export const RandomIcon = Dices
 
 // Status icons
 export const LockedIcon = Lock;
