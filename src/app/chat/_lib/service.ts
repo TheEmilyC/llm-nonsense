@@ -9,7 +9,7 @@ import { CharacterRecord } from "@/app/character/_lib/schema";
 import {
   createChatMessageContent,
   getChatForMemoryGen,
-  getChatSession,
+  getStoryChatSession,
   hideChatMessages,
 } from "@/app/chat/_lib/data";
 import {
@@ -20,8 +20,8 @@ import {
 import {
   ChatForMemoryGen,
   ChatModelKey,
-  ChatSession,
   LlmnUIMessage,
+  StoryChatSession,
 } from "@/app/chat/_lib/schema";
 import {
   getLorebookById,
@@ -56,7 +56,7 @@ export interface GenerateLorebookFactsParams {
 
 interface BuildPromptFromChatParams {
   character: CharacterRecord;
-  chat: ChatSession;
+  chat: StoryChatSession;
   lorebook?: LorebookReady;
   regenerate?: boolean;
 }
@@ -108,7 +108,7 @@ export async function constructChatResponse({
     });
   }
 
-  const chat = await getChatSession({ id: chatId });
+  const chat = await getStoryChatSession({ id: chatId });
   if (!chat) throw new NotFoundError("Chat", chatId);
   const lorebookRaw = chat.lorebookId
     ? await getLorebookById(chat.lorebookId)

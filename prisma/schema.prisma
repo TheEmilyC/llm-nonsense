@@ -58,8 +58,8 @@ model Story {
 model Chat {
   id         String        @id @default(cuid())
   name       String
-  storyId    String
-  story      Story         @relation(fields: [storyId], references: [id])
+  storyId    String?
+  story      Story?         @relation(fields: [storyId], references: [id])
   messages   ChatMessage[]
   /// [ChatFacts]
   facts      Json?

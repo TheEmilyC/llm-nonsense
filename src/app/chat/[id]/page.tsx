@@ -4,7 +4,7 @@ import z from "zod";
 
 import { dbIdValidator } from "@/app/_shared/schema";
 import { ChatView } from "@/app/chat/_components/chat-view";
-import { getChatSessionDto } from "@/app/chat/_lib/data";
+import { getStoryChatSessionDto } from "@/app/chat/_lib/data";
 import { getLorebookStatusDto } from "@/app/lorebook/_lib/data";
 import { LorebookStatusDto } from "@/app/lorebook/_lib/schema";
 
@@ -26,7 +26,7 @@ export default function ChatPage({ params }: Props) {
 
 async function ChatPageContent({ params }: Props) {
   const { id } = chatPageParamsSchema.parse(await params);
-  const chatSession = await getChatSessionDto({ id });
+  const chatSession = await getStoryChatSessionDto({ id });
   if (!chatSession) notFound();
   let lorebook: LorebookStatusDto | null;
   if (!chatSession.story.lorebookId) {

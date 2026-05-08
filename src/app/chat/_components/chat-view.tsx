@@ -12,8 +12,8 @@ import {
 } from "@/app/chat/_lib/hooks";
 import {
   ChatModelKey,
-  ChatSessionDto,
   GenerateSummariesActionResponse,
+  StoryChatSessionDto,
 } from "@/app/chat/_lib/schema";
 import { ArcResultsDrawer } from "@/app/lorebook/_components/arc-results-drawer";
 import { CurrentLorebook } from "@/app/lorebook/_components/current-lorebook";
@@ -47,7 +47,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export interface ChatViewParams {
-  chatSession: ChatSessionDto;
+  chatSession: StoryChatSessionDto;
   lorebook: LorebookStatusDto;
 }
 
