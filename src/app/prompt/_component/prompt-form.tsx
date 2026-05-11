@@ -109,14 +109,25 @@ export function PromptForm({
   });
 
   function handleOrderChange(newFields: typeof fields) {
-    for (let newIndex = 0; newIndex < newFields.length; newIndex++) {
-      const oldIndex = fields.findIndex(
-        (f) => f._rhfId === newFields[newIndex]._rhfId,
-      );
-      if (oldIndex !== newIndex) {
-        move(oldIndex, newIndex);
-        return;
-      }
+    let firstDiff = 0;
+    while (
+      firstDiff < newFields.length &&
+      newFields[firstDiff]._rhfId === fields[firstDiff]._rhfId
+    ) {
+      firstDiff++;
+    }
+    let lastDiff = newFields.length - 1;
+    while (
+      lastDiff >= 0 &&
+      newFields[lastDiff]._rhfId === fields[lastDiff]._rhfId
+    ) {
+      lastDiff--;
+    }
+    if (firstDiff > lastDiff) return;
+    if (newFields[firstDiff]._rhfId === fields[lastDiff]._rhfId) {
+      move(lastDiff, firstDiff);
+    } else {
+      move(firstDiff, lastDiff);
     }
   }
 
