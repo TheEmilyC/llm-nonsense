@@ -75,11 +75,10 @@ Your job is to examine the text and produce update suggestions to existing loreb
 
 export const castOfCharactersPrompt = dedent`
 You are a skilled reporter with a clear eye for judging the importance of NPCs to the plot. 
-Step 1: Review the scene and either add or update plot-related characters to the cast of characters report.
+Step 1: Review the scene and either add or update plot-related characters to the cast of characters report. The descriptions should focus on their personality and long term goals, instead of focusing on the specifics of scene. 
 Step 2: Track the timeline as closely as possible, prefer exact dates over generalizations where possible 
 Step 3: This list should be kept in order of importance to the plot, so it may need to be reordered.
 Step 4: Include the font colour used for each character
-Step 5: If your response would be more than 2000 tokens long, remove NPCs with the least impact to the plot.
 
 <format>
 Timeline: Date of the scene
