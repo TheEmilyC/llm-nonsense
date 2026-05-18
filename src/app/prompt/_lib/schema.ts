@@ -124,6 +124,20 @@ export const promptFragmentUpdateSchema = z.discriminatedUnion("type", [
   chatHistoryFragmentSchema.extend({ id: dbIdValidator.optional() }),
 ]);
 
+export const promptRegexCreateSchema = promptRegexSchema.pick({
+  enabled: true,
+  isShared: true,
+  name: true,
+  pattern: true,
+  target: true,
+});
+export type PromptRegexCreate = z.infer<typeof promptRegexCreateSchema>;
+
+export const promptRegexUpdateSchema = promptRegexCreateSchema.extend({
+  id: dbIdValidator.optional(),
+});
+export type PromptRegexUpdate = z.infer<typeof promptRegexUpdateSchema>;
+
 export const createPromptParamsSchema = promptEntitySchema
   .pick({
     name: true,
@@ -131,6 +145,7 @@ export const createPromptParamsSchema = promptEntitySchema
   })
   .extend({
     promptFragments: promptFragmentCreateSchema.array(),
+    promptRegexes: promptRegexCreateSchema.array(),
   });
 export type CreatePromptParams = z.infer<typeof createPromptParamsSchema>;
 
@@ -140,6 +155,7 @@ export const updatePromptParamsSchema = promptEntitySchema
     update: z.object({
       name: z.string().optional(),
       promptFragments: promptFragmentUpdateSchema.array(),
+      promptRegexes: promptRegexUpdateSchema.array(),
       ...promptEntitySchema.pick(promptSettingsFields).partial().shape,
     }),
   });
@@ -193,6 +209,7 @@ export const promptDtoSchema = promptEntitySchema
   })
   .extend({
     promptFragments: promptFragmentSchema.array(),
+    promptRegex: promptRegexSchema.array(),
   });
 export type PromptDto = z.infer<typeof promptDtoSchema>;
 

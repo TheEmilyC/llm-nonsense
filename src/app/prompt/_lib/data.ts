@@ -11,9 +11,20 @@ import {
   PromptListItemDto,
   UpdatePromptParams,
 } from "@/app/prompt/_lib/schema";
-import { Prisma, Prompt, PromptFragment } from "@/generated/client";
+import {
+  Prisma,
+  Prompt,
+  PromptFragment,
+  PromptRegex,
+  PromptRegexLink,
+} from "@/generated/client";
 import { AppError } from "@/lib/error";
 import { prisma, PrismaErrorCodes } from "@/lib/prisma";
+
+type PromptDtoRaw = Prompt & {
+  promptFragments: PromptFragment[];
+  promptRegexes: (PromptRegexLink & { promptRegex: PromptRegex })[];
+};
 
 export async function createPrompt({
   maxOutputTokens,
@@ -22,6 +33,7 @@ export async function createPrompt({
   name,
   prefetch,
   promptFragments,
+  promptRegexes,
   temperature,
   topK,
   topP,
@@ -34,10 +46,17 @@ export async function createPrompt({
       name,
       prefetch,
       promptFragments: promptFragments
+        ? { createMany: { data: promptFragments } }
+        : undefined,
+      promptRegexes: promptRegexes
         ? {
-            createMany: {
-              data: promptFragments,
-            },
+            create: promptRegexes.map(
+              ({ enabled, isShared, name, pattern, target }, index) => ({
+                enabled,
+                order: index + 1,
+                promptRegex: { create: { isShared, name, pattern, target } },
+              }),
+            ),
           }
         : undefined,
       temperature,
@@ -76,13 +95,18 @@ export async function getPromptDto(id: string): Promise<null | PromptDto> {
   cacheTag(`${PROMPT_CACHE_KEY}-${id}`);
 
   const prompt = await prisma.prompt.findUnique({
-    include: { promptFragments: { orderBy: { order: "asc" } } },
+    include: {
+      promptFragments: { orderBy: { order: "asc" } },
+      promptRegexes: {
+        include: { promptRegex: true },
+        orderBy: { order: "asc" },
+      },
+    },
     where: { id },
   });
   if (!prompt) return null;
 
-  const promptDto = toPromptDto(prompt);
-  return promptDto;
+  return toPromptDto(prompt);
 }
 
 export async function getPromptListDto(): Promise<PromptListItemDto[]> {
@@ -102,43 +126,123 @@ export async function updatePrompt({
   id,
   update,
 }: UpdatePromptParams): Promise<Prompt> {
-  const prompt = await prisma.prompt.update({
-    data: {
-      maxOutputTokens: update.maxOutputTokens,
-      maxSteps: update.maxSteps,
-      maxTokens: update.maxTokens,
-      name: update.name,
-      prefetch: update.prefetch,
-      promptFragments: update.promptFragments
-        ? {
-            deleteMany: {
-              id: {
-                notIn: update.promptFragments
-                  .map((f) => f.id)
-                  .filter((id): id is string => id !== undefined),
+  return prisma.$transaction(async (tx) => {
+    if (update.promptRegexes !== undefined) {
+      // Remove un-used unshared regex
+      const incomingIds = update.promptRegexes
+        .map((r) => r.id)
+        .filter((rid): rid is string => rid !== undefined);
+
+      const toDelete = await tx.promptRegexLink.findMany({
+        select: { promptRegexId: true },
+        where: {
+          promptId: id,
+          promptRegex: { isShared: false },
+          promptRegexId: { notIn: incomingIds },
+        },
+      });
+
+      if (toDelete.length > 0) {
+        await tx.promptRegex.deleteMany({
+          where: { id: { in: toDelete.map((r) => r.promptRegexId) } },
+        });
+      }
+    }
+
+    return tx.prompt.update({
+      data: {
+        maxOutputTokens: update.maxOutputTokens,
+        maxSteps: update.maxSteps,
+        maxTokens: update.maxTokens,
+        name: update.name,
+        prefetch: update.prefetch,
+        promptFragments: update.promptFragments
+          ? {
+              deleteMany: {
+                id: {
+                  notIn: update.promptFragments
+                    .map((f) => f.id)
+                    .filter((fid): fid is string => fid !== undefined),
+                },
               },
-            },
-            upsert: update.promptFragments.map(({ id, ...data }) => ({
-              create: data,
-              update: data,
-              where: { id: id ?? "" },
-            })),
-          }
-        : undefined,
-      temperature: update.temperature,
-      topK: update.topK,
-      topP: update.topP,
-    },
-    include: { promptFragments: { orderBy: { order: "asc" } } },
-    where: { id },
+              upsert: update.promptFragments.map(({ id: fid, ...data }) => ({
+                create: data,
+                update: data,
+                where: { id: fid ?? "" },
+              })),
+            }
+          : undefined,
+        promptRegexes: update.promptRegexes
+          ? {
+              deleteMany: {
+                promptRegexId: {
+                  notIn: update.promptRegexes
+                    .map((r) => r.id)
+                    .filter((rid): rid is string => rid !== undefined),
+                },
+              },
+              upsert: update.promptRegexes.map(
+                ({ id: rid, ...data }, index) => ({
+                  create: {
+                    enabled: data.enabled,
+                    order: index + 1,
+                    promptRegex: {
+                      create: {
+                        isShared: false,
+                        name: data.name,
+                        pattern: data.pattern,
+                        target: data.target,
+                      },
+                    },
+                  },
+                  update: {
+                    enabled: data.enabled,
+                    order: index + 1,
+                    promptRegex: {
+                      update: {
+                        name: data.name,
+                        pattern: data.pattern,
+                        target: data.target,
+                      },
+                    },
+                  },
+                  where: {
+                    promptId_promptRegexId: {
+                      promptId: id,
+                      promptRegexId: rid ?? "",
+                    },
+                  },
+                }),
+              ),
+            }
+          : undefined,
+        temperature: update.temperature,
+        topK: update.topK,
+        topP: update.topP,
+      },
+      include: { promptFragments: { orderBy: { order: "asc" } } },
+      where: { id },
+    });
   });
-  return prompt;
 }
 
-function toPromptDto(
-  prompt: Prompt & { promptFragments: PromptFragment[] },
-): PromptDto {
-  return promptDtoSchema.parse(prompt);
+function toPromptDto(prompt: PromptDtoRaw): PromptDto {
+  return promptDtoSchema.parse({
+    ...prompt,
+    promptRegex: prompt.promptRegexes.map(
+      (link: PromptRegexLink & { promptRegex: PromptRegex }) => ({
+        enabled: link.enabled,
+        id: link.promptRegex.id,
+        isShared: link.promptRegex.isShared,
+        linkId: link.id,
+        name: link.promptRegex.name,
+        order: link.order,
+        pattern: link.promptRegex.pattern,
+        promptId: link.promptId,
+        target: link.promptRegex.target,
+      }),
+    ),
+  });
 }
 
 function toPromptListDto(
