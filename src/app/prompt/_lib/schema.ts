@@ -181,7 +181,7 @@ export const promptFormSchema = promptEntitySchema
   })
   .extend({
     promptFragments: promptFragmentFormSchema.array(),
-    promptRegexs: promptRegexSchema
+    promptRegexes: promptRegexSchema
       .pick({ enabled: true, name: true, pattern: true, target: true })
       .extend({ id: dbIdValidator.optional() })
       .array(),

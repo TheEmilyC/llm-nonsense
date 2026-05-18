@@ -96,7 +96,7 @@ export function PromptForm({
       name: "",
       prefetch: false,
       promptFragments: [],
-      promptRegexs: [],
+      promptRegexes: [],
       temperature: 0.9,
       topK: 64,
       topP: 0.95,
@@ -112,7 +112,7 @@ export function PromptForm({
 
   const watchedRegex = useWatch({
     control: form.control,
-    name: "promptRegexs",
+    name: "promptRegexes",
   });
 
   const {
@@ -134,7 +134,7 @@ export function PromptForm({
   } = useFieldArray({
     control: form.control,
     keyName: "_rhfId",
-    name: "promptRegexs",
+    name: "promptRegexes",
   });
 
   /**
@@ -373,7 +373,7 @@ export function PromptForm({
                       <RegexIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                       <Controller
                         control={form.control}
-                        name={`promptRegexs.${index}.enabled`}
+                        name={`promptRegexes.${index}.enabled`}
                         render={({ field: f }) => (
                           <Switch
                             checked={f.value}
@@ -496,7 +496,7 @@ export function PromptForm({
             <FieldGroup>
               <Controller
                 control={form.control}
-                name={`promptRegexs.${regexEditingIndex}.name`}
+                name={`promptRegexes.${regexEditingIndex}.name`}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel>Name</FieldLabel>
@@ -509,7 +509,7 @@ export function PromptForm({
               />
               <Controller
                 control={form.control}
-                name={`promptRegexs.${regexEditingIndex}.pattern`}
+                name={`promptRegexes.${regexEditingIndex}.pattern`}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel>Pattern</FieldLabel>
@@ -522,7 +522,7 @@ export function PromptForm({
               />
               <Controller
                 control={form.control}
-                name={`promptRegexs.${regexEditingIndex}.target`}
+                name={`promptRegexes.${regexEditingIndex}.target`}
                 render={({ field }) => (
                   <Field>
                     <FieldLabel>Target</FieldLabel>
