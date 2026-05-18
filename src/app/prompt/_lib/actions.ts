@@ -18,6 +18,8 @@ import {
   PromptFormValues,
   promptFragmentCreateSchema,
   promptFragmentUpdateSchema,
+  promptRegexCreateSchema,
+  promptRegexUpdateSchema,
   UpdatePromptActionParams,
   updatePromptActionParamsSchema,
   UpdatePromptParams,
@@ -25,50 +27,6 @@ import {
 import { ActionResponse, toActionResponseError } from "@/lib/action-utils";
 import { AppError } from "@/lib/error";
 import { logger, parseError } from "@/lib/logger";
-
-export async function createPromptAction(
-  data: PromptFormValues,
-): Promise<ActionResponse> {
-  const parseResult = promptFormSchema.safeParse(data);
-  if (!parseResult.success) {
-    return toActionResponseError(parseResult.error);
-  }
-  const {
-    maxOutputTokens,
-    maxSteps,
-    maxTokens,
-    name,
-    prefetch,
-    promptFragments: rawFragments,
-    temperature,
-    topK,
-    topP,
-  } = parseResult.data;
-  const newPrompt: CreatePromptParams = {
-    maxOutputTokens,
-    maxSteps,
-    maxTokens,
-    name,
-    prefetch,
-    promptFragments: promptFragmentCreateSchema
-      .array()
-      .parse(rawFragments.map((frag, idx) => ({ ...frag, order: idx }))),
-    temperature,
-    topK,
-    topP,
-  };
-  let prompt: PromptEntity;
-  try {
-    prompt = await createPrompt(newPrompt);
-  } catch (err) {
-    logger.error("Failed to create prompt", { data, ...parseError(err) });
-    return toActionResponseError(err);
-  }
-  logger.info("Prompt created", { id: prompt.id });
-
-  updateTag(PROMPT_CACHE_KEY);
-  redirect(`/prompt/${prompt.id}`);
-}
 
 export async function copyPromptAction(
   promptId: string,
@@ -93,6 +51,7 @@ export async function copyPromptAction(
     promptFragments: promptFragmentCreateSchema
       .array()
       .parse(source.promptFragments),
+    promptRegexes: promptRegexCreateSchema.array().parse(source.promptRegex),
     temperature: source.temperature,
     topK: source.topK,
     topP: source.topP,
@@ -106,6 +65,50 @@ export async function copyPromptAction(
     return toActionResponseError(err);
   }
   logger.info("Prompt copied", { newId: prompt.id, sourceId: id });
+
+  updateTag(PROMPT_CACHE_KEY);
+  redirect(`/prompt/${prompt.id}`);
+}
+
+export async function createPromptAction(
+  data: PromptFormValues,
+): Promise<ActionResponse> {
+  const parseResult = promptFormSchema.safeParse(data);
+  if (!parseResult.success) {
+    return toActionResponseError(parseResult.error);
+  }
+  const {
+    maxOutputTokens,
+    maxSteps,
+    maxTokens,
+    name,
+    prefetch,
+    promptFragments: rawFragments,
+    promptRegexes: rawRegexes,
+    temperature,
+    topK,
+    topP,
+  } = parseResult.data;
+  const newPrompt: CreatePromptParams = {
+    maxOutputTokens,
+    maxSteps,
+    maxTokens,
+    name,
+    prefetch,
+    promptFragments: promptFragmentCreateSchema.array().parse(rawFragments),
+    promptRegexes: promptRegexCreateSchema.array().parse(rawRegexes),
+    temperature,
+    topK,
+    topP,
+  };
+  let prompt: PromptEntity;
+  try {
+    prompt = await createPrompt(newPrompt);
+  } catch (err) {
+    logger.error("Failed to create prompt", { data, ...parseError(err) });
+    return toActionResponseError(err);
+  }
+  logger.info("Prompt created", { id: prompt.id });
 
   updateTag(PROMPT_CACHE_KEY);
   redirect(`/prompt/${prompt.id}`);
@@ -156,6 +159,7 @@ export async function updatePromptAction(
       name,
       prefetch,
       promptFragments: rawFragments,
+      promptRegexes: rawRegexes,
       temperature,
       topK,
       topP,
@@ -170,9 +174,8 @@ export async function updatePromptAction(
       maxTokens,
       name,
       prefetch,
-      promptFragments: promptFragmentUpdateSchema
-        .array()
-        .parse(rawFragments.map((frag, idx) => ({ ...frag, order: idx }))),
+      promptFragments: promptFragmentUpdateSchema.array().parse(rawFragments),
+      promptRegexes: promptRegexUpdateSchema.array().parse(rawRegexes),
       temperature,
       topK,
       topP,

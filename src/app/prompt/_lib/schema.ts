@@ -113,15 +113,15 @@ export type PromptWithFragments = z.infer<typeof promptWithFragmentsSchema>;
 // -- Schema
 
 export const promptFragmentCreateSchema = z.discriminatedUnion("type", [
-  contentFragmentSchema.omit({ id: true }),
-  injectFragmentSchema.omit({ id: true }),
-  chatHistoryFragmentSchema.omit({ id: true }),
+  contentFragmentSchema.omit({ id: true, order: true }),
+  injectFragmentSchema.omit({ id: true, order: true }),
+  chatHistoryFragmentSchema.omit({ id: true, order: true }),
 ]);
 
 export const promptFragmentUpdateSchema = z.discriminatedUnion("type", [
-  contentFragmentSchema.extend({ id: dbIdValidator.optional() }),
-  injectFragmentSchema.extend({ id: dbIdValidator.optional() }),
-  chatHistoryFragmentSchema.extend({ id: dbIdValidator.optional() }),
+  contentFragmentSchema.extend({ id: dbIdValidator.optional() }).omit({ order: true }),
+  injectFragmentSchema.extend({ id: dbIdValidator.optional() }).omit({ order: true }),
+  chatHistoryFragmentSchema.extend({ id: dbIdValidator.optional() }).omit({ order: true }),
 ]);
 
 export const promptRegexCreateSchema = promptRegexSchema.pick({

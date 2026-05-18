@@ -46,7 +46,11 @@ export async function createPrompt({
       name,
       prefetch,
       promptFragments: promptFragments
-        ? { createMany: { data: promptFragments } }
+        ? {
+            createMany: {
+              data: promptFragments.map((f, index) => ({ ...f, order: index + 1 })),
+            },
+          }
         : undefined,
       promptRegexes: promptRegexes
         ? {
@@ -165,9 +169,9 @@ export async function updatePrompt({
                     .filter((fid): fid is string => fid !== undefined),
                 },
               },
-              upsert: update.promptFragments.map(({ id: fid, ...data }) => ({
-                create: data,
-                update: data,
+              upsert: update.promptFragments.map(({ id: fid, ...data }, index) => ({
+                create: { ...data, order: index + 1 },
+                update: { ...data, order: index + 1 },
                 where: { id: fid ?? "" },
               })),
             }
