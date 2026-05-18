@@ -102,9 +102,9 @@ describe("promptFragmentSchema", () => {
   it("accepts CONTENT fragment", () => {
     const result = promptFragmentSchema.safeParse({
       ...baseFields,
-      type: "CONTENT",
       content: "You are a helpful assistant.",
       role: "system",
+      type: "CONTENT",
     });
     expect(result.success).toBe(true);
   });
@@ -112,9 +112,9 @@ describe("promptFragmentSchema", () => {
   it("accepts INJECT fragment", () => {
     const result = promptFragmentSchema.safeParse({
       ...baseFields,
-      type: "INJECT",
       injectTag: "CHARACTER_DESCRIPTION",
       role: "system",
+      type: "INJECT",
     });
     expect(result.success).toBe(true);
   });
@@ -122,9 +122,9 @@ describe("promptFragmentSchema", () => {
   it("rejects CONTENT fragment with empty content", () => {
     const result = promptFragmentSchema.safeParse({
       ...baseFields,
-      type: "CONTENT",
       content: "",
       role: "system",
+      type: "CONTENT",
     });
     expect(result.success).toBe(false);
   });

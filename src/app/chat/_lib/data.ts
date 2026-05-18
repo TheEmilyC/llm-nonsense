@@ -348,6 +348,11 @@ export async function getStoryChatSession({
                 orderBy: { order: "asc" },
                 where: { enabled: true },
               },
+              promptRegexes: {
+                include: { promptRegex: { select: { pattern: true, target: true } } },
+                orderBy: { order: "asc" },
+                where: { enabled: true },
+              },
             },
           },
           world: true,
@@ -372,8 +377,11 @@ export async function getStoryChatSession({
     })),
     name: chat.name,
     persona: chat.story.persona,
-    // Prompt fragment parsing gets complicated, letting zod handle it
-    prompt: promptWithFragmentsSchema.parse(chat.story.prompt),
+    // Prompt parsing gets complicated, letting zod handle it
+    prompt: promptWithFragmentsSchema.parse({
+      ...chat.story.prompt,
+      promptRegexes: chat.story.prompt.promptRegexes.map((link) => link.promptRegex),
+    }),
     story: {
       ...chat.story,
       lorebookId: chat.story.lorebookId ?? undefined,

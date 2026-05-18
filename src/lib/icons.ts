@@ -26,6 +26,7 @@ import {
   Moon,
   Pencil,
   RefreshCw,
+  Regex,
   Square,
   Sun,
   Trash2,
@@ -47,6 +48,7 @@ export const ChatIcon = MessageSquare;
 export const PromptIcon = MessageSquareCode;
 export const MemoryIcon = Brain;
 export const FactsIcon = ListChecks;
+export const RegexIcon = Regex
 
 // Action icons
 export const CopyIcon = Clipboard;
@@ -65,7 +67,7 @@ export const SendIcon = ArrowUp;
 export const StopIcon = Square;
 export const MoveLeftIcon = ChevronLeft;
 export const MoveRightIcon = ChevronRight;
-export const RandomIcon = Dices
+export const RandomIcon = Dices;
 
 // Status icons
 export const LockedIcon = Lock;

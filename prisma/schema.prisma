@@ -59,7 +59,7 @@ model Chat {
   id         String        @id @default(cuid())
   name       String
   storyId    String?
-  story      Story?         @relation(fields: [storyId], references: [id])
+  story      Story?        @relation(fields: [storyId], references: [id])
   messages   ChatMessage[]
   /// [ChatFacts]
   facts      Json?
@@ -119,19 +119,51 @@ model Lorebook {
 }
 
 model Prompt {
-  id              String           @id @default(cuid())
+  id              String             @id @default(cuid())
   name            String
-  maxTokens       Int              @default(80000)
-  maxOutputTokens Int              @default(0)
-  maxSteps        Int              @default(20)
-  temperature     Float            @default(0.9)
-  topK            Int              @default(64)
-  topP            Float            @default(0.95)
-  prefetch        Boolean          @default(false)
+  maxTokens       Int                @default(80000)
+  maxOutputTokens Int                @default(0)
+  maxSteps        Int                @default(20)
+  temperature     Float              @default(0.9)
+  topK            Int                @default(64)
+  topP            Float              @default(0.95)
+  prefetch        Boolean            @default(false)
   promptFragments PromptFragment[]
-  createdAt       DateTime         @default(now())
-  modifiedAt      DateTime         @default(now()) @updatedAt
+  promptRegexes   PromptRegexLink[]
+  createdAt       DateTime           @default(now())
+  modifiedAt      DateTime           @default(now()) @updatedAt
   stories         Story[]
+}
+
+enum PromptRegexTarget {
+  ASSISTANT
+  USER
+  BOTH
+}
+
+model PromptRegex {
+  id            String            @id @default(cuid())
+  name          String
+  pattern       String
+  target        PromptRegexTarget
+  isShared      Boolean
+  promptRegexes PromptRegexLink[]
+  createdAt     DateTime          @default(now())
+  modifiedAt    DateTime          @default(now()) @updatedAt
+}
+
+model PromptRegexLink {
+  id            String      @id @default(cuid())
+  promptId      String
+  prompt        Prompt      @relation(fields: [promptId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  promptRegexId String
+  promptRegex   PromptRegex @relation(fields: [promptRegexId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  enabled       Boolean     @default(true)
+  order         Int
+  createdAt     DateTime    @default(now())
+  modifiedAt    DateTime    @default(now()) @updatedAt
+
+  @@unique([promptId, promptRegexId])
 }
 
 enum PromptInjectTag {
