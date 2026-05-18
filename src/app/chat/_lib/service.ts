@@ -42,6 +42,7 @@ import { makeGetLorebookEntriesTool } from "@/app/lorebook/_lib/tools";
 import {
   BuilderChatMessage,
   BuilderFragment,
+  BuilderRegex,
   PromptBuilder,
 } from "@/app/prompt/_lib/prompt-builder";
 import { chatModels, taskModels } from "@/lib/ai-registry";
@@ -515,6 +516,7 @@ async function buildPromptFromChat({
     promptSkeleton: chat.prompt.promptFragments.map((frag) =>
       frag.type === "INJECT" ? { ...frag, content: "" } : frag,
     ),
+    regexes: chat.prompt.promptRegexes as BuilderRegex[],
     variables: {
       char: character.card.name,
       user: chat.persona?.name ?? "",

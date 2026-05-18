@@ -5,6 +5,7 @@ import type { PromptInjectTag } from "@/app/prompt/_lib/schema";
 
 import {
   BuilderFragment,
+  BuilderRegex,
   hydratePrompt,
   PromptBuilder,
 } from "@/app/prompt/_lib/prompt-builder";
@@ -315,5 +316,90 @@ describe("build", () => {
     });
     const built = builder.build();
     expect(built.some((m) => m.content.includes("real content"))).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PromptBuilder — build with regexes
+// ---------------------------------------------------------------------------
+
+function regexFrag(pattern: string, target: BuilderRegex["target"]): BuilderRegex {
+  return { pattern, target };
+}
+
+describe("build — regexes", () => {
+  it("strips matching text from user messages for USER target", () => {
+    const builder = new PromptBuilder({
+      maxTokens: 100,
+      promptSkeleton: [chatHistoryFrag()],
+      regexes: [regexFrag("STRIP", "USER")],
+    });
+    builder.injectChatHistory([
+      { content: "hello STRIP world", role: "user" },
+      { content: "no STRIP change", role: "assistant" },
+    ]);
+    const built = builder.build();
+    expect(built.find((m) => m.role === "user")?.content).toBe("hello  world");
+    expect(built.find((m) => m.role === "assistant")?.content).toBe("no STRIP change");
+  });
+
+  it("strips matching text from assistant messages for ASSISTANT target", () => {
+    const builder = new PromptBuilder({
+      maxTokens: 100,
+      promptSkeleton: [chatHistoryFrag()],
+      regexes: [regexFrag("STRIP", "ASSISTANT")],
+    });
+    builder.injectChatHistory([
+      { content: "no STRIP change", role: "user" },
+      { content: "hello STRIP world", role: "assistant" },
+    ]);
+    const built = builder.build();
+    expect(built.find((m) => m.role === "user")?.content).toBe("no STRIP change");
+    expect(built.find((m) => m.role === "assistant")?.content).toBe("hello  world");
+  });
+
+  it("strips matching text from both roles for BOTH target", () => {
+    const builder = new PromptBuilder({
+      maxTokens: 100,
+      promptSkeleton: [chatHistoryFrag()],
+      regexes: [regexFrag("STRIP", "BOTH")],
+    });
+    builder.injectChatHistory([
+      { content: "user STRIP msg", role: "user" },
+      { content: "asst STRIP msg", role: "assistant" },
+    ]);
+    const built = builder.build();
+    expect(built.find((m) => m.role === "user")?.content).toBe("user  msg");
+    expect(built.find((m) => m.role === "assistant")?.content).toBe("asst  msg");
+  });
+
+  it("does not modify system messages", () => {
+    const builder = new PromptBuilder({
+      maxTokens: 100,
+      promptSkeleton: [contentFrag("STRIP me", "system")],
+      regexes: [regexFrag("STRIP", "BOTH")],
+    });
+    expect(builder.build()[0].content).toBe("STRIP me");
+  });
+
+  it("applies multiple regexes in order", () => {
+    const builder = new PromptBuilder({
+      maxTokens: 100,
+      promptSkeleton: [chatHistoryFrag()],
+      regexes: [regexFrag("foo", "USER"), regexFrag("bar", "USER")],
+    });
+    builder.injectChatHistory([{ content: "foo bar baz", role: "user" }]);
+    expect(builder.build().find((m) => m.role === "user")?.content).toBe("  baz");
+  });
+
+  it("silently ignores invalid regex patterns", () => {
+    const builder = new PromptBuilder({
+      maxTokens: 100,
+      promptSkeleton: [chatHistoryFrag()],
+      regexes: [regexFrag("[invalid(", "BOTH")],
+    });
+    builder.injectChatHistory([{ content: "hello", role: "user" }]);
+    expect(() => builder.build()).not.toThrow();
+    expect(builder.build().find((m) => m.role === "user")?.content).toBe("hello");
   });
 });

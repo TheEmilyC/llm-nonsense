@@ -107,6 +107,7 @@ export const promptWithFragmentsSchema = promptEntitySchema
   })
   .extend({
     promptFragments: promptFragmentSchema.array(),
+    promptRegexes: promptRegexSchema.pick({ pattern: true, target: true }).array(),
   });
 export type PromptWithFragments = z.infer<typeof promptWithFragmentsSchema>;
 

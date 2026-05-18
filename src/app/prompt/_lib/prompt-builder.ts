@@ -16,6 +16,11 @@ export type BuilderFragment =
   | BuilderContentFragment
   | BuilderInjectFragment;
 
+export type BuilderRegex = {
+  pattern: string;
+  target: "ASSISTANT" | "BOTH" | "USER";
+};
+
 type BuilderChatHistoryFragment = Pick<ChatHistoryFragment, "type">;
 
 type BuilderContentFragment = Pick<
@@ -37,18 +42,22 @@ export class PromptBuilder {
   currentTokens: number = 0;
   maxTokens: number;
   prompt: FragmentTokenCount[] = [];
+  regexes: BuilderRegex[] = [];
   variables: Record<string, string> = {};
 
   constructor({
     maxTokens,
     promptSkeleton,
+    regexes,
     variables,
   }: {
     maxTokens: number;
     promptSkeleton: BuilderFragment[];
+    regexes?: BuilderRegex[];
     variables?: Record<string, string>;
   }) {
     this.maxTokens = maxTokens;
+    if (regexes) this.regexes = regexes;
     if (variables) this.variables = variables;
     for (const fragment of promptSkeleton) {
       if (fragment.type === "CHAT_HISTORY") {
@@ -111,19 +120,38 @@ export class PromptBuilder {
   }
 
   build(): BuilderChatMessage[] {
-    return this.prompt.reduce<BuilderChatMessage[]>((acc, fragment) => {
-      if (fragment.type === "CHAT_HISTORY") {
-        return acc.concat(this.chatHistory.reverse() ?? []);
-      }
+    const messages = this.prompt.reduce<BuilderChatMessage[]>(
+      (acc, fragment) => {
+        if (fragment.type === "CHAT_HISTORY") {
+          return acc.concat(this.chatHistory.reverse() ?? []);
+        }
 
-      const last = acc[acc.length - 1];
-      if (last && last.role === fragment.role) {
-        last.content += `\n${fragment.content}`;
-      } else {
-        acc.push({ content: fragment.content, role: fragment.role });
-      }
-      return acc;
-    }, []);
+        const last = acc[acc.length - 1];
+        if (last && last.role === fragment.role) {
+          last.content += `\n${fragment.content}`;
+        } else {
+          acc.push({ content: fragment.content, role: fragment.role });
+        }
+        return acc;
+      },
+      [],
+    );
+
+    if (this.regexes.length === 0) return messages;
+
+    return messages.map((msg) => {
+      if (msg.role === "system") return msg;
+      const content = this.regexes.reduce((text, { pattern, target }) => {
+        if (target === "USER" && msg.role !== "user") return text;
+        if (target === "ASSISTANT" && msg.role !== "assistant") return text;
+        try {
+          return text.replace(new RegExp(pattern, "g"), "");
+        } catch {
+          return text;
+        }
+      }, msg.content);
+      return content === msg.content ? msg : { ...msg, content };
+    });
   }
 
   canAfford(text: string): boolean {
