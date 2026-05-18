@@ -27,6 +27,9 @@ export const promptInjectTagSchema = z.enum([
 ]);
 export type PromptInjectTag = z.infer<typeof promptInjectTagSchema>;
 
+export const promptRegexTargetSchema = z.enum(["USER", "ASSISTANT", "BOTH"]);
+export type PromptRegexTarget = z.infer<typeof promptRegexTargetSchema>;
+
 const promptEntitySchema = z.object({
   createdAt: z.date(),
   id: dbIdValidator,
@@ -47,6 +50,18 @@ const baseFragmentSchema = z.object({
   id: dbIdValidator,
   name: z.string().min(1, "Name is required"),
   order: z.number(),
+});
+
+const promptRegexSchema = z.object({
+  enabled: z.boolean(),
+  id: dbIdValidator,
+  isShared: z.boolean(),
+  linkId: dbIdValidator,
+  name: z.string().min(1, "Name is required"),
+  order: z.number().positive(),
+  pattern: z.string().min(1, "Pattern is required"),
+  promptId: dbIdValidator,
+  target: promptRegexTargetSchema,
 });
 
 const promptSettingsFields = {
@@ -150,6 +165,10 @@ export const promptFormSchema = promptEntitySchema
   })
   .extend({
     promptFragments: promptFragmentFormSchema.array(),
+    promptRegexs: promptRegexSchema
+      .pick({ enabled: true, name: true, pattern: true, target: true })
+      .extend({ id: dbIdValidator.optional() })
+      .array(),
   });
 export type PromptFormValues = z.infer<typeof promptFormSchema>;
 

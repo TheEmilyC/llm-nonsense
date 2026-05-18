@@ -41,12 +41,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
   AssistantIcon,
   DeleteIcon,
   HistoryIcon,
   LockedIcon,
+  RegexIcon,
   SystemIcon,
   UserIcon,
 } from "@/lib/icons";
@@ -79,7 +81,12 @@ export function PromptForm({
   formId,
   onSubmit,
 }: PromptFormProps) {
-  const [editingIndex, setEditingIndex] = useState<null | number>(null);
+  const [promptEditingIndex, setPromptEditingIndex] = useState<null | number>(
+    null,
+  );
+  const [regexEditingIndex, setRegexEditingIndex] = useState<null | number>(
+    null,
+  );
 
   const form = useForm<PromptFormValues>({
     defaultValues: defaultValues || {
@@ -89,6 +96,7 @@ export function PromptForm({
       name: "",
       prefetch: false,
       promptFragments: [],
+      promptRegexs: [],
       temperature: 0.9,
       topK: 64,
       topP: 0.95,
@@ -102,36 +110,75 @@ export function PromptForm({
     name: "promptFragments",
   });
 
-  const { append, fields, move, remove } = useFieldArray({
+  const watchedRegex = useWatch({
+    control: form.control,
+    name: "promptRegexs",
+  });
+
+  const {
+    append: appendPrompt,
+    fields: promptFields,
+    move: movePrompt,
+    remove: removePrompt,
+  } = useFieldArray({
     control: form.control,
     keyName: "_rhfId",
     name: "promptFragments",
   });
 
-  function handleOrderChange(newFields: typeof fields) {
+  const {
+    append: appendRegex,
+    fields: regexfields,
+    move: moveRegex,
+    remove: removeRegex,
+  } = useFieldArray({
+    control: form.control,
+    keyName: "_rhfId",
+    name: "promptRegexs",
+  });
+
+  /**
+   * Computes the (from, to) indices for a single-item move given two snapshots of
+   * a field array. Returns null if the arrays are identical.
+   */
+  function getFieldArrayMove<T>(
+    oldFields: T[],
+    newFields: T[],
+    getKey: (item: T) => string,
+  ): [number, number] | null {
     let firstDiff = 0;
     while (
       firstDiff < newFields.length &&
-      newFields[firstDiff]._rhfId === fields[firstDiff]._rhfId
+      getKey(newFields[firstDiff]) === getKey(oldFields[firstDiff])
     ) {
       firstDiff++;
     }
     let lastDiff = newFields.length - 1;
     while (
       lastDiff >= 0 &&
-      newFields[lastDiff]._rhfId === fields[lastDiff]._rhfId
+      getKey(newFields[lastDiff]) === getKey(oldFields[lastDiff])
     ) {
       lastDiff--;
     }
-    if (firstDiff > lastDiff) return;
-    if (newFields[firstDiff]._rhfId === fields[lastDiff]._rhfId) {
-      move(lastDiff, firstDiff);
-    } else {
-      move(firstDiff, lastDiff);
+    if (firstDiff > lastDiff) return null;
+    if (getKey(newFields[firstDiff]) === getKey(oldFields[lastDiff])) {
+      return [lastDiff, firstDiff];
     }
+    return [firstDiff, lastDiff];
   }
 
-  const editingFragment = editingIndex !== null ? fields[editingIndex] : null;
+  function handlePromptOrderChange(newFields: typeof promptFields) {
+    const move = getFieldArrayMove(promptFields, newFields, (f) => f._rhfId);
+    if (move) movePrompt(...move);
+  }
+
+  function handleRegexOrderChange(newFields: typeof regexfields) {
+    const move = getFieldArrayMove(regexfields, newFields, (f) => f._rhfId);
+    if (move) moveRegex(...move);
+  }
+
+  const editingFragment =
+    promptEditingIndex !== null ? promptFields[promptEditingIndex] : null;
 
   return (
     <form
@@ -189,106 +236,193 @@ export function PromptForm({
           </div>
         </Field>
       </FieldGroup>
-      <FieldSet className="mt-6">
-        <div className="flex items-center justify-between">
-          <FieldLegend variant="label">Fragments</FieldLegend>
-          <Button
-            onClick={() =>
-              append({
-                content: "",
-                enabled: true,
-                name: "New Fragment",
-                role: "system",
-                type: "CONTENT",
-              })
-            }
-            size="sm"
-            variant="ghost"
-          >
-            + Add
-          </Button>
-        </div>
-        <SortableList
-          getItemId={(field) => field._rhfId}
-          items={fields}
-          onItemClick={(field) =>
-            setEditingIndex(fields.findIndex((f) => f._rhfId === field._rhfId))
-          }
-          onOrderChange={handleOrderChange}
-          renderItem={(field) => {
-            const index = fields.findIndex((f) => f._rhfId === field._rhfId);
-            const watched = watchedFragments[index];
-            const Icon =
-              watched?.type === "CHAT_HISTORY"
-                ? ROLE_ICONS["history"]
-                : ROLE_ICONS[watched?.role ?? "system"];
-            return (
-              <div
-                className={cn(
-                  " flex items-center justify-between gap-2",
-                  !watched?.enabled && "opacity-50",
-                )}
+      <Tabs defaultValue="prompt">
+        <TabsList>
+          <TabsTrigger value="prompt">Prompt</TabsTrigger>
+          <TabsTrigger value="regex">Regex</TabsTrigger>
+        </TabsList>
+        <TabsContent value="prompt">
+          <FieldSet className="mt-6">
+            <div className="flex items-center justify-between">
+              <FieldLegend variant="label">Fragments</FieldLegend>
+              <Button
+                onClick={() =>
+                  appendPrompt({
+                    content: "",
+                    enabled: true,
+                    name: "New Fragment",
+                    role: "system",
+                    type: "CONTENT",
+                  })
+                }
+                size="sm"
+                variant="ghost"
               >
-                <div className="flex items-center gap-2">
-                  <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                  <Controller
-                    control={form.control}
-                    name={`promptFragments.${index}.enabled`}
-                    render={({ field: f }) => (
-                      <Switch
-                        checked={f.value}
-                        onCheckedChange={f.onChange}
-                        onClick={(e) => e.stopPropagation()}
-                        size="sm"
-                      />
+                + Add
+              </Button>
+            </div>
+            <SortableList
+              getItemId={(field) => field._rhfId}
+              items={promptFields}
+              onItemClick={(field) =>
+                setPromptEditingIndex(
+                  promptFields.findIndex((f) => f._rhfId === field._rhfId),
+                )
+              }
+              onOrderChange={handlePromptOrderChange}
+              renderItem={(field, index) => {
+                const watched = watchedFragments[index];
+                const Icon =
+                  watched?.type === "CHAT_HISTORY"
+                    ? ROLE_ICONS["history"]
+                    : ROLE_ICONS[watched?.role ?? "system"];
+                return (
+                  <div
+                    className={cn(
+                      " flex items-center justify-between gap-2",
+                      !watched?.enabled && "opacity-50",
                     )}
-                  />
-                  <span className="text-sm font-medium">{watched?.name}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground">
-                    {field.type === "CONTENT" && "content"}
-                    {field.type === "INJECT" && field.injectTag}
-                    {field.type === "CHAT_HISTORY" && "chatHistory"}
-                  </span>
-                  {field.type === "CONTENT" ? (
-                    <Button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        remove(index);
-                      }}
-                      size="icon-sm"
-                      type="button"
-                      variant="destructive"
-                    >
-                      <DeleteIcon className="text-muted-foreground" />
-                    </Button>
-                  ) : (
-                    <div className="flex size-7 shrink-0 items-center justify-center">
-                      <LockedIcon className="h-3.5 w-3.5 text-muted-foreground/50" />
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <Controller
+                        control={form.control}
+                        name={`promptFragments.${index}.enabled`}
+                        render={({ field: f }) => (
+                          <Switch
+                            checked={f.value}
+                            onCheckedChange={f.onChange}
+                            onClick={(e) => e.stopPropagation()}
+                            size="sm"
+                          />
+                        )}
+                      />
+                      <span className="text-sm font-medium">
+                        {watched?.name}
+                      </span>
                     </div>
-                  )}
-                </div>
-              </div>
-            );
-          }}
-        />
-      </FieldSet>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs text-muted-foreground">
+                        {field.type === "CONTENT" && "content"}
+                        {field.type === "INJECT" && field.injectTag}
+                        {field.type === "CHAT_HISTORY" && "chatHistory"}
+                      </span>
+                      {field.type === "CONTENT" ? (
+                        <Button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            removePrompt(index);
+                          }}
+                          size="icon-sm"
+                          type="button"
+                          variant="destructive"
+                        >
+                          <DeleteIcon className="text-muted-foreground" />
+                        </Button>
+                      ) : (
+                        <div className="flex size-7 shrink-0 items-center justify-center">
+                          <LockedIcon className="h-3.5 w-3.5 text-muted-foreground/50" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              }}
+            />
+          </FieldSet>
+        </TabsContent>
+        <TabsContent value="regex">
+          <FieldSet className="mt-6">
+            <div className="flex items-center justify-between">
+              <FieldLegend variant="label">Regex</FieldLegend>
+              <Button
+                onClick={() =>
+                  appendRegex({
+                    enabled: true,
+                    name: "New Regex",
+                    pattern: "",
+                    target: "BOTH",
+                  })
+                }
+                size="sm"
+                variant="ghost"
+              >
+                + Add
+              </Button>
+            </div>
+            <SortableList
+              getItemId={(field) => field._rhfId}
+              items={regexfields}
+              onItemClick={(field) =>
+                setRegexEditingIndex(
+                  regexfields.findIndex((f) => f._rhfId === field._rhfId),
+                )
+              }
+              onOrderChange={handleRegexOrderChange}
+              renderItem={(field, index) => {
+                const watched = watchedRegex[index];
+                return (
+                  <div
+                    className={cn(
+                      " flex items-center justify-between gap-2",
+                      !watched?.enabled && "opacity-50",
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <RegexIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <Controller
+                        control={form.control}
+                        name={`promptRegexs.${index}.enabled`}
+                        render={({ field: f }) => (
+                          <Switch
+                            checked={f.value}
+                            onCheckedChange={f.onChange}
+                            onClick={(e) => e.stopPropagation()}
+                            size="sm"
+                          />
+                        )}
+                      />
+                      <span className="text-sm font-medium">
+                        {watched?.name}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          removeRegex(index);
+                        }}
+                        size="icon-sm"
+                        type="button"
+                        variant="destructive"
+                      >
+                        <DeleteIcon className="text-muted-foreground" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              }}
+            ></SortableList>
+          </FieldSet>
+        </TabsContent>
+      </Tabs>
 
+      {/* Edit Prompt Dialog */}
       <Dialog
-        onOpenChange={(open) => !open && setEditingIndex(null)}
-        open={editingIndex !== null}
+        onOpenChange={(open) => !open && setPromptEditingIndex(null)}
+        open={promptEditingIndex !== null}
       >
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>Edit Fragment</DialogTitle>
           </DialogHeader>
-          {editingIndex !== null && (
+          {promptEditingIndex !== null && (
             <FieldGroup>
               <Controller
                 control={form.control}
-                name={`promptFragments.${editingIndex}.name`}
+                name={`promptFragments.${promptEditingIndex}.name`}
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel>Name</FieldLabel>
@@ -302,7 +436,7 @@ export function PromptForm({
               {editingFragment?.type !== "CHAT_HISTORY" && (
                 <Controller
                   control={form.control}
-                  name={`promptFragments.${editingIndex}.role`}
+                  name={`promptFragments.${promptEditingIndex}.role`}
                   render={({ field }) => (
                     <Field>
                       <FieldLabel>Role</FieldLabel>
@@ -331,7 +465,7 @@ export function PromptForm({
               {editingFragment?.type === "CONTENT" && (
                 <Controller
                   control={form.control}
-                  name={`promptFragments.${editingIndex}.content`}
+                  name={`promptFragments.${promptEditingIndex}.content`}
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel>Content</FieldLabel>
@@ -343,6 +477,70 @@ export function PromptForm({
                   )}
                 />
               )}
+            </FieldGroup>
+          )}
+          <DialogFooter showCloseButton />
+        </DialogContent>
+      </Dialog>
+
+      {/* Regex Edit Dialog */}
+      <Dialog
+        onOpenChange={(open) => !open && setRegexEditingIndex(null)}
+        open={regexEditingIndex !== null}
+      >
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Regex</DialogTitle>
+          </DialogHeader>
+          {regexEditingIndex !== null && (
+            <FieldGroup>
+              <Controller
+                control={form.control}
+                name={`promptRegexs.${regexEditingIndex}.name`}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel>Name</FieldLabel>
+                    <Input {...field} />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+              <Controller
+                control={form.control}
+                name={`promptRegexs.${regexEditingIndex}.pattern`}
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel>Pattern</FieldLabel>
+                    <Input {...field} />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
+                )}
+              />
+              <Controller
+                control={form.control}
+                name={`promptRegexs.${regexEditingIndex}.target`}
+                render={({ field }) => (
+                  <Field>
+                    <FieldLabel>Target</FieldLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="USER">User</SelectItem>
+                          <SelectItem value="ASSISTANT">Assistant</SelectItem>
+                          <SelectItem value="BOTH">Both</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                )}
+              />
             </FieldGroup>
           )}
           <DialogFooter showCloseButton />

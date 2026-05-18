@@ -20,7 +20,8 @@ interface SortableListProps<T> {
   items: T[];
   onItemClick: (item: T) => void;
   onOrderChange: (items: T[]) => void;
-  renderItem: (item: T) => React.ReactNode;
+  // renderItem instead of children: move() needs the raw items array to reorder on drag end
+  renderItem: (item: T, index: number) => React.ReactNode;
 }
 
 export function SortableList<T>({
@@ -54,7 +55,7 @@ export function SortableList<T>({
               key={id}
               onClick={() => onItemClick(item)}
             >
-              {renderItem(item)}
+              {renderItem(item, index)}
             </SortableItem>
           );
         })}
