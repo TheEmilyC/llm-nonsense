@@ -159,7 +159,7 @@ const DEFAULT_PROMPT: PromptFormValues = {
       type: "INJECT",
     },
   ],
-  promptRegexs: [],
+  promptRegexes: [],
   temperature: 0.9,
   topK: 64,
   topP: 0.95,
