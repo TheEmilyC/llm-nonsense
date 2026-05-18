@@ -340,6 +340,7 @@ export function PromptForm({
                 onClick={() =>
                   appendRegex({
                     enabled: true,
+                    isShared: false,
                     name: "New Regex",
                     pattern: "",
                     target: "BOTH",

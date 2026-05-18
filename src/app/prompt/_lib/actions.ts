@@ -51,7 +51,7 @@ export async function copyPromptAction(
     promptFragments: promptFragmentCreateSchema
       .array()
       .parse(source.promptFragments),
-    promptRegexes: promptRegexCreateSchema.array().parse(source.promptRegex),
+    promptRegexes: promptRegexCreateSchema.array().parse(source.promptRegexes),
     temperature: source.temperature,
     topK: source.topK,
     topP: source.topP,

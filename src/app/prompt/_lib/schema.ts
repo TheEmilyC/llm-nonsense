@@ -119,9 +119,15 @@ export const promptFragmentCreateSchema = z.discriminatedUnion("type", [
 ]);
 
 export const promptFragmentUpdateSchema = z.discriminatedUnion("type", [
-  contentFragmentSchema.extend({ id: dbIdValidator.optional() }).omit({ order: true }),
-  injectFragmentSchema.extend({ id: dbIdValidator.optional() }).omit({ order: true }),
-  chatHistoryFragmentSchema.extend({ id: dbIdValidator.optional() }).omit({ order: true }),
+  contentFragmentSchema
+    .extend({ id: dbIdValidator.optional() })
+    .omit({ order: true }),
+  injectFragmentSchema
+    .extend({ id: dbIdValidator.optional() })
+    .omit({ order: true }),
+  chatHistoryFragmentSchema
+    .extend({ id: dbIdValidator.optional() })
+    .omit({ order: true }),
 ]);
 
 export const promptRegexCreateSchema = promptRegexSchema.pick({
@@ -182,7 +188,13 @@ export const promptFormSchema = promptEntitySchema
   .extend({
     promptFragments: promptFragmentFormSchema.array(),
     promptRegexes: promptRegexSchema
-      .pick({ enabled: true, name: true, pattern: true, target: true })
+      .pick({
+        enabled: true,
+        isShared: true,
+        name: true,
+        pattern: true,
+        target: true,
+      })
       .extend({ id: dbIdValidator.optional() })
       .array(),
   });
@@ -209,7 +221,7 @@ export const promptDtoSchema = promptEntitySchema
   })
   .extend({
     promptFragments: promptFragmentSchema.array(),
-    promptRegex: promptRegexSchema.array(),
+    promptRegexes: promptRegexSchema.array(),
   });
 export type PromptDto = z.infer<typeof promptDtoSchema>;
 

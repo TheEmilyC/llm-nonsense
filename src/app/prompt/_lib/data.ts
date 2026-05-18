@@ -48,7 +48,10 @@ export async function createPrompt({
       promptFragments: promptFragments
         ? {
             createMany: {
-              data: promptFragments.map((f, index) => ({ ...f, order: index + 1 })),
+              data: promptFragments.map((f, index) => ({
+                ...f,
+                order: index + 1,
+              })),
             },
           }
         : undefined,
@@ -169,11 +172,13 @@ export async function updatePrompt({
                     .filter((fid): fid is string => fid !== undefined),
                 },
               },
-              upsert: update.promptFragments.map(({ id: fid, ...data }, index) => ({
-                create: { ...data, order: index + 1 },
-                update: { ...data, order: index + 1 },
-                where: { id: fid ?? "" },
-              })),
+              upsert: update.promptFragments.map(
+                ({ id: fid, ...data }, index) => ({
+                  create: { ...data, order: index + 1 },
+                  update: { ...data, order: index + 1 },
+                  where: { id: fid ?? "" },
+                }),
+              ),
             }
           : undefined,
         promptRegexes: update.promptRegexes
@@ -233,7 +238,7 @@ export async function updatePrompt({
 function toPromptDto(prompt: PromptDtoRaw): PromptDto {
   return promptDtoSchema.parse({
     ...prompt,
-    promptRegex: prompt.promptRegexes.map(
+    promptRegexes: prompt.promptRegexes.map(
       (link: PromptRegexLink & { promptRegex: PromptRegex }) => ({
         enabled: link.enabled,
         id: link.promptRegex.id,
