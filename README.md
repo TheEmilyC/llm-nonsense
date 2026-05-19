@@ -1,5 +1,7 @@
 # LLM Nonsense
 
+> **Development paused.** A breaking change to the Obsidian Local REST API removed a feature this app relied on for lorebook retrieval. The app is currently broken and further development is on hold until a workaround or replacement is found.
+
 A local-first AI character chat app built with Next.js. Create characters, define personas, craft stories, and chat with AI using configurable LLM backends.
 
 ## Motivation
