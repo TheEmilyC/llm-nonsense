@@ -17,6 +17,7 @@ export type BuilderFragment =
   | BuilderInjectFragment;
 
 export type BuilderRegex = {
+  minDepth?: null | number;
   pattern: string;
   target: "ASSISTANT" | "BOTH" | "USER";
 };
@@ -120,10 +121,24 @@ export class PromptBuilder {
   }
 
   build(): BuilderChatMessage[] {
+    let chatHistoryStart: number | undefined;
+    const chatHistoryLength = this.chatHistory.length;
+    let lastMessageIndex: number | undefined;
+
     const messages = this.prompt.reduce<BuilderChatMessage[]>(
       (acc, fragment) => {
         if (fragment.type === "CHAT_HISTORY") {
+          chatHistoryStart = acc.length;
           return acc.concat(this.chatHistory.reverse() ?? []);
+        }
+
+        if (
+          fragment.type === "INJECT" &&
+          fragment.injectTag === "LAST_MESSAGE"
+        ) {
+          const last = acc[acc.length - 1];
+          lastMessageIndex =
+            last?.role === fragment.role ? acc.length - 1 : acc.length;
         }
 
         const last = acc[acc.length - 1];
@@ -139,17 +154,34 @@ export class PromptBuilder {
 
     if (this.regexes.length === 0) return messages;
 
-    return messages.map((msg) => {
+    return messages.map((msg, index) => {
       if (msg.role === "system") return msg;
-      const content = this.regexes.reduce((text, { pattern, target }) => {
-        if (target === "USER" && msg.role !== "user") return text;
-        if (target === "ASSISTANT" && msg.role !== "assistant") return text;
-        try {
-          return text.replace(new RegExp(pattern, "g"), "");
-        } catch {
-          return text;
-        }
-      }, msg.content);
+
+      let depth: number | undefined;
+      if (index === lastMessageIndex) {
+        depth = 0;
+      } else if (
+        chatHistoryStart !== undefined &&
+        index >= chatHistoryStart &&
+        index < chatHistoryStart + chatHistoryLength
+      ) {
+        depth = chatHistoryLength - (index - chatHistoryStart);
+      }
+
+      const content = this.regexes.reduce(
+        (text, { minDepth, pattern, target }) => {
+          if (target === "USER" && msg.role !== "user") return text;
+          if (target === "ASSISTANT" && msg.role !== "assistant") return text;
+          if (minDepth != null && depth !== undefined && depth < minDepth)
+            return text;
+          try {
+            return text.replace(new RegExp(pattern, "g"), "");
+          } catch {
+            return text;
+          }
+        },
+        msg.content,
+      );
       return content === msg.content ? msg : { ...msg, content };
     });
   }

@@ -57,6 +57,7 @@ const promptRegexSchema = z.object({
   id: dbIdValidator,
   isShared: z.boolean(),
   linkId: dbIdValidator,
+  minDepth: z.number().int().min(0).nullable().optional(),
   name: z.string().min(1, "Name is required"),
   order: z.number().positive(),
   pattern: z.string().min(1, "Pattern is required"),
@@ -107,7 +108,9 @@ export const promptWithFragmentsSchema = promptEntitySchema
   })
   .extend({
     promptFragments: promptFragmentSchema.array(),
-    promptRegexes: promptRegexSchema.pick({ pattern: true, target: true }).array(),
+    promptRegexes: promptRegexSchema
+      .pick({ minDepth: true, pattern: true, target: true })
+      .array(),
   });
 export type PromptWithFragments = z.infer<typeof promptWithFragmentsSchema>;
 
@@ -134,6 +137,7 @@ export const promptFragmentUpdateSchema = z.discriminatedUnion("type", [
 export const promptRegexCreateSchema = promptRegexSchema.pick({
   enabled: true,
   isShared: true,
+  minDepth: true,
   name: true,
   pattern: true,
   target: true,
@@ -192,6 +196,7 @@ export const promptFormSchema = promptEntitySchema
       .pick({
         enabled: true,
         isShared: true,
+        minDepth: true,
         name: true,
         pattern: true,
         target: true,

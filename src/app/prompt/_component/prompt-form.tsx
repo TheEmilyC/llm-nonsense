@@ -341,6 +341,7 @@ export function PromptForm({
                   appendRegex({
                     enabled: true,
                     isShared: false,
+                    minDepth: null,
                     name: "New Regex",
                     pattern: "",
                     target: "BOTH",
@@ -539,6 +540,28 @@ export function PromptForm({
                         </SelectGroup>
                       </SelectContent>
                     </Select>
+                  </Field>
+                )}
+              />
+              <Controller
+                control={form.control}
+                name={`promptRegexes.${regexEditingIndex}.minDepth`}
+                render={({ field }) => (
+                  <Field>
+                    <FieldLabel>Min Depth</FieldLabel>
+                    <Input
+                      min={0}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === ""
+                            ? null
+                            : parseInt(e.target.value, 10),
+                        )
+                      }
+                      placeholder="None"
+                      type="number"
+                      value={field.value ?? ""}
+                    />
                   </Field>
                 )}
               />

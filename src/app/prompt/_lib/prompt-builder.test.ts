@@ -323,7 +323,10 @@ describe("build", () => {
 // PromptBuilder — build with regexes
 // ---------------------------------------------------------------------------
 
-function regexFrag(pattern: string, target: BuilderRegex["target"]): BuilderRegex {
+function regexFrag(
+  pattern: string,
+  target: BuilderRegex["target"],
+): BuilderRegex {
   return { pattern, target };
 }
 
@@ -340,7 +343,9 @@ describe("build — regexes", () => {
     ]);
     const built = builder.build();
     expect(built.find((m) => m.role === "user")?.content).toBe("hello  world");
-    expect(built.find((m) => m.role === "assistant")?.content).toBe("no STRIP change");
+    expect(built.find((m) => m.role === "assistant")?.content).toBe(
+      "no STRIP change",
+    );
   });
 
   it("strips matching text from assistant messages for ASSISTANT target", () => {
@@ -354,8 +359,12 @@ describe("build — regexes", () => {
       { content: "hello STRIP world", role: "assistant" },
     ]);
     const built = builder.build();
-    expect(built.find((m) => m.role === "user")?.content).toBe("no STRIP change");
-    expect(built.find((m) => m.role === "assistant")?.content).toBe("hello  world");
+    expect(built.find((m) => m.role === "user")?.content).toBe(
+      "no STRIP change",
+    );
+    expect(built.find((m) => m.role === "assistant")?.content).toBe(
+      "hello  world",
+    );
   });
 
   it("strips matching text from both roles for BOTH target", () => {
@@ -370,7 +379,9 @@ describe("build — regexes", () => {
     ]);
     const built = builder.build();
     expect(built.find((m) => m.role === "user")?.content).toBe("user  msg");
-    expect(built.find((m) => m.role === "assistant")?.content).toBe("asst  msg");
+    expect(built.find((m) => m.role === "assistant")?.content).toBe(
+      "asst  msg",
+    );
   });
 
   it("does not modify system messages", () => {
@@ -389,7 +400,9 @@ describe("build — regexes", () => {
       regexes: [regexFrag("foo", "USER"), regexFrag("bar", "USER")],
     });
     builder.injectChatHistory([{ content: "foo bar baz", role: "user" }]);
-    expect(builder.build().find((m) => m.role === "user")?.content).toBe("  baz");
+    expect(builder.build().find((m) => m.role === "user")?.content).toBe(
+      "  baz",
+    );
   });
 
   it("silently ignores invalid regex patterns", () => {
@@ -400,6 +413,85 @@ describe("build — regexes", () => {
     });
     builder.injectChatHistory([{ content: "hello", role: "user" }]);
     expect(() => builder.build()).not.toThrow();
-    expect(builder.build().find((m) => m.role === "user")?.content).toBe("hello");
+    expect(builder.build().find((m) => m.role === "user")?.content).toBe(
+      "hello",
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PromptBuilder — build with minDepth
+// ---------------------------------------------------------------------------
+
+describe("build — minDepth", () => {
+  it("applies regex to all messages when minDepth is not set", () => {
+    const builder = new PromptBuilder({
+      maxTokens: 200,
+      promptSkeleton: [injectFrag("LAST_MESSAGE", "user"), chatHistoryFrag()],
+      regexes: [{ pattern: "STRIP", target: "BOTH" }],
+    });
+    builder.addToPrompt("LAST_MESSAGE", "last STRIP msg");
+    builder.injectChatHistory([{ content: "history STRIP msg", role: "user" }]);
+    const built = builder.build();
+    expect(
+      built.find((m) => m.role === "user" && m.content.includes("last"))
+        ?.content,
+    ).toBe("\nlast  msg");
+    expect(built.find((m) => m.content.includes("history"))?.content).toBe(
+      "history  msg",
+    );
+  });
+
+  it("skips last message (depth 0) when minDepth is 1", () => {
+    const builder = new PromptBuilder({
+      maxTokens: 200,
+      promptSkeleton: [injectFrag("LAST_MESSAGE", "user"), chatHistoryFrag()],
+      regexes: [{ minDepth: 1, pattern: "STRIP", target: "BOTH" }],
+    });
+    builder.addToPrompt("LAST_MESSAGE", "last STRIP msg");
+    builder.injectChatHistory([{ content: "history STRIP msg", role: "user" }]);
+    const built = builder.build();
+    expect(built.find((m) => m.content.includes("last"))?.content).toBe(
+      "\nlast STRIP msg",
+    );
+    expect(built.find((m) => m.content.includes("history"))?.content).toBe(
+      "history  msg",
+    );
+  });
+
+  it("applies regex only to messages at or beyond minDepth", () => {
+    const builder = new PromptBuilder({
+      maxTokens: 400,
+      promptSkeleton: [chatHistoryFrag()],
+      regexes: [{ minDepth: 2, pattern: "STRIP", target: "BOTH" }],
+    });
+    // injectChatHistory receives newest-first; depth 1 = most recent
+    builder.injectChatHistory([
+      { content: "depth1 STRIP msg", role: "user" },
+      { content: "depth2 STRIP msg", role: "assistant" },
+      { content: "depth3 STRIP msg", role: "user" },
+    ]);
+    const built = builder.build();
+    expect(built.find((m) => m.content.includes("depth1"))?.content).toBe(
+      "depth1 STRIP msg",
+    );
+    expect(built.find((m) => m.content.includes("depth2"))?.content).toBe(
+      "depth2  msg",
+    );
+    expect(built.find((m) => m.content.includes("depth3"))?.content).toBe(
+      "depth3  msg",
+    );
+  });
+
+  it("treats null minDepth as no depth filter", () => {
+    const builder = new PromptBuilder({
+      maxTokens: 200,
+      promptSkeleton: [chatHistoryFrag()],
+      regexes: [{ minDepth: null, pattern: "STRIP", target: "BOTH" }],
+    });
+    builder.injectChatHistory([{ content: "msg STRIP here", role: "user" }]);
+    expect(builder.build().find((m) => m.role === "user")?.content).toBe(
+      "msg  here",
+    );
   });
 });
