@@ -119,19 +119,19 @@ model Lorebook {
 }
 
 model Prompt {
-  id              String             @id @default(cuid())
+  id              String            @id @default(cuid())
   name            String
-  maxTokens       Int                @default(80000)
-  maxOutputTokens Int                @default(0)
-  maxSteps        Int                @default(20)
-  temperature     Float              @default(0.9)
-  topK            Int                @default(64)
-  topP            Float              @default(0.95)
-  prefetch        Boolean            @default(false)
+  maxTokens       Int               @default(80000)
+  maxOutputTokens Int               @default(0)
+  maxSteps        Int               @default(20)
+  temperature     Float             @default(0.9)
+  topK            Int               @default(64)
+  topP            Float             @default(0.95)
+  prefetch        Boolean           @default(false)
   promptFragments PromptFragment[]
   promptRegexes   PromptRegexLink[]
-  createdAt       DateTime           @default(now())
-  modifiedAt      DateTime           @default(now()) @updatedAt
+  createdAt       DateTime          @default(now())
+  modifiedAt      DateTime          @default(now()) @updatedAt
   stories         Story[]
 }
 
@@ -146,6 +146,7 @@ model PromptRegex {
   name          String
   pattern       String
   target        PromptRegexTarget
+  minDepth      Int?
   isShared      Boolean
   promptRegexes PromptRegexLink[]
   createdAt     DateTime          @default(now())

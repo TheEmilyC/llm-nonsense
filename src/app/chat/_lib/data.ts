@@ -349,7 +349,11 @@ export async function getStoryChatSession({
                 where: { enabled: true },
               },
               promptRegexes: {
-                include: { promptRegex: { select: { pattern: true, target: true } } },
+                include: {
+                  promptRegex: {
+                    select: { minDepth: true, pattern: true, target: true },
+                  },
+                },
                 orderBy: { order: "asc" },
                 where: { enabled: true },
               },
@@ -380,7 +384,9 @@ export async function getStoryChatSession({
     // Prompt parsing gets complicated, letting zod handle it
     prompt: promptWithFragmentsSchema.parse({
       ...chat.story.prompt,
-      promptRegexes: chat.story.prompt.promptRegexes.map((link) => link.promptRegex),
+      promptRegexes: chat.story.prompt.promptRegexes.map(
+        (link) => link.promptRegex,
+      ),
     }),
     story: {
       ...chat.story,
