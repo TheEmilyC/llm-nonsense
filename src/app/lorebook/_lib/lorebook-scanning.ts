@@ -1,4 +1,4 @@
-import { LorebookEntryFile } from "@/app/lorebook/_lib/schema";
+import { ObsidianFile } from "@/app/lorebook/_lib/schema";
 import {
   LOREBOOK_CASE_SENSITIVE,
   LOREBOOK_MATCH_WHOLE_WORDS,
@@ -18,26 +18,27 @@ interface ScanLorebookIndexParams {
   scanText: string;
 }
 
-export function convertFilesToPrompt(files: LorebookEntryFile[]) {
+export function convertFilesToPrompt(files: ObsidianFile[]) {
   return files
     .map((file) => {
       const content = stripFrontMatter(file.content);
-      const outlinks = file.outlinks
-        .map((l) => `${l.display ?? l.path}(${l.path})`)
-        .join(", ");
-      const inlinks = file.inlinks
-        .map((l) => `${l.display ?? l.path}(${l.path})`)
-        .join(", ");
+      const links = file.links.join(", ");
+      const backLinks = file.backlinks.join(", ");
 
       return [
         `# ${file.path}`,
         content,
         "---",
-        `**Outgoing links:** ${outlinks}`,
-        `**Backlinks:** ${inlinks}`,
+        `**Outgoing links:** [${links}]`,
+        `**Backlinks:** [${backLinks}]`,
       ].join("\n\n");
     })
     .join("\n\n");
+}
+
+export function extractFirstHeader(str: string): null | string {
+  const match = str.match(/^#{1,6}\s+(.+)/m);
+  return match ? match[1].trim() : null;
 }
 
 export function scanLorebookIndex({

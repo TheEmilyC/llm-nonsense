@@ -6,6 +6,11 @@ GET http://127.0.0.1:27123/vault/lorebook/characters/thea/thea-ashworth.md HTTP/
 Accept: application/vnd.olrapi.note+json
 Authorization: Bearer 315608501d039714d6139d5da6e0ccd0636e195dc900457210de9124c5c63194
 
+### Read file JsonLogic
+GET http://127.0.0.1:55935/vault/lorebook/characters/astrid-skaptidottir.md HTTP/1.1
+Authorization: Bearer 0f2cc23d50e0562396e91d603d7a417abfd70fd7fe87b9062bc83f213f4c2120
+Accept: application/vnd.olrapi.note+json
+
 ### Get Commands
 GET http://127.0.0.1:27123/commands/
 Authorization: Bearer 315608501d039714d6139d5da6e0ccd0636e195dc900457210de9124c5c63194
@@ -24,6 +29,20 @@ TABLE
   order, 
   file.ctime as "ctime"
 FROM #lorebook AND !#lorebook-never AND !"system/templates"
+
+### JsonLogic query
+POST http://127.0.0.1:57261/search/
+Authorization: Bearer 1C5t5RxDxemwnq8zMLKvdSSEaho4ODIu
+Content-Type: application/vnd.olrapi.jsonlogic+json
+Accept: application/json
+
+{
+  "and": [
+    { "in": ["lorebook", { "var": "tags" }] },
+    { "!": { "in": ["lorebook-never", { "var": "tags" }] } },
+    { "!": { "in": ["system/templates/", { "var": "path" }] } }
+  ]
+}
 
 ### Link fetch query
 POST http://127.0.0.1:27123/search/

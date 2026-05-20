@@ -168,7 +168,12 @@ export const obsidianIndexSchema = z.object({
 export type ObsidianIndex = z.infer<typeof obsidianIndexSchema>;
 
 export const getObsidianIndexResponseSchema = z.union([
-  obsidianIndexSchema.array(),
+  z
+    .object({
+      filename: z.string(),
+      result: z.literal(true),
+    })
+    .array(),
   obsidianError,
 ]);
 export type GetLorebookIndexResponse = z.infer<
@@ -176,12 +181,14 @@ export type GetLorebookIndexResponse = z.infer<
 >;
 
 export const obsidianFileSchema = z.object({
+  backlinks: z.string().array(),
   content: z.string(),
   frontmatter: lorebookFrontmatterSchema,
+  links: z.string().array(),
   path: z.string(),
   stat: z.object({
-    ctime: z.number(),
-    mtime: z.number(),
+    ctime: z.coerce.date(),
+    mtime: z.coerce.date(),
     size: z.number(),
   }),
   tags: z.string().array(),
@@ -206,12 +213,6 @@ export const obsidianFileLinksResponseSchema = z.union([
   obsidianFileLinksSchema.array(),
   obsidianError,
 ]);
-
-export const lorebookEntryFileSchema = obsidianFileSchema.extend({
-  inlinks: obsidianLinkSchema.array(),
-  outlinks: obsidianLinkSchema.array(),
-});
-export type LorebookEntryFile = z.infer<typeof lorebookEntryFileSchema>;
 
 // -- LLM schemas
 export const lorebookUpdateSuggestionSchema = z.discriminatedUnion(
