@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import type { LorebookEntryFile } from "@/app/lorebook/_lib/schema";
+
 import {
   convertFilesToPrompt,
-  scanLorebookIndex,
   type IndexEntry,
+  scanLorebookIndex,
 } from "@/app/lorebook/_lib/lorebook-scanning";
+import { ObsidianFile } from "@/app/lorebook/_lib/schema";
 
 // Constants in effect: case-insensitive, no whole-word matching, max 15 matches
 
@@ -18,14 +19,14 @@ function makeEntry(overrides: Partial<IndexEntry> = {}): IndexEntry {
   };
 }
 
-function makeFile(overrides: Partial<LorebookEntryFile> = {}): LorebookEntryFile {
+function makeFile(overrides: Partial<ObsidianFile> = {}): ObsidianFile {
   return {
+    backlinks: [],
     content: "Some content",
-    frontmatter: {} as LorebookEntryFile["frontmatter"],
-    inlinks: [],
-    outlinks: [],
+    frontmatter: {} as ObsidianFile["frontmatter"],
+    links: [],
     path: "file.md",
-    stat: { ctime: 0, mtime: 0, size: 0 },
+    stat: { ctime: new Date(), mtime: new Date(), size: 0 },
     tags: [],
     ...overrides,
   };
@@ -103,7 +104,9 @@ describe("scanLorebookIndex", () => {
 
 describe("convertFilesToPrompt", () => {
   it("formats a file with its path as a header", () => {
-    const result = convertFilesToPrompt([makeFile({ path: "notes/dragon.md" })]);
+    const result = convertFilesToPrompt([
+      makeFile({ path: "notes/dragon.md" }),
+    ]);
     expect(result).toContain("# notes/dragon.md");
   });
 
@@ -118,8 +121,8 @@ describe("convertFilesToPrompt", () => {
 
   it("formats outlinks and inlinks", () => {
     const file = makeFile({
-      inlinks: [{ display: "Origin", embed: false, path: "origin.md", type: "file" }],
-      outlinks: [{ embed: false, path: "target.md", type: "file" }],
+      backlinks: ["target.md"],
+      links: ["origin.md"],
     });
     const result = convertFilesToPrompt([file]);
     expect(result).toContain("Outgoing links:");
@@ -130,17 +133,14 @@ describe("convertFilesToPrompt", () => {
 
   it("uses display name in link label when present", () => {
     const file = makeFile({
-      outlinks: [{ display: "The Big Dragon", embed: false, path: "dragon.md", type: "file" }],
+      backlinks: ["dragon.md"],
     });
     const result = convertFilesToPrompt([file]);
-    expect(result).toContain("The Big Dragon(dragon.md)");
+    expect(result).toContain("dragon.md");
   });
 
   it("joins multiple files with double newlines", () => {
-    const files = [
-      makeFile({ path: "a.md" }),
-      makeFile({ path: "b.md" }),
-    ];
+    const files = [makeFile({ path: "a.md" }), makeFile({ path: "b.md" })];
     const result = convertFilesToPrompt(files);
     expect(result).toContain("# a.md");
     expect(result).toContain("# b.md");

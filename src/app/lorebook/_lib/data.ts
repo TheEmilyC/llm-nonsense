@@ -1,22 +1,21 @@
 "use server";
 
-import dedent from "dedent";
 import { cacheTag } from "next/cache";
 
+import { extractFirstHeader } from "@/app/lorebook/_lib/lorebook-scanning";
 import {
   getObsidianIndexResponseSchema,
   Lorebook,
   LOREBOOK_CACHE_KEY,
   LorebookEntityDto,
   LorebookEntityListDto,
-  LorebookEntryFile,
   LorebookEntryIndex,
   LorebookIndex,
   LorebookNotReady,
   LorebookStatusDto,
   lorebookStatusDtoSchema,
   ObsidianApiConnection,
-  obsidianFileLinksResponseSchema,
+  ObsidianFile,
   obsidianFileResponseSchema,
   ObsidianIndex,
 } from "@/app/lorebook/_lib/schema";
@@ -172,7 +171,7 @@ export async function getLorebookEntityDtoList(): Promise<
 export async function getLorebookEntry({
   fileName,
   lorebookId,
-}: GetLorebookEntryParams): Promise<LorebookEntryFile> {
+}: GetLorebookEntryParams): Promise<ObsidianFile> {
   const lorebookEntity = await getLorebookEntityById(lorebookId);
   if (!lorebookEntity) throw new NotFoundError("Lorebook", lorebookId);
   return fetchLorebookEntry({
@@ -186,7 +185,7 @@ export async function getLorebookEntry({
 export async function getLorebookEntryList({
   files,
   lorebookId,
-}: GetLorebookEntryListParams): Promise<LorebookEntryFile[]> {
+}: GetLorebookEntryListParams): Promise<ObsidianFile[]> {
   const lorebookEntity = await getLorebookEntityById(lorebookId);
   if (!lorebookEntity) throw new NotFoundError("Lorebook", lorebookId);
   const results = await Promise.allSettled(
@@ -252,7 +251,7 @@ async function fetchLorebookEntry({
   fileName,
   lorebookId,
   port,
-}: FetchLorebookEntryParams): Promise<LorebookEntryFile> {
+}: FetchLorebookEntryParams): Promise<ObsidianFile> {
   "use cache";
   cacheTag(`${LOREBOOK_CACHE_KEY}-${lorebookId}`);
 
@@ -271,31 +270,7 @@ async function fetchLorebookEntry({
     throw new ObsidianError(contentResponse.statusText, contentResponse.status);
   }
 
-  const linkResponse = await fetch(`${OBSIDIAN_URL}:${port}/search`, {
-    body: dedent`
-      TABLE 
-        unique(filter(file.inlinks, (l) => contains(l.tags, "${LOREBOOK_TAG}") AND !contains(l.tags, "${LOREBOOK_NEVER_TAG}"))) as inlinks,
-        unique(filter(file.outlinks, (l) => contains(l.tags, "${LOREBOOK_TAG}") AND !contains(l.tags, "${LOREBOOK_NEVER_TAG}"))) as outlinks 
-      FROM "${fileName}"`,
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-type": "application/vnd.olrapi.dataview.dql+txt",
-    },
-    method: "POST",
-  });
-
-  const links = obsidianFileLinksResponseSchema.parse(
-    await linkResponse.json(),
-  );
-  if ("errorCode" in links) {
-    throw new ObsidianError(linkResponse.statusText, linkResponse.status);
-  }
-
-  return {
-    ...file,
-    inlinks: links.length > 0 ? links[0].result.inlinks : [],
-    outlinks: links.length > 0 ? links[0].result.outlinks : [],
-  };
+  return file;
 }
 
 async function fetchLorebookIndex({
@@ -305,14 +280,20 @@ async function fetchLorebookIndex({
   entity: LorebookEntity;
   id: string;
 }): Promise<FetchLorebookIndexResult> {
+  const query = JSON.stringify({
+    and: [
+      { in: [LOREBOOK_TAG, { var: "tags" }] },
+      { "!": { in: [LOREBOOK_NEVER_TAG, { var: "tags" }] } },
+      { "!": { in: [LOREBOOK_TEMPLATES_FOLDER, { var: "path" }] } },
+    ],
+  });
+
   try {
     const rawResponse = await fetch(`${OBSIDIAN_URL}:${entity.port}/search`, {
-      body: dedent`
-      TABLE title, tags, characters, summary, order, file.ctime as "ctime"
-      FROM #${LOREBOOK_TAG} and !#${LOREBOOK_NEVER_TAG} and !"${LOREBOOK_TEMPLATES_FOLDER}"`,
+      body: query,
       headers: {
         Authorization: `Bearer ${entity.apiKey}`,
-        "Content-type": "application/vnd.olrapi.dataview.dql+txt",
+        "Content-type": "application/vnd.olrapi.jsonlogic+json",
       },
       method: "POST",
     });
@@ -334,8 +315,22 @@ async function fetchLorebookIndex({
     if ("errorCode" in result) {
       return { error: result, status: "ERROR", success: false };
     }
+    const files = await getLorebookEntryList({
+      files: result.map((idx) => idx.filename),
+      lorebookId: id,
+    });
     return {
-      index: result,
+      index: files.map((file) => ({
+        filename: file.path,
+        result: {
+          ...file.frontmatter,
+          ctime: file.stat.ctime,
+          title:
+            file.frontmatter.title ??
+            extractFirstHeader(file.content) ??
+            file.path,
+        },
+      })),
       success: true,
     };
   } catch {
