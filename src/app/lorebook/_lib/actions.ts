@@ -196,7 +196,7 @@ export async function updateLorebookAction(
     });
     return toActionResponseError(err);
   }
-  logger.info("Persona updated", { id });
+  logger.info("Lorebook updated", { id });
 
   updateTag(LOREBOOK_CACHE_KEY);
   updateTag(`${LOREBOOK_CACHE_KEY}-${id}`);
