@@ -53,6 +53,7 @@ import {
   LorebookIcon,
   MoveLeftIcon,
   MoveRightIcon,
+  RandomIcon,
   RangeEndIcon,
   RangeStartIcon,
   SendIcon,
@@ -267,22 +268,47 @@ export function ChatMessage({
                 </Reasoning>
               );
             }
-            if (part.type === "tool-getLorebookEntries") {
-              const entries =
-                (part.input as { entries?: string[] })?.entries ?? [];
+            if (part.type === "tool-rollDice") {
+              const rolls =
+                (part.input as { rolls?: { name: string }[] })?.rolls ?? [];
               return (
                 <div
                   className="flex items-start gap-1.5 text-xs text-muted-foreground/60"
                   key={partIndex}
                 >
-                  <LorebookIcon className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                  <RandomIcon className="h-3.5 w-3.5 mt-0.5 shrink-0" />
                   <span>
-                    Looking up:{" "}
-                    {entries.length > 0
-                      ? entries.join(", ")
-                      : "lorebook entries"}
+                    Rolling:{" "}
+                    {rolls.length > 0
+                      ? rolls.map((r) => r.name).join(", ")
+                      : "dice"}
                   </span>
                 </div>
+              );
+            }
+            if (part.type === "tool-getLorebookEntries") {
+              const entries =
+                (part.input as { entries?: string[] })?.entries ?? [];
+              return (
+                <details
+                  className="text-xs text-muted-foreground/60 group"
+                  key={partIndex}
+                >
+                  <summary className="flex items-center gap-1.5 cursor-pointer list-none">
+                    <LorebookIcon className="h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      Retrieved{" "}
+                      {entries.length > 0
+                        ? `${entries.length} lorebook ${entries.length === 1 ? "entry" : "entries"}`
+                        : "lorebook entries"}
+                    </span>
+                  </summary>
+                  <ul className="mt-1 ml-5 space-y-0.5">
+                    {entries.map((entry) => (
+                      <li key={entry}>{entry}</li>
+                    ))}
+                  </ul>
+                </details>
               );
             }
             if (part.type === "text") {
