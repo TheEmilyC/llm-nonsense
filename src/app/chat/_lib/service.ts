@@ -24,6 +24,7 @@ import {
   LlmnUIMessage,
   StoryChatSession,
 } from "@/app/chat/_lib/schema";
+import { rollDiceTool } from "@/app/chat/_lib/tools";
 import {
   getLorebookById,
   getLorebookEntry,
@@ -222,6 +223,7 @@ export async function constructChatResponse({
     stopWhen: stepCountIs(maxSteps),
     temperature,
     tools: {
+      rollDice: rollDiceTool,
       ...(lorebookRaw?.status === "READY" && {
         getLorebookEntries: makeGetLorebookEntriesTool(lorebookRaw),
       }),
