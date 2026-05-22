@@ -58,10 +58,10 @@ export async function createPrompt({
       promptRegexes: promptRegexes
         ? {
             create: promptRegexes.map(
-              ({ enabled, isShared, name, pattern, target }, index) => ({
+              ({ enabled, isShared, minDepth, name, pattern, target }, index) => ({
                 enabled,
                 order: index + 1,
-                promptRegex: { create: { isShared, name, pattern, target } },
+                promptRegex: { create: { isShared, minDepth, name, pattern, target } },
               }),
             ),
           }
@@ -198,6 +198,7 @@ export async function updatePrompt({
                     promptRegex: {
                       create: {
                         isShared: false,
+                        minDepth: data.minDepth ?? null,
                         name: data.name,
                         pattern: data.pattern,
                         target: data.target,
@@ -209,6 +210,7 @@ export async function updatePrompt({
                     order: index + 1,
                     promptRegex: {
                       update: {
+                        minDepth: data.minDepth ?? null,
                         name: data.name,
                         pattern: data.pattern,
                         target: data.target,
@@ -244,6 +246,7 @@ function toPromptDto(prompt: PromptDtoRaw): PromptDto {
         id: link.promptRegex.id,
         isShared: link.promptRegex.isShared,
         linkId: link.id,
+        minDepth: link.promptRegex.minDepth,
         name: link.promptRegex.name,
         order: link.order,
         pattern: link.promptRegex.pattern,
