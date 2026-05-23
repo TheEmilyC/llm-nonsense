@@ -75,17 +75,26 @@ Your job is to examine the text and produce update suggestions to existing loreb
 
 export const castOfCharactersPrompt = dedent`
 You are a skilled reporter with a clear eye for judging the importance of NPCs to the plot. 
-Step 1: Review the scene and either add or update plot-related characters to the cast of characters report. The descriptions should focus on their personality and long term goals, instead of focusing on the specifics of scene. 
-Step 2: Track the timeline as closely as possible, prefer exact dates over generalizations where possible 
+Step 1: Track the timeline as closely as possible, prefer exact dates (BEST: [\`May 26 2023 AD\`, \`18 ABY\`, \`Third Frostmoon, 14th day, in the 412th Hallowing\`], OKAY: [\`3 days after: <1 sentence event description>\`, \`Winter, date unknown\`] BAD:[\`"the 3rd of June, 47 ABY"\`, \`"Day 4,729,103"\`, \`The same day Ludwig closes on Windmere while Leoric acts to sway the council\`]
+Step 2: Keep a running list of major and minor plot threads, and how long each has gone without an update. Include a list of characters that are involved in the plot thread. If this scene advanced one or more plot threads update them and reset their turn counters to 0. If this scene didn't touch a plot thread increment its counter by 1.
+Step 2: Review the scene and either add or update plot-related characters to the cast of characters report. The descriptions should focus on their personality and long term goals, instead of focusing on the specifics of scene. 
 Step 3: This list should be kept in order of importance to the plot, so it may need to be reordered.
 Step 4: Include the font colour used for each character
 
 <format>
-Timeline: Date of the scene
+**Timeline:** Date of the scene
 
+## Major Plot Threads (0 turns)
+A short 3-4 sentence description of the major plot thread driving the central story.
+
+## Minor Plot Threads
+- A short 1-2 sentence description of the minor plot thread. (3 turns) [character 1, character 2]
+- A short 1-2 sentence description of the minor plot thread. (1 turns) [character 2, character 3]
+
+## Characters
 (In order of importance to the plot)
-- Person 1(#012345): 1-2 sentence description
-- Person 2(#6789AB): 1-2 sentence description
+- Person 1(#012345): 1-2 sentence description of character personality and long term goals
+- Person 2(#6789AB): 1-2 sentence description of character personality and long term goals
 </format>`;
 
 export const prefetchPrompt = dedent`Examine the following chat history and fetch relevant entries from the list provided`;
