@@ -10,6 +10,7 @@ import {
   ChatMessageEntity,
   ChatSession,
   ChatSessionDto,
+  MemoryGenMessagePart,
   MessageContentEntity,
   MessageMetadata,
   StoryChatSession,
@@ -213,11 +214,25 @@ export async function getChatForMemoryGen(
     id: chat.id,
     lorebookId: chat.story.lorebookId ?? undefined,
     messages: chat.messages.map((msg) => ({
-      content: msg.contents[0].parts
-        .filter((part) => part.type === "text")
-        .map((part) => part.text)
-        .join("\n"),
       id: msg.id,
+      parts: msg.contents[0].parts.flatMap((part): MemoryGenMessagePart[] => {
+        if (part.type === "text") {
+          return [{ content: part.text, type: "text" as const }];
+        }
+        if (
+          part.type === "tool-getLorebookEntries" &&
+          "input" in part &&
+          part.input != null
+        ) {
+          return [
+            {
+              entries: (part.input as { entries: string[] }).entries,
+              type: "tool" as const,
+            },
+          ];
+        }
+        return [];
+      }),
       role: msg.contents[0].role,
     })),
   };

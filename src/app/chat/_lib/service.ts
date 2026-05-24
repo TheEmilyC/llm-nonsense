@@ -22,6 +22,7 @@ import {
   ChatForMemoryGen,
   ChatModelKey,
   LlmnUIMessage,
+  MemoryGenMessage,
   StoryChatSession,
 } from "@/app/chat/_lib/schema";
 import { rollDiceTool } from "@/app/chat/_lib/tools";
@@ -53,7 +54,8 @@ import { logger } from "@/lib/logger";
 
 export interface GenerateLorebookFactsParams {
   existingFacts?: LorebookFact[];
-  messages: BuilderChatMessage[];
+  lorebook?: LorebookReady;
+  messages: MemoryGenMessage[];
   previousScene: string;
 }
 
@@ -67,7 +69,7 @@ interface BuildPromptFromChatParams {
 interface BuildSummaryPromptParams {
   lastMemoryContent?: string;
   lorebook?: LorebookReady;
-  messages: BuilderChatMessage[];
+  messages: MemoryGenMessage[];
 }
 
 interface ConstructChatResponseParams {
@@ -79,7 +81,7 @@ interface ConstructChatResponseParams {
 }
 
 interface GenerateCastOfCharactersParams {
-  messages: BuilderChatMessage[];
+  messages: MemoryGenMessage[];
   previousCast?: string;
 }
 
@@ -263,9 +265,10 @@ export async function constructChatResponse({
 }
 
 export async function generateCastOfCharacters({
-  messages,
+  messages: memGenMessages,
   previousCast,
 }: GenerateCastOfCharactersParams) {
+  const messages = toBuilderMessages(memGenMessages);
   const promptSkeleton: BuilderFragment[] = [
     {
       content: castOfCharactersPrompt,
@@ -325,9 +328,32 @@ export async function generateCastOfCharacters({
 
 export async function generateLorebookFacts({
   existingFacts,
+  lorebook,
   messages,
   previousScene,
 }: GenerateLorebookFactsParams) {
+  // Collect unique lorebook entry filenames from tool-call parts across all messages
+  let existingLoreContent: string | undefined;
+  if (lorebook) {
+    const entryFilenames = new Set<string>();
+    for (const message of messages) {
+      for (const part of message.parts) {
+        if (part.type === "tool") {
+          for (const entry of part.entries) {
+            entryFilenames.add(entry);
+          }
+        }
+      }
+    }
+    if (entryFilenames.size > 0) {
+      const files = await getLorebookEntryList({
+        files: Array.from(entryFilenames),
+        lorebookId: lorebook.id,
+      });
+      existingLoreContent = convertFilesToPrompt(files) || undefined;
+    }
+  }
+
   const existingFactsBlock: BuilderFragment[] =
     existingFacts && existingFacts.length > 0
       ? [
@@ -343,6 +369,14 @@ export async function generateLorebookFacts({
         ]
       : [];
 
+  const existingLoreBlock: BuilderFragment[] = existingLoreContent
+    ? [
+        { content: `<existing_lore>`, role: "system", type: "CONTENT" },
+        { content: existingLoreContent, role: "system", type: "CONTENT" },
+        { content: `</existing_lore>`, role: "system", type: "CONTENT" },
+      ]
+    : [];
+
   const promptBuilder = new PromptBuilder({
     maxTokens: SIDE_PROMPT_TOKEN_LIMIT,
     promptSkeleton: [
@@ -355,12 +389,13 @@ export async function generateLorebookFacts({
       { content: previousScene, role: "system", type: "CONTENT" },
       { content: `</previous_scene_summary>`, role: "system", type: "CONTENT" },
       ...existingFactsBlock,
+      ...existingLoreBlock,
       { content: `<scene>`, role: "system", type: "CONTENT" },
       { type: "CHAT_HISTORY" },
       { content: `</scene>`, role: "user", type: "CONTENT" },
     ],
   });
-  promptBuilder.injectChatHistory(messages);
+  promptBuilder.injectChatHistory(toBuilderMessages(messages));
   const prompt = promptBuilder.build();
   logger.info("Lorebook facts request", { prompt });
   try {
@@ -494,6 +529,7 @@ export async function generateSummaries({
     }),
     generateLorebookFacts({
       existingFacts: chat.facts,
+      lorebook,
       messages: chat.messages,
       previousScene: previousScene ?? "No previous scene available",
     }),
@@ -608,8 +644,9 @@ async function buildPromptFromChat({
 async function buildSummaryPrompt({
   lastMemoryContent,
   lorebook,
-  messages,
+  messages: memGenMessages,
 }: BuildSummaryPromptParams): Promise<BuilderChatMessage[]> {
+  const messages = toBuilderMessages(memGenMessages);
   const promptSkeleton: BuilderFragment[] = [
     { content: chatSummaryInstructions, role: "system", type: "CONTENT" },
     { content: `<lore>`, role: "system", type: "CONTENT" },
@@ -733,4 +770,14 @@ async function prefetchLorebook(
     prompt,
   });
   return output;
+}
+
+function toBuilderMessages(messages: MemoryGenMessage[]): BuilderChatMessage[] {
+  return messages.map((msg) => ({
+    content: msg.parts
+      .filter((part) => part.type === "text")
+      .map((part) => part.content)
+      .join("\n"),
+    role: msg.role,
+  }));
 }
