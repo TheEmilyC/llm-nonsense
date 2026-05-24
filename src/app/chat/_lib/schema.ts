@@ -156,6 +156,29 @@ export const chatSessionSchema = chatEntitySchema
   });
 export type ChatSession = z.infer<typeof chatSessionSchema>;
 
+const memoryGenMessageTextPartSchema = z.object({
+  content: z.string(),
+  type: z.literal("text"),
+});
+
+const memoryGenMessageToolPartSchema = z.object({
+  entries: z.string().array(),
+  type: z.literal("tool"),
+});
+
+export const memoryGenMessagePartSchema = z.discriminatedUnion("type", [
+  memoryGenMessageTextPartSchema,
+  memoryGenMessageToolPartSchema,
+]);
+export type MemoryGenMessagePart = z.infer<typeof memoryGenMessagePartSchema>;
+
+const memoryGenMessageSchema = chatMessageEntitySchema.pick({ id: true }).extend(
+  messageContentEntitySchema.pick({ role: true }).shape,
+).extend({
+  parts: memoryGenMessagePartSchema.array(),
+});
+export type MemoryGenMessage = z.infer<typeof memoryGenMessageSchema>;
+
 export const chatForMemoryGenSchema = chatEntitySchema
   .pick({
     id: true,
@@ -163,7 +186,7 @@ export const chatForMemoryGenSchema = chatEntitySchema
   .extend({
     facts: lorebookFactSchema.array().optional(),
     lorebookId: dbIdValidator.optional(),
-    messages: chatMessageForLLMSchema.array(),
+    messages: memoryGenMessageSchema.array(),
   });
 export type ChatForMemoryGen = z.infer<typeof chatForMemoryGenSchema>;
 
