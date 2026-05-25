@@ -18,6 +18,8 @@ import {
   ObsidianFile,
   obsidianFileResponseSchema,
   ObsidianIndex,
+  VaultDirectory,
+  vaultDirectoryResponseSchema,
 } from "@/app/lorebook/_lib/schema";
 import { Lorebook as LorebookEntity } from "@/generated/client";
 import {
@@ -139,6 +141,32 @@ export async function getLorebookById(id: string): Promise<Lorebook> {
   };
 
   return lorebook;
+}
+
+export async function getLorebookDirectory(
+  lorebookId: string,
+  pathToDirectory: string = "",
+): Promise<VaultDirectory> {
+  const entity = await getLorebookEntityById(lorebookId);
+  if (!entity) throw new NotFoundError("Lorebook", lorebookId);
+
+  const path = pathToDirectory ? `${pathToDirectory}/` : "";
+  const response = await fetch(`${OBSIDIAN_URL}:${entity.port}/vault/${path}`, {
+    headers: {
+      Authorization: `Bearer ${entity.apiKey}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new ObsidianError(response.statusText, response.status);
+  }
+
+  const result = vaultDirectoryResponseSchema.parse(await response.json());
+  if ("errorCode" in result) {
+    throw new ObsidianError(result.message, result.errorCode);
+  }
+
+  return result;
 }
 
 export async function getLorebookEntityById(

@@ -292,6 +292,18 @@ export const lorebookUpdateResultSchema = z.object({
 export type GenerateLorebookUpdatesResult = LorebookUpdateResult[];
 export type LorebookUpdateResult = z.infer<typeof lorebookUpdateResultSchema>;
 
+// -- Vault directory schemas
+
+export const vaultDirectorySchema = z.object({
+  files: z.string().array(),
+});
+export type VaultDirectory = z.infer<typeof vaultDirectorySchema>;
+
+export const vaultDirectoryResponseSchema = z.union([
+  vaultDirectorySchema,
+  obsidianError,
+]);
+
 // -- DTOs
 
 export const lorebookEntityListDtoSchema = lorebookEntitySchema.pick({
