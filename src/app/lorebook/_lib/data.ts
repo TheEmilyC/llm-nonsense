@@ -56,6 +56,29 @@ export interface UpdateLorebookEntityParams {
   update: Partial<Pick<LorebookEntity, "apiKey" | "memoryLocation" | "name" | "port">>;
 }
 
+export interface WriteLorebookFileOptions {
+  /** Reject the request if the file already has content. Defaults to false. */
+  rejectIfContentPreexists?: boolean;
+  /** Target section type within the file. Required when `target` is set. */
+  targetType?: "block" | "frontmatter" | "heading";
+  /**
+   * The specific target within the file (e.g. a heading name or block ID).
+   * Required when `targetType` is set. Will be URL-encoded before sending.
+   */
+  target?: string;
+  /** Delimiter for nested heading targets. Defaults to "::" on the API side. */
+  targetDelimiter?: string;
+  /** Strip leading/trailing whitespace from the resolved target. Defaults to false. */
+  trimTargetWhitespace?: boolean;
+}
+
+export interface WriteLorebookFileParams {
+  content: string;
+  fileName: string;
+  lorebookId: string;
+  options?: WriteLorebookFileOptions;
+}
+
 interface FetchLorebookEntryParams {
   apiKey: string;
   fileName: string;
@@ -277,6 +300,50 @@ export async function updateLorebookEntity({
   });
 
   return toLorebookEntityDto(entity);
+}
+
+export async function writeLorebookFile({
+  content,
+  fileName,
+  lorebookId,
+  options,
+}: WriteLorebookFileParams): Promise<void> {
+  const entity = await getLorebookEntityById(lorebookId);
+  if (!entity) throw new NotFoundError("Lorebook", lorebookId);
+
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${entity.apiKey}`,
+    "Content-Type": "text/markdown",
+  };
+
+  if (options?.rejectIfContentPreexists !== undefined) {
+    headers["Reject-If-Content-Preexists"] = String(options.rejectIfContentPreexists);
+  }
+  if (options?.targetType !== undefined) {
+    headers["Target-Type"] = options.targetType;
+  }
+  if (options?.target !== undefined) {
+    headers["Target"] = encodeURIComponent(options.target);
+  }
+  if (options?.targetDelimiter !== undefined) {
+    headers["Target-Delimiter"] = options.targetDelimiter;
+  }
+  if (options?.trimTargetWhitespace !== undefined) {
+    headers["Trim-Target-Whitespace"] = String(options.trimTargetWhitespace);
+  }
+
+  const response = await fetch(
+    `${OBSIDIAN_URL}:${entity.port}/vault/${fileName}`,
+    {
+      body: content,
+      headers,
+      method: "PUT",
+    },
+  );
+
+  if (!response.ok) {
+    throw new ObsidianError(response.statusText, response.status);
+  }
 }
 
 async function fetchLorebookEntry({
