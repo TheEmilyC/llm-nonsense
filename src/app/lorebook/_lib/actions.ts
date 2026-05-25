@@ -9,10 +9,13 @@ import {
   createLorebookEntity,
   deleteLorebookEntity,
   getLorebookDirectory,
+  getLorebookEntityById,
   getLorebookStatusDto,
   testLorebookConnection,
   updateLorebookEntity,
+  writeLorebookFile,
 } from "@/app/lorebook/_lib/data";
+import { extractFirstHeader } from "@/app/lorebook/_lib/lorebook-scanning";
 import {
   GenerateLorebookUpdatesActionParams,
   generateLorebookUpdatesActionParamsSchema,
@@ -28,6 +31,8 @@ import {
   LorebookStatusDto,
   ObsidianApiConnection,
   obsidianApiConnectionSchema,
+  SaveMemoryToLorebookActionParams,
+  saveMemoryToLorebookActionParamsSchema,
   UpdateLorebookActionParams,
   updateLorebookActionParamsSchema,
 } from "@/app/lorebook/_lib/schema";
@@ -39,40 +44,6 @@ import {
 import { ActionResponse, toActionResponseError } from "@/lib/action-utils";
 import { AppError, NotFoundError } from "@/lib/error";
 import { logger, parseError } from "@/lib/logger";
-
-export async function getLorebookDirectoryAction(
-  lorebookId: string,
-  path: string,
-): Promise<ActionResponse<string[]>> {
-  const idResult = dbIdValidator.safeParse(lorebookId);
-  if (!idResult.success) return toActionResponseError(idResult.error);
-
-  try {
-    const directory = await getLorebookDirectory(idResult.data, path);
-
-    // Extract immediate children from the flat files list.
-    // Handles both vault-relative paths ("Characters/Alice.md") and
-    // relative paths ("Alice.md") returned by different API versions.
-    const prefix = path ? `${path}/` : "";
-    const children = new Set<string>();
-    for (const file of directory.files) {
-      const relative = file.startsWith(prefix) ? file.slice(prefix.length) : file;
-      const firstSegment = relative.split("/")[0];
-      if (firstSegment) {
-        children.add(path ? `${path}/${firstSegment}` : firstSegment);
-      }
-    }
-
-    return { data: Array.from(children).sort(), success: true };
-  } catch (err) {
-    logger.error("Failed to fetch lorebook directory", {
-      lorebookId,
-      path,
-      ...parseError(err),
-    });
-    return toActionResponseError(err);
-  }
-}
 
 export async function createLorebookAction(
   data: LorebookFormValues,
@@ -191,6 +162,73 @@ export async function getLorebookAction(
   return { data: lorebook, success: true };
 }
 
+export async function getLorebookDirectoryAction(
+  lorebookId: string,
+  path: string,
+): Promise<ActionResponse<string[]>> {
+  const idResult = dbIdValidator.safeParse(lorebookId);
+  if (!idResult.success) return toActionResponseError(idResult.error);
+
+  try {
+    const directory = await getLorebookDirectory(idResult.data, path);
+
+    // Extract immediate children from the flat files list.
+    // Handles both vault-relative paths ("Characters/Alice.md") and
+    // relative paths ("Alice.md") returned by different API versions.
+    const prefix = path ? `${path}/` : "";
+    const children = new Set<string>();
+    for (const file of directory.files) {
+      const relative = file.startsWith(prefix)
+        ? file.slice(prefix.length)
+        : file;
+      const firstSegment = relative.split("/")[0];
+      if (firstSegment) {
+        children.add(path ? `${path}/${firstSegment}` : firstSegment);
+      }
+    }
+
+    return { data: Array.from(children).sort(), success: true };
+  } catch (err) {
+    logger.error("Failed to fetch lorebook directory", {
+      lorebookId,
+      path,
+      ...parseError(err),
+    });
+    return toActionResponseError(err);
+  }
+}
+
+export async function saveMemoryToLorebookAction(
+  params: SaveMemoryToLorebookActionParams,
+): Promise<ActionResponse> {
+  const parseResult = saveMemoryToLorebookActionParamsSchema.safeParse(params);
+  if (!parseResult.success) return toActionResponseError(parseResult.error);
+  const { content, lorebookId } = parseResult.data;
+
+  try {
+    const entity = await getLorebookEntityById(lorebookId);
+    if (!entity)
+      return toActionResponseError(new NotFoundError("Lorebook", lorebookId));
+
+    const title =
+      extractFirstHeader(content) ?? new Date().toISOString().slice(0, 10);
+    const slug = slugifyTitle(title);
+    const base = entity.memoryLocation ?? "";
+    const fileName = base ? `${base}/${slug}.md` : `${slug}.md`;
+
+    await writeLorebookFile({ content, fileName, lorebookId });
+  } catch (err) {
+    logger.error("Failed to save memory to lorebook", {
+      lorebookId,
+      ...parseError(err),
+    });
+    return toActionResponseError(err);
+  }
+
+  logger.info("Memory saved to lorebook", { lorebookId });
+  return { success: true };
+}
+
 export async function testConnectionAction(
   apiRaw: ObsidianApiConnection,
 ): Promise<ActionResponse> {
@@ -236,4 +274,12 @@ export async function updateLorebookAction(
   updateTag(LOREBOOK_CACHE_KEY);
   updateTag(`${LOREBOOK_CACHE_KEY}-${id}`);
   return { success: true };
+}
+
+/** Converts a heading string like "Chapter 3: The Title" → "chapter-3-the-title". */
+function slugifyTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }

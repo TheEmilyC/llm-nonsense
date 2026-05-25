@@ -113,6 +113,14 @@ export type UpdateLorebookActionParams = z.infer<
   typeof updateLorebookActionParamsSchema
 >;
 
+export const saveMemoryToLorebookActionParamsSchema = z.object({
+  content: z.string().min(1),
+  lorebookId: dbIdValidator,
+});
+export type SaveMemoryToLorebookActionParams = z.infer<
+  typeof saveMemoryToLorebookActionParamsSchema
+>;
+
 export const getLorebookActionParamsSchema = z.object({
   id: dbIdValidator,
   isRetry: z.boolean().optional(),
