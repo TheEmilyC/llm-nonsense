@@ -12,7 +12,7 @@ import {
 } from "@/app/lorebook/_lib/schema";
 import { FieldInput } from "@/components/form-fields/field-input";
 import { Button } from "@/components/ui/button";
-import { FieldGroup } from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { RandomIcon } from "@/lib/icons";
 
 interface LorebookFormProps {
@@ -30,7 +30,12 @@ export function LorebookForm({
   onSubmit,
 }: LorebookFormProps) {
   const form = useForm<LorebookFormValues>({
-    defaultValues: defaultValues || { apiKey: "", name: "", port: 27123 },
+    defaultValues: defaultValues || {
+      apiKey: "",
+      memoryLocation: null,
+      name: "",
+      port: 27123,
+    },
     mode: "onTouched",
     resolver: zodResolver(lorebookFormSchema),
   });
@@ -48,6 +53,10 @@ export function LorebookForm({
 
   const port = useWatch({ control: form.control, name: "port" });
   const apiKey = useWatch({ control: form.control, name: "apiKey" });
+  const memoryLocation = useWatch({
+    control: form.control,
+    name: "memoryLocation",
+  });
 
   const connectionVerified =
     verifiedCredentials?.port === port &&
@@ -130,11 +139,17 @@ export function LorebookForm({
         </div>
         <div>
           {defaultValues?.id && (
-            <LorebookDirectoryTree
-              height={480}
-              lorebookId={defaultValues.id}
-              onFileSelect={(path) => console.log("selected:", path)}
-            />
+            <Field>
+              <FieldLabel>Lorebook Files</FieldLabel>
+              <LorebookDirectoryTree
+                height={480}
+                lorebookId={defaultValues.id}
+                memoryLocation={memoryLocation}
+                onMemoryLocationChange={(path) =>
+                  form.setValue("memoryLocation", path, { shouldDirty: true })
+                }
+              />
+            </Field>
           )}
         </div>
       </FieldGroup>

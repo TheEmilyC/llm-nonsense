@@ -3,30 +3,35 @@
 import { useCallback } from "react";
 
 import { getLorebookDirectoryAction } from "@/app/lorebook/_lib/actions";
-import { TreeView, type TreeViewNode } from "@/components/ui/tree-view";
+import {
+  TreeView,
+  type TreeViewContextMenuItem,
+  type TreeViewNode,
+} from "@/components/ui/tree-view";
+import { MemoryIcon } from "@/lib/icons";
 
 interface LorebookDirectoryTreeProps {
   className?: string;
   height?: number | string;
   lorebookId: string;
-  onFileSelect?: (path: string) => void;
+  memoryLocation?: null | string;
+  onMemoryLocationChange?: (path: null | string) => void;
 }
 
 export function LorebookDirectoryTree({
   className,
   height,
   lorebookId,
-  onFileSelect,
+  memoryLocation,
+  onMemoryLocationChange,
 }: LorebookDirectoryTreeProps) {
   const getItem = useCallback(
-    (id: string): Promise<TreeViewNode> =>
-      Promise.resolve(nodeFromPath(id)),
+    (id: string): Promise<TreeViewNode> => Promise.resolve(nodeFromPath(id)),
     [],
   );
 
   const getChildren = useCallback(
     async (id: string): Promise<string[]> => {
-      // Root item id is "__root__" — treat it as vault root (empty path)
       const path = id === "__root__" ? "" : id;
       const result = await getLorebookDirectoryAction(lorebookId, path);
       return result.success ? (result.data ?? []) : [];
@@ -34,13 +39,48 @@ export function LorebookDirectoryTree({
     [lorebookId],
   );
 
+  const directoryItems = useCallback(
+    (id: string): TreeViewContextMenuItem[] => {
+      if (id === memoryLocation) {
+        return [
+          {
+            icon: <MemoryIcon />,
+            label: "Remove memory location",
+            onSelect: () => onMemoryLocationChange?.(null),
+          },
+        ];
+      }
+      return [
+        {
+          icon: <MemoryIcon />,
+          label: "Set as memory location",
+          onSelect: () => onMemoryLocationChange?.(id),
+        },
+      ];
+    },
+    [memoryLocation, onMemoryLocationChange],
+  );
+
+  const renderItemSuffix = useCallback(
+    (id: string, node: TreeViewNode) => {
+      if (node.isFolder && id === memoryLocation) {
+        return (
+          <MemoryIcon className="ml-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+        );
+      }
+      return null;
+    },
+    [memoryLocation],
+  );
+
   return (
     <TreeView
       className={className}
+      contextMenu={{ directoryItems }}
       getChildren={getChildren}
       getItem={getItem}
       height={height}
-      onSelect={onFileSelect}
+      renderItemSuffix={renderItemSuffix}
     />
   );
 }

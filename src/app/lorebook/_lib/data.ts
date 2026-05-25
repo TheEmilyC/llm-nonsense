@@ -53,7 +53,7 @@ export interface GetLorebookEntryParams {
 
 export interface UpdateLorebookEntityParams {
   id: string;
-  update: Partial<Pick<LorebookEntity, "apiKey" | "name" | "port">>;
+  update: Partial<Pick<LorebookEntity, "apiKey" | "memoryLocation" | "name" | "port">>;
 }
 
 interface FetchLorebookEntryParams {
@@ -267,7 +267,12 @@ export async function updateLorebookEntity({
   update,
 }: UpdateLorebookEntityParams): Promise<LorebookEntityDto> {
   const entity = await prisma.lorebook.update({
-    data: { apiKey: update.apiKey, name: update.name, port: update.port },
+    data: {
+      apiKey: update.apiKey,
+      memoryLocation: update.memoryLocation,
+      name: update.name,
+      port: update.port,
+    },
     where: { id },
   });
 
@@ -370,6 +375,7 @@ function toLorebookEntityDto(lorebook: LorebookEntity): LorebookEntityDto {
   return {
     apiKey: lorebook.apiKey,
     id: lorebook.id,
+    memoryLocation: lorebook.memoryLocation,
     name: lorebook.name,
     port: lorebook.port,
   };

@@ -19,6 +19,7 @@ export const lorebookEntitySchema = z.object({
   apiKey: z.string().min(1),
   createdAt: z.date(),
   id: dbIdValidator,
+  memoryLocation: z.string().nullable(),
   modifiedAt: z.date(),
   name: z.string().min(1),
   port: z.number(),
@@ -60,6 +61,7 @@ const obsidianError = z.object({
 export const lorebookFormSchema = z.object({
   apiKey: z.string().min(1, "API key is required"),
   id: dbIdValidator.optional(),
+  memoryLocation: z.string().nullable(),
   name: z.string().min(1, "Name is required"),
   port: z.number(),
 });
@@ -317,6 +319,7 @@ export type LorebookEntityListDto = z.infer<typeof lorebookEntityListDtoSchema>;
 export const lorebookEntityDtoSchema = lorebookEntitySchema.pick({
   apiKey: true,
   id: true,
+  memoryLocation: true,
   name: true,
   port: true,
 });

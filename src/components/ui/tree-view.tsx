@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef } from "react";
 import {
   asyncDataLoaderFeature,
   hotkeysCoreFeature,
@@ -9,6 +8,7 @@ import {
 import { useTree } from "@headless-tree/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronRight, File, Folder, FolderOpen, Loader2 } from "lucide-react";
+import { useRef } from "react";
 
 import {
   ContextMenu,
@@ -19,9 +19,17 @@ import {
 } from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
 
-export interface TreeViewNode {
-  isFolder: boolean;
-  label: string;
+export interface TreeViewContextMenu {
+  /** Items shown when right-clicking a directory node.
+   *  Pass a function to compute items dynamically per node ID. */
+  directoryItems?:
+    | ((id: string) => TreeViewContextMenuItem[])
+    | TreeViewContextMenuItem[];
+  /** Items shown when right-clicking a file node.
+   *  Pass a function to compute items dynamically per node ID. */
+  fileItems?:
+    | ((id: string) => TreeViewContextMenuItem[])
+    | TreeViewContextMenuItem[];
 }
 
 export type TreeViewContextMenuItem =
@@ -34,11 +42,9 @@ export type TreeViewContextMenuItem =
     }
   | { type: "separator" };
 
-export interface TreeViewContextMenu {
-  /** Items shown when right-clicking a directory node */
-  directoryItems?: TreeViewContextMenuItem[];
-  /** Items shown when right-clicking a file node */
-  fileItems?: TreeViewContextMenuItem[];
+export interface TreeViewNode {
+  isFolder: boolean;
+  label: string;
 }
 
 export interface TreeViewProps {
@@ -48,10 +54,20 @@ export interface TreeViewProps {
   getItem: (id: string) => Promise<TreeViewNode>;
   height?: number | string;
   onSelect?: (id: string) => void;
+  /** Rendered after the label inside each item row. Use for badges or status icons. */
+  renderItemSuffix?: (id: string, node: TreeViewNode) => React.ReactNode;
   rootId?: string;
 }
 
 const ITEM_HEIGHT = 32;
+
+interface TreeViewItemProps {
+  contextMenu?: TreeViewContextMenu;
+  item: ItemInstance<TreeViewNode>;
+  onSelect?: (id: string) => void;
+  renderItemSuffix?: TreeViewProps["renderItemSuffix"];
+  style: React.CSSProperties;
+}
 
 export function TreeView({
   className,
@@ -60,6 +76,7 @@ export function TreeView({
   getItem,
   height = 400,
   onSelect,
+  renderItemSuffix,
   rootId = "__root__",
 }: TreeViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -91,11 +108,11 @@ export function TreeView({
   return (
     <div
       {...tree.getContainerProps("File tree")}
+      className={cn("overflow-y-auto outline-none", className)}
       ref={(el) => {
         containerRef.current = el;
         tree.registerElement(el);
       }}
-      className={cn("overflow-y-auto outline-none", className)}
       style={{ height }}
     >
       <div
@@ -114,6 +131,7 @@ export function TreeView({
               item={item}
               key={item.getKey()}
               onSelect={onSelect}
+              renderItemSuffix={renderItemSuffix}
               style={{
                 height: ITEM_HEIGHT,
                 left: 0,
@@ -130,14 +148,23 @@ export function TreeView({
   );
 }
 
-interface TreeViewItemProps {
-  contextMenu?: TreeViewContextMenu;
-  item: ItemInstance<TreeViewNode>;
-  onSelect?: (id: string) => void;
-  style: React.CSSProperties;
+function resolveMenuItems(
+  items:
+    | ((id: string) => TreeViewContextMenuItem[])
+    | TreeViewContextMenuItem[]
+    | undefined,
+  id: string,
+): TreeViewContextMenuItem[] {
+  if (!items) return [];
+  return typeof items === "function" ? items(id) : items;
 }
 
-function TreeViewItem({ contextMenu, item, style }: TreeViewItemProps) {
+function TreeViewItem({
+  contextMenu,
+  item,
+  renderItemSuffix,
+  style,
+}: TreeViewItemProps) {
   const data = item.getItemData();
   const { level } = item.getItemMeta();
   const isFolder = item.isFolder();
@@ -145,9 +172,11 @@ function TreeViewItem({ contextMenu, item, style }: TreeViewItemProps) {
   const isLoading = item.isLoading();
   const isFocused = item.isFocused();
 
-  const menuItems = isFolder
-    ? (contextMenu?.directoryItems ?? [])
-    : (contextMenu?.fileItems ?? []);
+  const id = item.getId();
+  const menuItems = resolveMenuItems(
+    isFolder ? contextMenu?.directoryItems : contextMenu?.fileItems,
+    id,
+  );
 
   return (
     <div style={style}>
@@ -160,13 +189,16 @@ function TreeViewItem({ contextMenu, item, style }: TreeViewItemProps) {
               "outline-none transition-colors hover:bg-muted/50",
               isFocused && "bg-muted",
             )}
-            style={{ paddingLeft: `${(level - 1) * 16 + 8}px`, paddingRight: 8 }}
             onClick={() => {
               if (isFolder) {
                 isExpanded ? item.collapse() : item.expand();
               } else {
                 item.primaryAction();
               }
+            }}
+            style={{
+              paddingLeft: `${(level - 1) * 16 + 8}px`,
+              paddingRight: 8,
             }}
           >
             {isFolder ? (
@@ -190,7 +222,8 @@ function TreeViewItem({ contextMenu, item, style }: TreeViewItemProps) {
             ) : (
               <File className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             )}
-            <span className="truncate">{data?.label ?? item.getId()}</span>
+            <span className="min-w-0 flex-1 truncate">{data?.label ?? id}</span>
+            {data && renderItemSuffix?.(id, data)}
           </div>
         </ContextMenuTrigger>
         {menuItems.length > 0 && (
