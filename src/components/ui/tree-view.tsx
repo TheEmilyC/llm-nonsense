@@ -10,6 +10,13 @@ import { useTree } from "@headless-tree/react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ChevronRight, File, Folder, FolderOpen, Loader2 } from "lucide-react";
 
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
 
 export interface TreeViewNode {
@@ -17,8 +24,26 @@ export interface TreeViewNode {
   label: string;
 }
 
+export type TreeViewContextMenuItem =
+  | {
+      icon?: React.ReactNode;
+      label: string;
+      onSelect: (id: string) => void;
+      type?: "item";
+      variant?: "default" | "destructive";
+    }
+  | { type: "separator" };
+
+export interface TreeViewContextMenu {
+  /** Items shown when right-clicking a directory node */
+  directoryItems?: TreeViewContextMenuItem[];
+  /** Items shown when right-clicking a file node */
+  fileItems?: TreeViewContextMenuItem[];
+}
+
 export interface TreeViewProps {
   className?: string;
+  contextMenu?: TreeViewContextMenu;
   getChildren: (id: string) => Promise<string[]>;
   getItem: (id: string) => Promise<TreeViewNode>;
   height?: number | string;
@@ -30,6 +55,7 @@ const ITEM_HEIGHT = 32;
 
 export function TreeView({
   className,
+  contextMenu,
   getChildren,
   getItem,
   height = 400,
@@ -84,6 +110,7 @@ export function TreeView({
           if (!item) return null;
           return (
             <TreeViewItem
+              contextMenu={contextMenu}
               item={item}
               key={item.getKey()}
               onSelect={onSelect}
@@ -104,12 +131,13 @@ export function TreeView({
 }
 
 interface TreeViewItemProps {
+  contextMenu?: TreeViewContextMenu;
   item: ItemInstance<TreeViewNode>;
   onSelect?: (id: string) => void;
   style: React.CSSProperties;
 }
 
-function TreeViewItem({ item, style }: TreeViewItemProps) {
+function TreeViewItem({ contextMenu, item, style }: TreeViewItemProps) {
   const data = item.getItemData();
   const { level } = item.getItemMeta();
   const isFolder = item.isFolder();
@@ -117,47 +145,74 @@ function TreeViewItem({ item, style }: TreeViewItemProps) {
   const isLoading = item.isLoading();
   const isFocused = item.isFocused();
 
+  const menuItems = isFolder
+    ? (contextMenu?.directoryItems ?? [])
+    : (contextMenu?.fileItems ?? []);
+
   return (
     <div style={style}>
-      <div
-        {...item.getProps()}
-        className={cn(
-          "flex h-full cursor-pointer select-none items-center gap-1.5 rounded-sm text-sm",
-          "outline-none transition-colors hover:bg-muted/50",
-          isFocused && "bg-muted",
-        )}
-        style={{ paddingLeft: `${(level - 1) * 16 + 8}px`, paddingRight: 8 }}
-        onClick={() => {
-          if (isFolder) {
-            isExpanded ? item.collapse() : item.expand();
-          } else {
-            item.primaryAction();
-          }
-        }}
-      >
-        {isFolder ? (
-          <ChevronRight
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div
+            {...item.getProps()}
             className={cn(
-              "h-3 w-3 shrink-0 text-muted-foreground/70 transition-transform duration-150",
-              isExpanded && "rotate-90",
+              "flex h-full cursor-pointer select-none items-center gap-1.5 rounded-sm text-sm",
+              "outline-none transition-colors hover:bg-muted/50",
+              isFocused && "bg-muted",
             )}
-          />
-        ) : (
-          <span aria-hidden className="w-3 shrink-0" />
+            style={{ paddingLeft: `${(level - 1) * 16 + 8}px`, paddingRight: 8 }}
+            onClick={() => {
+              if (isFolder) {
+                isExpanded ? item.collapse() : item.expand();
+              } else {
+                item.primaryAction();
+              }
+            }}
+          >
+            {isFolder ? (
+              <ChevronRight
+                className={cn(
+                  "h-3 w-3 shrink-0 text-muted-foreground/70 transition-transform duration-150",
+                  isExpanded && "rotate-90",
+                )}
+              />
+            ) : (
+              <span aria-hidden className="w-3 shrink-0" />
+            )}
+            {isLoading ? (
+              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" />
+            ) : isFolder ? (
+              isExpanded ? (
+                <FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              ) : (
+                <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              )
+            ) : (
+              <File className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            )}
+            <span className="truncate">{data?.label ?? item.getId()}</span>
+          </div>
+        </ContextMenuTrigger>
+        {menuItems.length > 0 && (
+          <ContextMenuContent>
+            {menuItems.map((menuItem, i) => {
+              if (menuItem.type === "separator") {
+                return <ContextMenuSeparator key={i} />;
+              }
+              return (
+                <ContextMenuItem
+                  key={i}
+                  onSelect={() => menuItem.onSelect(item.getId())}
+                  variant={menuItem.variant}
+                >
+                  {menuItem.icon}
+                  {menuItem.label}
+                </ContextMenuItem>
+              );
+            })}
+          </ContextMenuContent>
         )}
-        {isLoading ? (
-          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" />
-        ) : isFolder ? (
-          isExpanded ? (
-            <FolderOpen className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-          ) : (
-            <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-          )
-        ) : (
-          <File className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-        )}
-        <span className="truncate">{data?.label ?? item.getId()}</span>
-      </div>
+      </ContextMenu>
     </div>
   );
 }
