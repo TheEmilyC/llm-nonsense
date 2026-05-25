@@ -8,6 +8,7 @@ import { getChatForMemoryGen } from "@/app/chat/_lib/data";
 import {
   createLorebookEntity,
   deleteLorebookEntity,
+  getLorebookDirectory,
   getLorebookStatusDto,
   testLorebookConnection,
   updateLorebookEntity,
@@ -38,6 +39,40 @@ import {
 import { ActionResponse, toActionResponseError } from "@/lib/action-utils";
 import { AppError, NotFoundError } from "@/lib/error";
 import { logger, parseError } from "@/lib/logger";
+
+export async function getLorebookDirectoryAction(
+  lorebookId: string,
+  path: string,
+): Promise<ActionResponse<string[]>> {
+  const idResult = dbIdValidator.safeParse(lorebookId);
+  if (!idResult.success) return toActionResponseError(idResult.error);
+
+  try {
+    const directory = await getLorebookDirectory(idResult.data, path);
+
+    // Extract immediate children from the flat files list.
+    // Handles both vault-relative paths ("Characters/Alice.md") and
+    // relative paths ("Alice.md") returned by different API versions.
+    const prefix = path ? `${path}/` : "";
+    const children = new Set<string>();
+    for (const file of directory.files) {
+      const relative = file.startsWith(prefix) ? file.slice(prefix.length) : file;
+      const firstSegment = relative.split("/")[0];
+      if (firstSegment) {
+        children.add(path ? `${path}/${firstSegment}` : firstSegment);
+      }
+    }
+
+    return { data: Array.from(children).sort(), success: true };
+  } catch (err) {
+    logger.error("Failed to fetch lorebook directory", {
+      lorebookId,
+      path,
+      ...parseError(err),
+    });
+    return toActionResponseError(err);
+  }
+}
 
 export async function createLorebookAction(
   data: LorebookFormValues,

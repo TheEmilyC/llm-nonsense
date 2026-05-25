@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm, UseFormSetError, useWatch } from "react-hook-form";
 
+import { LorebookDirectoryTree } from "@/app/lorebook/_components/lorebook-directory-tree";
 import { useTestLorebookConnection } from "@/app/lorebook/_lib/hooks";
 import {
   lorebookFormSchema,
@@ -125,6 +126,15 @@ export function LorebookForm({
             <p className="text-sm text-destructive">
               {form.formState.errors.root.message}
             </p>
+          )}
+        </div>
+        <div>
+          {defaultValues?.id && (
+            <LorebookDirectoryTree
+              height={480}
+              lorebookId={defaultValues.id}
+              onFileSelect={(path) => console.log("selected:", path)}
+            />
           )}
         </div>
       </FieldGroup>

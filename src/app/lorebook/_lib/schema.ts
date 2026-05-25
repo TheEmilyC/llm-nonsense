@@ -59,6 +59,7 @@ const obsidianError = z.object({
 
 export const lorebookFormSchema = z.object({
   apiKey: z.string().min(1, "API key is required"),
+  id: dbIdValidator.optional(),
   name: z.string().min(1, "Name is required"),
   port: z.number(),
 });
