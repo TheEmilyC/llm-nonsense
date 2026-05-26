@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import z from "zod";
 
@@ -23,6 +24,7 @@ export default function PromptEditPage({ params }: PromptEditPageParams) {
 }
 
 async function PromptEditPageContent({ params }: PromptEditPageParams) {
+  await connection();
   const { id } = promptEditPageParamsSchema.parse(await params);
   const prompt = await getPromptDto(id);
   if (!prompt) notFound();

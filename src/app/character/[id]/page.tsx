@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import z from "zod";
 
@@ -23,6 +24,7 @@ export default function CharacterPage({ params }: CharacterPageParams) {
 }
 
 async function CharacterPageContent({ params }: CharacterPageParams) {
+  await connection();
   const { id } = characterEditPageParamsSchema.parse(await params);
   const character = await getCharacterDto(id);
   if (!character) notFound();

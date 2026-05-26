@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import z from "zod";
 
@@ -29,6 +30,7 @@ export default function StoryPage({ params }: StoryPageParams) {
 }
 
 async function StoryPageContent({ params }: StoryPageParams) {
+  await connection();
   const [
     characters,
     personas,
