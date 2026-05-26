@@ -7,16 +7,21 @@ import {
 } from "@/app/lorebook/_lib/schema";
 
 describe("lorebookFormSchema", () => {
-  const valid = { apiKey: "secret", name: "My Vault", port: 27124 };
+  const valid = {
+    apiKey: "secret",
+    memoryLocation: null,
+    name: "My Vault",
+    port: 27124,
+  };
 
   it("accepts valid input", () => {
     expect(lorebookFormSchema.safeParse(valid).success).toBe(true);
   });
 
   it("rejects empty apiKey", () => {
-    expect(
-      lorebookFormSchema.safeParse({ ...valid, apiKey: "" }).success,
-    ).toBe(false);
+    expect(lorebookFormSchema.safeParse({ ...valid, apiKey: "" }).success).toBe(
+      false,
+    );
   });
 
   it("rejects empty name", () => {
@@ -71,10 +76,10 @@ describe("lorebookUpdateSuggestionSchema", () => {
   it("accepts append variant", () => {
     expect(
       lorebookUpdateSuggestionSchema.safeParse({
-        updateType: "append",
         proposedContent: "New lore text",
         reasoning: "Because plot",
         sourceFactIndices: [0],
+        updateType: "append",
       }).success,
     ).toBe(true);
   });
@@ -82,11 +87,11 @@ describe("lorebookUpdateSuggestionSchema", () => {
   it("accepts modify variant", () => {
     expect(
       lorebookUpdateSuggestionSchema.safeParse({
-        updateType: "modify",
         currentContent: "old text",
         proposedContent: "new text",
         reasoning: "updated",
         sourceFactIndices: [1, 2],
+        updateType: "modify",
       }).success,
     ).toBe(true);
   });
@@ -94,11 +99,11 @@ describe("lorebookUpdateSuggestionSchema", () => {
   it("accepts conflict variant", () => {
     expect(
       lorebookUpdateSuggestionSchema.safeParse({
-        updateType: "conflict",
         existingContent: "She is young",
         factDescription: "She is stated to be 300 years old",
         reasoning: "contradiction",
         sourceFactIndices: [0],
+        updateType: "conflict",
       }).success,
     ).toBe(true);
   });
@@ -106,9 +111,9 @@ describe("lorebookUpdateSuggestionSchema", () => {
   it("accepts no_change variant", () => {
     expect(
       lorebookUpdateSuggestionSchema.safeParse({
-        updateType: "no_change",
         reasoning: "already accurate",
         sourceFactIndices: [],
+        updateType: "no_change",
       }).success,
     ).toBe(true);
   });
@@ -116,9 +121,9 @@ describe("lorebookUpdateSuggestionSchema", () => {
   it("rejects unknown updateType", () => {
     expect(
       lorebookUpdateSuggestionSchema.safeParse({
-        updateType: "delete",
         reasoning: "nope",
         sourceFactIndices: [],
+        updateType: "delete",
       }).success,
     ).toBe(false);
   });
@@ -126,9 +131,9 @@ describe("lorebookUpdateSuggestionSchema", () => {
   it("rejects append missing required proposedContent", () => {
     expect(
       lorebookUpdateSuggestionSchema.safeParse({
-        updateType: "append",
         reasoning: "missing content",
         sourceFactIndices: [],
+        updateType: "append",
       }).success,
     ).toBe(false);
   });

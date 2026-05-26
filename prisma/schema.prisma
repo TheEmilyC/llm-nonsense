@@ -109,13 +109,14 @@ model World {
 }
 
 model Lorebook {
-  id         String   @id @default(cuid())
-  name       String
-  apiKey     String // API key for local Obsidian server, scoped to localhost only
-  port       Int
-  stories    Story[]
-  createdAt  DateTime @default(now())
-  modifiedAt DateTime @default(now()) @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  apiKey         String // API key for local Obsidian server, scoped to localhost only
+  port           Int
+  memoryLocation String? // vault-relative path of the directory used to store memory entries
+  stories        Story[]
+  createdAt      DateTime @default(now())
+  modifiedAt     DateTime @default(now()) @updatedAt
 }
 
 model Prompt {

@@ -18,6 +18,8 @@ import {
   ObsidianFile,
   obsidianFileResponseSchema,
   ObsidianIndex,
+  VaultDirectory,
+  vaultDirectoryResponseSchema,
 } from "@/app/lorebook/_lib/schema";
 import { Lorebook as LorebookEntity } from "@/generated/client";
 import {
@@ -51,7 +53,30 @@ export interface GetLorebookEntryParams {
 
 export interface UpdateLorebookEntityParams {
   id: string;
-  update: Partial<Pick<LorebookEntity, "apiKey" | "name" | "port">>;
+  update: Partial<Pick<LorebookEntity, "apiKey" | "memoryLocation" | "name" | "port">>;
+}
+
+export interface WriteLorebookFileOptions {
+  /** Reject the request if the file already has content. Defaults to false. */
+  rejectIfContentPreexists?: boolean;
+  /** Target section type within the file. Required when `target` is set. */
+  targetType?: "block" | "frontmatter" | "heading";
+  /**
+   * The specific target within the file (e.g. a heading name or block ID).
+   * Required when `targetType` is set. Will be URL-encoded before sending.
+   */
+  target?: string;
+  /** Delimiter for nested heading targets. Defaults to "::" on the API side. */
+  targetDelimiter?: string;
+  /** Strip leading/trailing whitespace from the resolved target. Defaults to false. */
+  trimTargetWhitespace?: boolean;
+}
+
+export interface WriteLorebookFileParams {
+  content: string;
+  fileName: string;
+  lorebookId: string;
+  options?: WriteLorebookFileOptions;
 }
 
 interface FetchLorebookEntryParams {
@@ -139,6 +164,32 @@ export async function getLorebookById(id: string): Promise<Lorebook> {
   };
 
   return lorebook;
+}
+
+export async function getLorebookDirectory(
+  lorebookId: string,
+  pathToDirectory: string = "",
+): Promise<VaultDirectory> {
+  const entity = await getLorebookEntityById(lorebookId);
+  if (!entity) throw new NotFoundError("Lorebook", lorebookId);
+
+  const path = pathToDirectory ? `${pathToDirectory}/` : "";
+  const response = await fetch(`${OBSIDIAN_URL}:${entity.port}/vault/${path}`, {
+    headers: {
+      Authorization: `Bearer ${entity.apiKey}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new ObsidianError(response.statusText, response.status);
+  }
+
+  const result = vaultDirectoryResponseSchema.parse(await response.json());
+  if ("errorCode" in result) {
+    throw new ObsidianError(result.message, result.errorCode);
+  }
+
+  return result;
 }
 
 export async function getLorebookEntityById(
@@ -239,11 +290,60 @@ export async function updateLorebookEntity({
   update,
 }: UpdateLorebookEntityParams): Promise<LorebookEntityDto> {
   const entity = await prisma.lorebook.update({
-    data: { apiKey: update.apiKey, name: update.name, port: update.port },
+    data: {
+      apiKey: update.apiKey,
+      memoryLocation: update.memoryLocation,
+      name: update.name,
+      port: update.port,
+    },
     where: { id },
   });
 
   return toLorebookEntityDto(entity);
+}
+
+export async function writeLorebookFile({
+  content,
+  fileName,
+  lorebookId,
+  options,
+}: WriteLorebookFileParams): Promise<void> {
+  const entity = await getLorebookEntityById(lorebookId);
+  if (!entity) throw new NotFoundError("Lorebook", lorebookId);
+
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${entity.apiKey}`,
+    "Content-Type": "text/markdown",
+  };
+
+  if (options?.rejectIfContentPreexists !== undefined) {
+    headers["Reject-If-Content-Preexists"] = String(options.rejectIfContentPreexists);
+  }
+  if (options?.targetType !== undefined) {
+    headers["Target-Type"] = options.targetType;
+  }
+  if (options?.target !== undefined) {
+    headers["Target"] = encodeURIComponent(options.target);
+  }
+  if (options?.targetDelimiter !== undefined) {
+    headers["Target-Delimiter"] = options.targetDelimiter;
+  }
+  if (options?.trimTargetWhitespace !== undefined) {
+    headers["Trim-Target-Whitespace"] = String(options.trimTargetWhitespace);
+  }
+
+  const response = await fetch(
+    `${OBSIDIAN_URL}:${entity.port}/vault/${fileName}`,
+    {
+      body: content,
+      headers,
+      method: "PUT",
+    },
+  );
+
+  if (!response.ok) {
+    throw new ObsidianError(response.statusText, response.status);
+  }
 }
 
 async function fetchLorebookEntry({
@@ -342,6 +442,7 @@ function toLorebookEntityDto(lorebook: LorebookEntity): LorebookEntityDto {
   return {
     apiKey: lorebook.apiKey,
     id: lorebook.id,
+    memoryLocation: lorebook.memoryLocation,
     name: lorebook.name,
     port: lorebook.port,
   };

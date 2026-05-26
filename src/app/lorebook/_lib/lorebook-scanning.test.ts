@@ -126,9 +126,9 @@ describe("convertFilesToPrompt", () => {
     });
     const result = convertFilesToPrompt([file]);
     expect(result).toContain("Outgoing links:");
-    expect(result).toContain("target.md(target.md)");
+    expect(result).toContain("origin.md");
     expect(result).toContain("Backlinks:");
-    expect(result).toContain("Origin(origin.md)");
+    expect(result).toContain("target.md");
   });
 
   it("uses display name in link label when present", () => {

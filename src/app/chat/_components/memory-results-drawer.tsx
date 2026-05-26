@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { useSaveChatFacts } from "@/app/chat/_lib/hooks";
+import { useSaveChatFacts, useSaveMemoryToLorebook } from "@/app/chat/_lib/hooks";
 import { GenerateSummariesActionResponse } from "@/app/chat/_lib/schema";
 import { LorebookFact } from "@/app/lorebook/_lib/schema";
 import { CopyButton } from "@/components/copy-button";
@@ -21,6 +21,7 @@ import { Markdown } from "@/components/ui/markdown";
 interface MemoryResultsDrawerProps {
   chatId: string;
   data: GenerateSummariesActionResponse | undefined;
+  lorebookId?: string;
   onOpenChange: (open: boolean) => void;
   open: boolean;
 }
@@ -28,11 +29,13 @@ interface MemoryResultsDrawerProps {
 export function MemoryResultsDrawer({
   chatId,
   data,
+  lorebookId,
   onOpenChange,
   open,
 }: MemoryResultsDrawerProps) {
   const [editableFacts, setEditableFacts] = useState<LorebookFact[]>([]);
   const { isPending: isSaving, saveFacts } = useSaveChatFacts();
+  const { isPending: isSavingMemory, saveMemory } = useSaveMemoryToLorebook();
 
   useEffect(() => {
     setEditableFacts(data?.facts ?? []);
@@ -53,6 +56,20 @@ export function MemoryResultsDrawer({
       ...prev,
       { claim: "", confidence: "explicit" },
     ]);
+  }
+
+  async function handleSaveMemory() {
+    if (!lorebookId || !data) return;
+    const res = await saveMemory({
+      content: data.content,
+      lorebookId,
+      summary: data.summary,
+    });
+    if (!res.success) {
+      toast.error(res.error.message);
+      return;
+    }
+    toast.success("Memory saved to lorebook");
   }
 
   async function handleSaveFacts() {
@@ -84,11 +101,23 @@ export function MemoryResultsDrawer({
         {data && (
           <div className="no-scrollbar overflow-y-auto px-4 pb-6 space-y-6">
             <section>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
                   Summary
-                  <CopyButton text={data.content} />
                 </h3>
+                <div className="flex items-center gap-2">
+                  <CopyButton text={data.content} />
+                  {lorebookId && (
+                    <Button
+                      disabled={isSavingMemory}
+                      onClick={handleSaveMemory}
+                      size="sm"
+                      variant="outline"
+                    >
+                      {isSavingMemory ? "Saving…" : "Save to Lorebook"}
+                    </Button>
+                  )}
+                </div>
               </div>
               <Markdown className="prose prose-sm dark:prose-invert max-w-none">
                 {data.content}

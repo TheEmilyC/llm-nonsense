@@ -25,6 +25,10 @@ import {
   LlmnUIMessage,
   SaveChatFactsActionParams,
 } from "@/app/chat/_lib/schema";
+import { saveMemoryToLorebookAction } from "@/app/lorebook/_lib/actions";
+import {
+  SaveMemoryToLorebookActionParams,
+} from "@/app/lorebook/_lib/schema";
 import { ActionError, ActionResponse } from "@/lib/action-utils";
 
 type HookUIMessage = LlmnUIMessage & { isHidden: boolean };
@@ -325,6 +329,24 @@ export function useSaveChatFacts(onError?: (error: ActionError) => void) {
   }
 
   return { isPending, saveFacts };
+}
+
+export function useSaveMemoryToLorebook(onError?: (error: ActionError) => void) {
+  const [isPending, startTransition] = useTransition();
+
+  function saveMemory(
+    params: SaveMemoryToLorebookActionParams,
+  ): Promise<ActionResponse> {
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const res = await saveMemoryToLorebookAction(params);
+        if (!res.success) onError?.(res.error);
+        resolve(res);
+      });
+    });
+  }
+
+  return { isPending, saveMemory };
 }
 
 function getMessageSwipes(message: ChatMessageDto): HookUIMessage[] {

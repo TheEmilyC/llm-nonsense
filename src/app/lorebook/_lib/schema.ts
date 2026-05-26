@@ -19,6 +19,7 @@ export const lorebookEntitySchema = z.object({
   apiKey: z.string().min(1),
   createdAt: z.date(),
   id: dbIdValidator,
+  memoryLocation: z.string().nullable(),
   modifiedAt: z.date(),
   name: z.string().min(1),
   port: z.number(),
@@ -59,6 +60,8 @@ const obsidianError = z.object({
 
 export const lorebookFormSchema = z.object({
   apiKey: z.string().min(1, "API key is required"),
+  id: dbIdValidator.optional(),
+  memoryLocation: z.string().nullable(),
   name: z.string().min(1, "Name is required"),
   port: z.number(),
 });
@@ -108,6 +111,15 @@ export const updateLorebookActionParamsSchema = z.object({
 });
 export type UpdateLorebookActionParams = z.infer<
   typeof updateLorebookActionParamsSchema
+>;
+
+export const saveMemoryToLorebookActionParamsSchema = z.object({
+  content: z.string().min(1),
+  lorebookId: dbIdValidator,
+  summary: z.string(),
+});
+export type SaveMemoryToLorebookActionParams = z.infer<
+  typeof saveMemoryToLorebookActionParamsSchema
 >;
 
 export const getLorebookActionParamsSchema = z.object({
@@ -292,6 +304,18 @@ export const lorebookUpdateResultSchema = z.object({
 export type GenerateLorebookUpdatesResult = LorebookUpdateResult[];
 export type LorebookUpdateResult = z.infer<typeof lorebookUpdateResultSchema>;
 
+// -- Vault directory schemas
+
+export const vaultDirectorySchema = z.object({
+  files: z.string().array(),
+});
+export type VaultDirectory = z.infer<typeof vaultDirectorySchema>;
+
+export const vaultDirectoryResponseSchema = z.union([
+  vaultDirectorySchema,
+  obsidianError,
+]);
+
 // -- DTOs
 
 export const lorebookEntityListDtoSchema = lorebookEntitySchema.pick({
@@ -304,6 +328,7 @@ export type LorebookEntityListDto = z.infer<typeof lorebookEntityListDtoSchema>;
 export const lorebookEntityDtoSchema = lorebookEntitySchema.pick({
   apiKey: true,
   id: true,
+  memoryLocation: true,
   name: true,
   port: true,
 });

@@ -351,6 +351,7 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
         <MemoryResultsDrawer
           chatId={chatSession.id}
           data={memoryResults}
+          lorebookId={chatSession.story.lorebookId}
           onOpenChange={setMemoryDrawerOpen}
           open={memoryDrawerOpen}
         />
