@@ -1,6 +1,6 @@
 import z from "zod";
 
-import { dbIdValidator } from "@/app/_shared/schema";
+import { avatarImageValidator, dbIdValidator } from "@/app/_shared/schema";
 
 export const PERSONA_CACHE_KEY = "persona";
 
@@ -16,11 +16,6 @@ export const personaEntitySchema = z.object({
 });
 export type PersonaEntity = z.infer<typeof personaEntitySchema>;
 
-const personaImageValidator = z
-  .instanceof(File)
-  .refine((file) => file.type.startsWith("image/"), "Must be an image")
-  .refine((file) => file.size <= 15 * 1024 * 1024, "Max file size is 15MB");
-
 // -- Schemas
 
 export const personaFormSchema = personaEntitySchema
@@ -29,7 +24,7 @@ export const personaFormSchema = personaEntitySchema
     name: true,
   })
   .extend({
-    image: personaImageValidator.optional(),
+    image: avatarImageValidator.optional(),
   });
 export type PersonaFormValues = z.infer<typeof personaFormSchema>;
 

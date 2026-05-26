@@ -1,8 +1,8 @@
 import z from "zod";
 
 import {
-  MAX_CHARACTER_IMAGE_SIZE,
-  MAX_CHARACTER_IMAGE_SIZE_MB,
+  MAX_AVATAR_IMAGE_SIZE,
+  MAX_AVATAR_IMAGE_SIZE_MB,
 } from "@/lib/constants";
 
 export const CHARACTER_CACHE_KEY = "character";
@@ -50,8 +50,8 @@ const characterImageValidator = z
   .instanceof(File)
   .refine((file) => file.type === "image/png", "Only PNGs are supported.")
   .refine(
-    (file) => file.size <= MAX_CHARACTER_IMAGE_SIZE,
-    `Max file size is ${MAX_CHARACTER_IMAGE_SIZE_MB}MB`,
+    (file) => file.size <= MAX_AVATAR_IMAGE_SIZE,
+    `Max file size is ${MAX_AVATAR_IMAGE_SIZE_MB}MB`,
   );
 
 // -- Schemas
