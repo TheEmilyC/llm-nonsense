@@ -42,6 +42,7 @@ import {
   GenerateMemoryArcResult,
 } from "@/app/lorebook/_lib/service";
 import { ActionResponse, toActionResponseError } from "@/lib/action-utils";
+import { LOREBOOK_MEMORY_TAG, LOREBOOK_TAG } from "@/lib/env-variables";
 import { AppError, NotFoundError } from "@/lib/error";
 import { logger, parseError } from "@/lib/logger";
 
@@ -203,7 +204,7 @@ export async function saveMemoryToLorebookAction(
 ): Promise<ActionResponse> {
   const parseResult = saveMemoryToLorebookActionParamsSchema.safeParse(params);
   if (!parseResult.success) return toActionResponseError(parseResult.error);
-  const { content, lorebookId } = parseResult.data;
+  const { content, lorebookId, summary } = parseResult.data;
 
   try {
     const entity = await getLorebookEntityById(lorebookId);
@@ -216,7 +217,22 @@ export async function saveMemoryToLorebookAction(
     const base = entity.memoryLocation ?? "";
     const fileName = base ? `${base}/${slug}.md` : `${slug}.md`;
 
-    await writeLorebookFile({ content, fileName, lorebookId });
+    const frontmatter = [
+      "---",
+      "tags:",
+      `  - ${LOREBOOK_TAG}`,
+      `  - ${LOREBOOK_MEMORY_TAG}`,
+      `summary: ${JSON.stringify(summary)}`,
+      "characters:",
+      "---",
+      "",
+    ].join("\n");
+
+    await writeLorebookFile({
+      content: frontmatter + content,
+      fileName,
+      lorebookId,
+    });
   } catch (err) {
     logger.error("Failed to save memory to lorebook", {
       lorebookId,

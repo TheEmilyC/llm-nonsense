@@ -6,7 +6,7 @@ export const SIDE_PROMPT_TOKEN_LIMIT =
   Number(process.env.SIDE_PROMPT_TOKEN_LIMIT) ?? 40000;
 
 // -- Lorebooks
-export const LOREBOOK_TAG = process.env.LOREBOOK_TAG ?? "#lorebook";
+export const LOREBOOK_TAG = process.env.LOREBOOK_TAG ?? "lorebook";
 export const LOREBOOK_ALWAYS_TAG =
   process.env.LOREBOOK_ALWAYS_TAG ?? "lorebook-always";
 export const LOREBOOK_CONTEXT_TAG =

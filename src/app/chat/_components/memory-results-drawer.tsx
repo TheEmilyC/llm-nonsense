@@ -60,7 +60,11 @@ export function MemoryResultsDrawer({
 
   async function handleSaveMemory() {
     if (!lorebookId || !data) return;
-    const res = await saveMemory({ content: data.content, lorebookId });
+    const res = await saveMemory({
+      content: data.content,
+      lorebookId,
+      summary: data.summary,
+    });
     if (!res.success) {
       toast.error(res.error.message);
       return;
