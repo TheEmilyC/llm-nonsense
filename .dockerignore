@@ -2,3 +2,4 @@ node_modules
 .next
 generated
 prisma/data
+data
