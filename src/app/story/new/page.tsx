@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { Suspense } from "react";
 import z from "zod";
 
@@ -32,6 +33,7 @@ export default function NewStoryPage({ searchParams }: NewStoryPageParams) {
 }
 
 async function NewStoryPageContent({ searchParams }: NewStoryPageParams) {
+  await connection();
   const [characters, personas, worlds, lorebookResult, promptResult, params] =
     await Promise.all([
       getCharacterListDto(),

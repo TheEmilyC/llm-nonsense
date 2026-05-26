@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import z from "zod";
 
@@ -23,6 +24,7 @@ export default function PersonaEditPage({ params }: PersonaPageParams) {
 }
 
 async function PersonaEditPageContent({ params }: PersonaPageParams) {
+  await connection();
   const { id } = personaEditPageParamsSchema.parse(await params);
   const persona = await getPersonaDto(id);
   if (!persona) notFound();

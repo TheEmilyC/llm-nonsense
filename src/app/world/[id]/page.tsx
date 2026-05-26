@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import z from "zod";
 
@@ -23,6 +24,7 @@ export default function WorldEditPage({ params }: WorldPageParams) {
 }
 
 async function WorldEditPageContent({ params }: WorldPageParams) {
+  await connection();
   const { id } = worldEditPageParamsSchema.parse(await params);
   const world = await getWorldDto(id);
   if (!world) notFound();

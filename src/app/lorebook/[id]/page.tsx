@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import z from "zod";
 
@@ -23,6 +24,7 @@ export default function LorebookEditPage({ params }: LorebookEditPageParams) {
 }
 
 async function LorebookEditPageContent({ params }: LorebookEditPageParams) {
+  await connection();
   const { id } = lorebookEditPageParamsSchema.parse(await params);
   const lorebook = await getLorebookEntityDto(id);
   if (!lorebook) notFound();

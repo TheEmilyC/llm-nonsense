@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import z from "zod";
 
@@ -29,6 +30,7 @@ export default function ChatPage({ params }: Props) {
 }
 
 async function ChatPageContent({ params }: Props) {
+  await connection();
   const { id } = chatPageParamsSchema.parse(await params);
 
   const storyChatSession = await getStoryChatSessionDto({ id });
