@@ -252,190 +252,209 @@ export function ChatMessage({
           <span className="text-xs font-semibold tracking-wide uppercase opacity-60">
             {isUser ? (persona?.name ?? "User") : (character?.name ?? "AI")}
           </span>
-          {message.parts.map((part, partIndex) => {
-            if (part.type === "reasoning") {
-              return (
-                <Reasoning isStreaming={isStreaming} key={partIndex}>
-                  <ReasoningTrigger className="text-sm text-muted-foreground">
-                    Thinking
-                  </ReasoningTrigger>
-                  <ReasoningContent
-                    className="border-l-2 border-muted-foreground/30 pl-3 mt-1"
-                    markdown
-                  >
-                    {part.text}
-                  </ReasoningContent>
-                </Reasoning>
-              );
-            }
-            if (part.type === "tool-rollDice") {
-              const rolls =
-                (part.input as { rolls?: { name: string }[] })?.rolls ?? [];
-              return (
-                <div
-                  className="flex items-start gap-1.5 text-xs text-muted-foreground/60"
-                  key={partIndex}
-                >
-                  <RandomIcon className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                  <span>
-                    Rolling:{" "}
-                    {rolls.length > 0
-                      ? rolls.map((r) => r.name).join(", ")
-                      : "dice"}
-                  </span>
-                </div>
-              );
-            }
-            if (part.type === "tool-getLorebookEntries") {
-              const entries =
-                (part.input as { entries?: string[] })?.entries ?? [];
-              return (
-                <details
-                  className="text-xs text-muted-foreground/60 group"
-                  key={partIndex}
-                >
-                  <summary className="flex items-center gap-1.5 cursor-pointer list-none">
-                    <LorebookIcon className="h-3.5 w-3.5 shrink-0" />
-                    <span>
-                      Retrieved{" "}
-                      {entries.length > 0
-                        ? `${entries.length} lorebook ${entries.length === 1 ? "entry" : "entries"}`
-                        : "lorebook entries"}
-                    </span>
-                  </summary>
-                  <ul className="mt-1 ml-5 space-y-0.5">
-                    {entries.map((entry) => (
-                      <li key={entry}>{entry}</li>
-                    ))}
-                  </ul>
-                </details>
-              );
-            }
-            if (part.type === "text") {
-              if (editingPartIndex === partIndex) {
+          <div className="group/msg flex flex-col gap-2">
+            {message.parts.map((part, partIndex) => {
+              if (part.type === "reasoning") {
                 return (
-                  <div className="flex flex-col gap-2" key={partIndex}>
-                    <Textarea
-                      autoFocus
-                      className="bg-transparent border-muted-foreground/30 text-sm resize-none"
-                      onChange={(e) => setEditText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          saveEdit();
-                        }
-                        if (e.key === "Escape") cancelEdit();
-                      }}
-                      rows={25}
-                      value={editText}
-                    />
-                    <div className="flex gap-1">
-                      <button
-                        aria-label="Save edit"
-                        className="p-1 hover:text-foreground transition-colors text-muted-foreground"
-                        onClick={saveEdit}
-                      >
-                        <ConfirmIcon className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        aria-label="Cancel edit"
-                        className="p-1 hover:text-foreground transition-colors text-muted-foreground"
-                        onClick={cancelEdit}
-                      >
-                        <CloseIcon className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
+                  <Reasoning isStreaming={isStreaming} key={partIndex}>
+                    <ReasoningTrigger className="text-sm text-muted-foreground">
+                      Thinking
+                    </ReasoningTrigger>
+                    <ReasoningContent
+                      className="border-l-2 border-muted-foreground/30 pl-3 mt-1"
+                      markdown
+                    >
+                      {part.text}
+                    </ReasoningContent>
+                  </Reasoning>
+                );
+              }
+              if (part.type === "tool-rollDice") {
+                const rolls =
+                  (part.input as { rolls?: { name: string }[] })?.rolls ?? [];
+                return (
+                  <div
+                    className="flex items-start gap-1.5 text-xs text-muted-foreground/60"
+                    key={partIndex}
+                  >
+                    <RandomIcon className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                    <span>
+                      Rolling:{" "}
+                      {rolls.length > 0
+                        ? rolls.map((r) => r.name).join(", ")
+                        : "dice"}
+                    </span>
                   </div>
                 );
               }
-              return (
-                <div className="group/text" key={partIndex}>
+              if (part.type === "tool-getLorebookEntries") {
+                const entries =
+                  (part.input as { entries?: string[] })?.entries ?? [];
+                return (
+                  <details
+                    className="text-xs text-muted-foreground/60 group"
+                    key={partIndex}
+                  >
+                    <summary className="flex items-center gap-1.5 cursor-pointer list-none">
+                      <LorebookIcon className="h-3.5 w-3.5 shrink-0" />
+                      <span>
+                        Retrieved{" "}
+                        {entries.length > 0
+                          ? `${entries.length} lorebook ${entries.length === 1 ? "entry" : "entries"}`
+                          : "lorebook entries"}
+                      </span>
+                    </summary>
+                    <ul className="mt-1 ml-5 space-y-0.5">
+                      {entries.map((entry) => (
+                        <li key={entry}>{entry}</li>
+                      ))}
+                    </ul>
+                  </details>
+                );
+              }
+              if (part.type === "text") {
+                if (editingPartIndex === partIndex) {
+                  return (
+                    <div className="flex flex-col gap-2" key={partIndex}>
+                      <Textarea
+                        autoFocus
+                        className="bg-transparent border-muted-foreground/30 text-sm resize-none"
+                        onChange={(e) => setEditText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            saveEdit();
+                          }
+                          if (e.key === "Escape") cancelEdit();
+                        }}
+                        rows={25}
+                        value={editText}
+                      />
+                      <div className="flex gap-1">
+                        <button
+                          aria-label="Save edit"
+                          className="p-1 hover:text-foreground transition-colors text-muted-foreground"
+                          onClick={saveEdit}
+                        >
+                          <ConfirmIcon className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          aria-label="Cancel edit"
+                          className="p-1 hover:text-foreground transition-colors text-muted-foreground"
+                          onClick={cancelEdit}
+                        >
+                          <CloseIcon className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
+                return (
                   <MessageContent
                     className="rounded-none bg-transparent p-0"
+                    key={partIndex}
                     markdown
                   >
                     {part.text}
                   </MessageContent>
-                  <MessageActions className="mt-1 opacity-0 group-hover/text:opacity-100 transition-opacity">
-                    <MessageAction tooltip="Edit">
-                      <button
-                        aria-label="Edit Message"
-                        className="p-1 hover:text-foreground transition-colors rounded-full"
-                        onClick={() => startEdit(part.text, partIndex)}
-                      >
-                        <EditIcon className="h-3.5 w-3.5" />
-                      </button>
-                    </MessageAction>
-                    <MessageAction
-                      tooltip={
-                        isHidden
-                          ? "Unhide (message will be sent to LLM)"
-                          : "Hide (message won't be sent to LLM)"
-                      }
-                    >
-                      <button
-                        aria-label={
-                          isHidden ? "Unhide message" : "Hide message"
-                        }
-                        className="p-1 hover:text-foreground transition-colors text-muted-foreground rounded-full"
-                        onClick={onHide}
-                      >
-                        {isHidden ? (
-                          <UnHideIcon className="h-3.5 w-3.5" />
-                        ) : (
-                          <HideIcon className="h-3.5 w-3.5" />
-                        )}
-                      </button>
-                    </MessageAction>
-                    <Tooltip>
-                      <ConfirmDialog
-                        description="This will permanently delete this message and all its swipes."
-                        onConfirm={onDelete}
-                        title="Delete message?"
-                        type="delete"
-                      >
-                        <TooltipTrigger asChild>
-                          <button className="p-1 hover:text-destructive transition-colors rounded-full">
-                            <DeleteIcon className="h-3.5 w-3.5" />
+                );
+              }
+              return null;
+            })}
+            {!isStreaming && (
+              <MessageActions className="mt-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                {(() => {
+                  const textPart = message.parts.findLast(
+                    (p) => p.type === "text",
+                  ) as undefined | { text: string; type: "text" };
+                  const textPartIndex = textPart
+                    ? message.parts.lastIndexOf(textPart)
+                    : -1;
+                  return (
+                    <>
+                      {textPart && (
+                        <MessageAction tooltip="Edit">
+                          <button
+                            aria-label="Edit Message"
+                            className="p-1 hover:text-foreground transition-colors rounded-full"
+                            onClick={() =>
+                              startEdit(textPart.text, textPartIndex)
+                            }
+                          >
+                            <EditIcon className="h-3.5 w-3.5" />
                           </button>
-                        </TooltipTrigger>
-                      </ConfirmDialog>
-                      <TooltipContent side="top">Delete</TooltipContent>
-                    </Tooltip>
-                    <MessageAction tooltip="Memory Start">
-                      <button
-                        aria-label="Memory Start"
-                        className={cn(
-                          "p-1 hover:text-foreground transition-colors rounded-full",
-                          memory?.isMemoryStart
-                            ? "text-primary bg-primary/20"
-                            : "text-muted-foreground",
-                        )}
-                        onClick={memory?.onMemoryStart}
+                        </MessageAction>
+                      )}
+                      <MessageAction
+                        tooltip={
+                          isHidden
+                            ? "Unhide (message will be sent to LLM)"
+                            : "Hide (message won't be sent to LLM)"
+                        }
                       >
-                        <RangeStartIcon className="h-3.5 w-3.5" />
-                      </button>
-                    </MessageAction>
-                    <MessageAction tooltip="Memory End">
-                      <button
-                        aria-label="Memory End"
-                        className={cn(
-                          "p-1 hover:text-foreground transition-colors rounded-full",
-                          memory?.isMemoryEnd
-                            ? "text-primary bg-primary/20"
-                            : "text-muted-foreground",
-                        )}
-                        onClick={memory?.onMemoryEnd}
-                      >
-                        <RangeEndIcon className="h-3.5 w-3.5" />
-                      </button>
-                    </MessageAction>
-                  </MessageActions>
-                </div>
-              );
-            }
-            return null;
-          })}
+                        <button
+                          aria-label={
+                            isHidden ? "Unhide message" : "Hide message"
+                          }
+                          className="p-1 hover:text-foreground transition-colors text-muted-foreground rounded-full"
+                          onClick={onHide}
+                        >
+                          {isHidden ? (
+                            <UnHideIcon className="h-3.5 w-3.5" />
+                          ) : (
+                            <HideIcon className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      </MessageAction>
+                      <Tooltip>
+                        <ConfirmDialog
+                          description="This will permanently delete this message and all its swipes."
+                          onConfirm={onDelete}
+                          title="Delete message?"
+                          type="delete"
+                        >
+                          <TooltipTrigger asChild>
+                            <button className="p-1 hover:text-destructive transition-colors rounded-full">
+                              <DeleteIcon className="h-3.5 w-3.5" />
+                            </button>
+                          </TooltipTrigger>
+                        </ConfirmDialog>
+                        <TooltipContent side="top">Delete</TooltipContent>
+                      </Tooltip>
+                      <MessageAction tooltip="Memory Start">
+                        <button
+                          aria-label="Memory Start"
+                          className={cn(
+                            "p-1 hover:text-foreground transition-colors rounded-full",
+                            memory?.isMemoryStart
+                              ? "text-primary bg-primary/20"
+                              : "text-muted-foreground",
+                          )}
+                          onClick={memory?.onMemoryStart}
+                        >
+                          <RangeStartIcon className="h-3.5 w-3.5" />
+                        </button>
+                      </MessageAction>
+                      <MessageAction tooltip="Memory End">
+                        <button
+                          aria-label="Memory End"
+                          className={cn(
+                            "p-1 hover:text-foreground transition-colors rounded-full",
+                            memory?.isMemoryEnd
+                              ? "text-primary bg-primary/20"
+                              : "text-muted-foreground",
+                          )}
+                          onClick={memory?.onMemoryEnd}
+                        >
+                          <RangeEndIcon className="h-3.5 w-3.5" />
+                        </button>
+                      </MessageAction>
+                    </>
+                  );
+                })()}
+              </MessageActions>
+            )}
+          </div>
         </div>
       </div>
     </Message>
