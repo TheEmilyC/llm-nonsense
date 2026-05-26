@@ -1,6 +1,6 @@
 import z from "zod";
 
-import { dbIdValidator } from "@/app/_shared/schema";
+import { avatarImageValidator, dbIdValidator } from "@/app/_shared/schema";
 
 export const WORLD_CACHE_KEY = "world";
 
@@ -16,10 +16,7 @@ export const worldEntitySchema = z.object({
 });
 export type WorldEntity = z.infer<typeof worldEntitySchema>;
 
-export const worldImageValidator = z
-  .instanceof(File)
-  .refine((file) => file.type.startsWith("image/"), "Must be an image")
-  .refine((file) => file.size <= 15 * 1024 * 1024, "Max file size is 15MB");
+export const worldImageValidator = avatarImageValidator;
 
 // -- Schemas
 

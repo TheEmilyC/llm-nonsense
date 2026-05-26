@@ -11,6 +11,9 @@ export default defineConfig({
     },
   },
   test: {
+    coverage: {
+      exclude: ["src/generated/**", "src/lib/logger.ts"],
+    },
     environment: "node",
   },
 });

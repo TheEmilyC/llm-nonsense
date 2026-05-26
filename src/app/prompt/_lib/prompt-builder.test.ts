@@ -1,6 +1,17 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
+
+vi.mock("@/app/lorebook/_lib/data", () => ({
+  getLorebookEntryList: vi.fn(),
+}));
 
 import type { MessageRole } from "@/app/_shared/schema";
+import { getLorebookEntryList } from "@/app/lorebook/_lib/data";
+import type {
+  LorebookEntryIndex,
+  LorebookIndex,
+  LorebookReady,
+  ObsidianFile,
+} from "@/app/lorebook/_lib/schema";
 import type { PromptInjectTag } from "@/app/prompt/_lib/schema";
 
 import {
@@ -493,5 +504,194 @@ describe("build — minDepth", () => {
     expect(builder.build().find((m) => m.role === "user")?.content).toBe(
       "msg  here",
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PromptBuilder — addLorebookToPrompt
+// ---------------------------------------------------------------------------
+
+function makeLorebookIndex(overrides: Partial<LorebookIndex> = {}): LorebookIndex {
+  return {
+    createdAt: new Date(),
+    filename: "entry.md",
+    name: "Entry",
+    order: 0,
+    tags: [],
+    ...overrides,
+  };
+}
+
+function makeEntryIndex(
+  overrides: Partial<LorebookEntryIndex> = {},
+): LorebookEntryIndex {
+  return {
+    ...makeLorebookIndex(),
+    aliases: [],
+    characters: [],
+    summary: "",
+    ...overrides,
+  };
+}
+
+function makeLorebookReady(overrides: Partial<LorebookReady> = {}): LorebookReady {
+  return {
+    constants: [],
+    context: [],
+    entries: [],
+    id: "lb-1",
+    memories: [],
+    name: "Test Lorebook",
+    status: "READY",
+    ...overrides,
+  };
+}
+
+function makeObsidianFile(overrides: Partial<ObsidianFile> = {}): ObsidianFile {
+  return {
+    backlinks: [],
+    content: "File content",
+    frontmatter: { tags: [] },
+    links: [],
+    path: "notes/entry.md",
+    stat: { ctime: new Date(), mtime: new Date(), size: 0 },
+    tags: [],
+    ...overrides,
+  };
+}
+
+describe("addLorebookToPrompt", () => {
+  beforeEach(() => vi.resetAllMocks());
+
+  // Returns the content string of a named INJECT fragment directly from the prompt
+  // array, bypassing build() to avoid same-role fragment merging.
+  function getInjectContent(builder: PromptBuilder, tag: PromptInjectTag): string {
+    const frag = builder.prompt.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (f) => f.type === "INJECT" && (f as any).injectTag === tag,
+    ) as { content: string } | undefined;
+    return frag?.content ?? "";
+  }
+
+  function makeBuilder() {
+    return new PromptBuilder({
+      maxTokens: 100_000,
+      promptSkeleton: [
+        injectFrag("LOREBOOK_CONTEXT"),
+        injectFrag("LOREBOOK_CONSTANT"),
+        injectFrag("LOREBOOK_ENTRIES"),
+        injectFrag("LOREBOOK_MEMORIES"),
+      ],
+    });
+  }
+
+  it("injects context file content into LOREBOOK_CONTEXT", async () => {
+    vi.mocked(getLorebookEntryList)
+      .mockResolvedValueOnce([makeObsidianFile({ content: "# Dragon\nA fearsome beast" })])
+      .mockResolvedValueOnce([]);
+
+    const lorebook = makeLorebookReady({
+      context: [makeLorebookIndex({ filename: "dragon.md" })],
+    });
+    const builder = makeBuilder();
+    await builder.addLorebookToPrompt(lorebook);
+
+    expect(getInjectContent(builder, "LOREBOOK_CONTEXT")).toContain("A fearsome beast");
+  });
+
+  it("injects constant file content into LOREBOOK_CONSTANT", async () => {
+    vi.mocked(getLorebookEntryList)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([makeObsidianFile({ content: "# Rules\nAlways speak in riddles" })]);
+
+    const lorebook = makeLorebookReady({
+      constants: [makeEntryIndex({ filename: "rules.md" })],
+    });
+    const builder = makeBuilder();
+    await builder.addLorebookToPrompt(lorebook);
+
+    expect(getInjectContent(builder, "LOREBOOK_CONSTANT")).toContain("Always speak in riddles");
+  });
+
+  it("skips LOREBOOK_CONTEXT injection when context files yield empty content", async () => {
+    vi.mocked(getLorebookEntryList).mockResolvedValue([]);
+
+    const lorebook = makeLorebookReady({
+      context: [makeLorebookIndex({ filename: "ctx.md" })],
+    });
+    const builder = makeBuilder();
+    await builder.addLorebookToPrompt(lorebook);
+
+    expect(getInjectContent(builder, "LOREBOOK_CONTEXT")).toBe("");
+  });
+
+  it("skips LOREBOOK_CONSTANT injection when constant files yield empty content", async () => {
+    vi.mocked(getLorebookEntryList).mockResolvedValue([]);
+
+    const lorebook = makeLorebookReady({
+      constants: [makeEntryIndex({ filename: "const.md" })],
+    });
+    const builder = makeBuilder();
+    await builder.addLorebookToPrompt(lorebook);
+
+    expect(getInjectContent(builder, "LOREBOOK_CONSTANT")).toBe("");
+  });
+
+  it("injects the entries table into LOREBOOK_ENTRIES", async () => {
+    vi.mocked(getLorebookEntryList).mockResolvedValue([]);
+
+    const lorebook = makeLorebookReady({
+      entries: [makeEntryIndex({ aliases: ["TheAlias"], filename: "ent.md" })],
+    });
+    const builder = makeBuilder();
+    await builder.addLorebookToPrompt(lorebook);
+
+    const content = getInjectContent(builder, "LOREBOOK_ENTRIES");
+    expect(content).toContain("ent.md");
+    expect(content).toContain("TheAlias");
+  });
+
+  it("injects the memories table into LOREBOOK_MEMORIES", async () => {
+    vi.mocked(getLorebookEntryList).mockResolvedValue([]);
+
+    const lorebook = makeLorebookReady({
+      memories: [makeEntryIndex({ aliases: ["MemAlias"], filename: "mem.md" })],
+    });
+    const builder = makeBuilder();
+    await builder.addLorebookToPrompt(lorebook);
+
+    const content = getInjectContent(builder, "LOREBOOK_MEMORIES");
+    expect(content).toContain("mem.md");
+    expect(content).toContain("MemAlias");
+  });
+
+  it("calls getLorebookEntryList with the context filenames and lorebook id", async () => {
+    vi.mocked(getLorebookEntryList).mockResolvedValue([]);
+
+    const lorebook = makeLorebookReady({
+      context: [makeLorebookIndex({ filename: "ctx.md" })],
+      id: "lb-42",
+    });
+    await makeBuilder().addLorebookToPrompt(lorebook);
+
+    expect(getLorebookEntryList).toHaveBeenCalledWith({
+      files: ["ctx.md"],
+      lorebookId: "lb-42",
+    });
+  });
+
+  it("calls getLorebookEntryList with the constant filenames and lorebook id", async () => {
+    vi.mocked(getLorebookEntryList).mockResolvedValue([]);
+
+    const lorebook = makeLorebookReady({
+      constants: [makeEntryIndex({ filename: "const.md" })],
+      id: "lb-42",
+    });
+    await makeBuilder().addLorebookToPrompt(lorebook);
+
+    expect(getLorebookEntryList).toHaveBeenCalledWith({
+      files: ["const.md"],
+      lorebookId: "lb-42",
+    });
   });
 });

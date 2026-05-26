@@ -14,8 +14,10 @@ export interface IndexEntry {
 }
 
 interface ScanLorebookIndexParams {
+  caseSensitive?: boolean;
   index: IndexEntry[];
   scanText: string;
+  wholeWords?: boolean;
 }
 
 export function convertFilesToPrompt(files: ObsidianFile[]) {
@@ -42,15 +44,18 @@ export function extractFirstHeader(str: string): null | string {
 }
 
 export function scanLorebookIndex({
+  caseSensitive,
   index,
   scanText,
+  wholeWords,
 }: ScanLorebookIndexParams) {
-  const scanTextFormatted = LOREBOOK_CASE_SENSITIVE
-    ? scanText
-    : scanText.toLowerCase();
+  const scanCaseSensitive = caseSensitive ?? LOREBOOK_CASE_SENSITIVE;
+  const scanWholeWords = wholeWords ?? LOREBOOK_MATCH_WHOLE_WORDS;
 
   const indexList = index
-    .filter((index) => testIndexMatch(scanTextFormatted, index))
+    .filter((index) =>
+      testIndexMatch(scanText, index, scanWholeWords, scanCaseSensitive),
+    )
     .sort((a, b) => a.position - b.position)
     .slice(0, LOREBOOK_MAX_MATCHES)
     .map((index) => index.filename);
@@ -63,25 +68,8 @@ export function scanLorebookIndex({
  * @param {string} str
  * @returns {string}
  */
-function escapeRegex(str: string) {
+function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-/**
- * Extracts the leading header
- * @param str
- * @returns Returns the str without the header if present, and the found header without markup
- */
-function extractHeader(str: string) {
-  let header: null | string = null;
-  const headerRegex = /^#\s+(.*)\n?/;
-  const match = str.match(headerRegex);
-  if (match) {
-    header = match[1].trim();
-  }
-  const cleanedText = str.replace(headerRegex, "").trim();
-
-  return { cleanedText, header };
 }
 
 /**
@@ -93,20 +81,27 @@ function stripFrontMatter(str: string) {
   return str.replace(/^---[\s\S]*?---/g, "").trim();
 }
 
-function testIndexMatch(scanText: string, index: IndexEntry): boolean {
+function testIndexMatch(
+  scanText: string,
+  index: IndexEntry,
+  wholeWords?: boolean,
+  caseSensitive?: boolean,
+): boolean {
   if (index.constant) return true;
   if (index.keys.length === 0) return false;
 
+  const scanTextFormatted = caseSensitive ? scanText : scanText.toLowerCase();
+
   for (const rawKey of index.keys) {
-    const key = LOREBOOK_CASE_SENSITIVE ? rawKey : rawKey.toLowerCase();
-    if (LOREBOOK_MATCH_WHOLE_WORDS) {
+    const key = caseSensitive ? rawKey : rawKey.toLowerCase();
+    if (wholeWords) {
       const regex = new RegExp(
         `\\b${escapeRegex(key)}\\b`,
-        LOREBOOK_CASE_SENSITIVE ? "" : "i",
+        caseSensitive ? "" : "i",
       );
-      if (regex.test(scanText)) return true;
+      if (regex.test(scanTextFormatted)) return true;
     } else {
-      if (scanText.includes(key)) return true;
+      if (scanTextFormatted.includes(key)) return true;
     }
   }
   return false;

@@ -1,7 +1,6 @@
 // -- Images --
-export const MAX_CHARACTER_IMAGE_SIZE_MB = 15;
-export const MAX_CHARACTER_IMAGE_SIZE =
-  MAX_CHARACTER_IMAGE_SIZE_MB * 1024 * 1024; //15MB, Some characters have integrated lorebooks that can be quite large
+export const MAX_AVATAR_IMAGE_SIZE_MB = 15;
+export const MAX_AVATAR_IMAGE_SIZE = MAX_AVATAR_IMAGE_SIZE_MB * 1024 * 1024; //15MB, Some characters have integrated lorebooks that can be quite large
 
 // -- Directories --
 export const DEFAULT_AVATAR_PATH = "/public/image/ai4.png";
