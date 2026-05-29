@@ -20,7 +20,7 @@ export const chatModels = {
   deepseek: registry.languageModel("deepseek:deepseek-v4-pro"),
   gemini: registry.languageModel("openrouter:google/gemini-3.1-pro-preview"),
   glm: registry.languageModel("openrouter:z-ai/glm-5"),
-  opus: registry.languageModel("openrouter:anthropic/claude-opus-4.7"),
+  opus: registry.languageModel("openrouter:anthropic/claude-opus-4.8"),
 };
 
 export const taskModels = {
