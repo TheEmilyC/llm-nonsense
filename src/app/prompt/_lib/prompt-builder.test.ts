@@ -1,11 +1,10 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/app/lorebook/_lib/data", () => ({
   getLorebookEntryList: vi.fn(),
 }));
 
 import type { MessageRole } from "@/app/_shared/schema";
-import { getLorebookEntryList } from "@/app/lorebook/_lib/data";
 import type {
   LorebookEntryIndex,
   LorebookIndex,
@@ -14,6 +13,7 @@ import type {
 } from "@/app/lorebook/_lib/schema";
 import type { PromptInjectTag } from "@/app/prompt/_lib/schema";
 
+import { getLorebookEntryList } from "@/app/lorebook/_lib/data";
 import {
   BuilderFragment,
   BuilderRegex,
@@ -505,22 +505,67 @@ describe("build — minDepth", () => {
       "msg  here",
     );
   });
+
+  it("applies regex to last message when minDepth is 0", () => {
+    // minDepth:0 means depth < 0 never fires — no message is exempt
+    const builder = new PromptBuilder({
+      maxTokens: 200,
+      promptSkeleton: [injectFrag("LAST_MESSAGE", "user"), chatHistoryFrag()],
+      regexes: [{ minDepth: 0, pattern: "STRIP", target: "BOTH" }],
+    });
+    builder.addToPrompt("LAST_MESSAGE", "last STRIP msg");
+    builder.injectChatHistory([{ content: "history STRIP msg", role: "user" }]);
+    const built = builder.build();
+    // depth 0 (lastMessage) satisfies minDepth 0 — regex applied
+    expect(built.find((m) => m.content.includes("last"))?.content).toBe(
+      "\nlast  msg",
+    );
+    // depth 1 (history) also satisfies — regex applied
+    expect(built.find((m) => m.content.includes("history"))?.content).toBe(
+      "history  msg",
+    );
+  });
+
+  it("still applies regex to messages outside depth tracking when minDepth is set", () => {
+    // A CONTENT fragment with a non-system role has depth=undefined; the depth
+    // guard only fires when depth is known and < minDepth, so the regex still runs.
+    const builder = new PromptBuilder({
+      maxTokens: 200,
+      promptSkeleton: [contentFrag("user STRIP content", "user")],
+      regexes: [{ minDepth: 5, pattern: "STRIP", target: "USER" }],
+    });
+    expect(builder.build().find((m) => m.role === "user")?.content).toBe(
+      "user  content",
+    );
+  });
+
+  it("respects target filter together with minDepth", () => {
+    // USER target + minDepth:1 — only user messages at depth ≥ 1 are stripped;
+    // assistant messages at any depth are unaffected.
+    const builder = new PromptBuilder({
+      maxTokens: 400,
+      promptSkeleton: [chatHistoryFrag()],
+      regexes: [{ minDepth: 1, pattern: "STRIP", target: "USER" }],
+    });
+    // injectChatHistory receives newest-first; after reverse in build():
+    // assistant → depth 2, user → depth 1
+    builder.injectChatHistory([
+      { content: "user STRIP msg", role: "user" },
+      { content: "asst STRIP msg", role: "assistant" },
+    ]);
+    const built = builder.build();
+    // user at depth 1 (≥ minDepth 1) and role matches USER target — stripped
+    expect(built.find((m) => m.role === "user")?.content).toBe("user  msg");
+    // assistant at depth 2 (≥ minDepth 1) but target is USER — not stripped
+    expect(built.find((m) => m.role === "assistant")?.content).toBe(
+      "asst STRIP msg",
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
 // PromptBuilder — addLorebookToPrompt
 // ---------------------------------------------------------------------------
-
-function makeLorebookIndex(overrides: Partial<LorebookIndex> = {}): LorebookIndex {
-  return {
-    createdAt: new Date(),
-    filename: "entry.md",
-    name: "Entry",
-    order: 0,
-    tags: [],
-    ...overrides,
-  };
-}
 
 function makeEntryIndex(
   overrides: Partial<LorebookEntryIndex> = {},
@@ -534,7 +579,22 @@ function makeEntryIndex(
   };
 }
 
-function makeLorebookReady(overrides: Partial<LorebookReady> = {}): LorebookReady {
+function makeLorebookIndex(
+  overrides: Partial<LorebookIndex> = {},
+): LorebookIndex {
+  return {
+    createdAt: new Date(),
+    filename: "entry.md",
+    name: "Entry",
+    order: 0,
+    tags: [],
+    ...overrides,
+  };
+}
+
+function makeLorebookReady(
+  overrides: Partial<LorebookReady> = {},
+): LorebookReady {
   return {
     constants: [],
     context: [],
@@ -565,11 +625,14 @@ describe("addLorebookToPrompt", () => {
 
   // Returns the content string of a named INJECT fragment directly from the prompt
   // array, bypassing build() to avoid same-role fragment merging.
-  function getInjectContent(builder: PromptBuilder, tag: PromptInjectTag): string {
+  function getInjectContent(
+    builder: PromptBuilder,
+    tag: PromptInjectTag,
+  ): string {
     const frag = builder.prompt.find(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (f) => f.type === "INJECT" && (f as any).injectTag === tag,
-    ) as { content: string } | undefined;
+    ) as undefined | { content: string };
     return frag?.content ?? "";
   }
 
@@ -587,7 +650,9 @@ describe("addLorebookToPrompt", () => {
 
   it("injects context file content into LOREBOOK_CONTEXT", async () => {
     vi.mocked(getLorebookEntryList)
-      .mockResolvedValueOnce([makeObsidianFile({ content: "# Dragon\nA fearsome beast" })])
+      .mockResolvedValueOnce([
+        makeObsidianFile({ content: "# Dragon\nA fearsome beast" }),
+      ])
       .mockResolvedValueOnce([]);
 
     const lorebook = makeLorebookReady({
@@ -596,13 +661,17 @@ describe("addLorebookToPrompt", () => {
     const builder = makeBuilder();
     await builder.addLorebookToPrompt(lorebook);
 
-    expect(getInjectContent(builder, "LOREBOOK_CONTEXT")).toContain("A fearsome beast");
+    expect(getInjectContent(builder, "LOREBOOK_CONTEXT")).toContain(
+      "A fearsome beast",
+    );
   });
 
   it("injects constant file content into LOREBOOK_CONSTANT", async () => {
     vi.mocked(getLorebookEntryList)
       .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([makeObsidianFile({ content: "# Rules\nAlways speak in riddles" })]);
+      .mockResolvedValueOnce([
+        makeObsidianFile({ content: "# Rules\nAlways speak in riddles" }),
+      ]);
 
     const lorebook = makeLorebookReady({
       constants: [makeEntryIndex({ filename: "rules.md" })],
@@ -610,7 +679,9 @@ describe("addLorebookToPrompt", () => {
     const builder = makeBuilder();
     await builder.addLorebookToPrompt(lorebook);
 
-    expect(getInjectContent(builder, "LOREBOOK_CONSTANT")).toContain("Always speak in riddles");
+    expect(getInjectContent(builder, "LOREBOOK_CONSTANT")).toContain(
+      "Always speak in riddles",
+    );
   });
 
   it("skips LOREBOOK_CONTEXT injection when context files yield empty content", async () => {

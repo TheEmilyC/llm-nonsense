@@ -129,7 +129,7 @@ export class PromptBuilder {
       (acc, fragment) => {
         if (fragment.type === "CHAT_HISTORY") {
           chatHistoryStart = acc.length;
-          return acc.concat(this.chatHistory.reverse() ?? []);
+          return acc.concat([...this.chatHistory].reverse() ?? []);
         }
 
         if (
