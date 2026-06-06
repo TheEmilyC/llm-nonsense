@@ -59,7 +59,7 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
     stop,
     swipe: { nextSwipe, ...restSwipe },
   } = useChatMessages(chatSession);
-  const [chatModel, setChatModel] = useState<ChatModelKey>("opus");
+  const [chatModel, setChatModel] = useState<ChatModelKey>("deepseek");
 
   // Memory
   const { generateSummaries, isPending: isSummaryPending } =

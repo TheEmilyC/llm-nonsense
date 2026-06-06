@@ -17,7 +17,13 @@ export const CHAT_CACHE_KEY = "chat";
 
 // -- Base
 
-export const chatModelKeySchema = z.enum(["deepseek", "gemini", "glm", "opus"]);
+export const chatModelKeySchema = z.enum([
+  "deepseek",
+  "gemini",
+  "glm",
+  "opus4_6",
+  "opus4_7",
+]);
 export type ChatModelKey = z.infer<typeof chatModelKeySchema>;
 
 export const messageMetadataSchema = z.object({
@@ -172,11 +178,12 @@ export const memoryGenMessagePartSchema = z.discriminatedUnion("type", [
 ]);
 export type MemoryGenMessagePart = z.infer<typeof memoryGenMessagePartSchema>;
 
-const memoryGenMessageSchema = chatMessageEntitySchema.pick({ id: true }).extend(
-  messageContentEntitySchema.pick({ role: true }).shape,
-).extend({
-  parts: memoryGenMessagePartSchema.array(),
-});
+const memoryGenMessageSchema = chatMessageEntitySchema
+  .pick({ id: true })
+  .extend(messageContentEntitySchema.pick({ role: true }).shape)
+  .extend({
+    parts: memoryGenMessagePartSchema.array(),
+  });
 export type MemoryGenMessage = z.infer<typeof memoryGenMessageSchema>;
 
 export const chatForMemoryGenSchema = chatEntitySchema

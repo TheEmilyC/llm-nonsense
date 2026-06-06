@@ -74,7 +74,8 @@ const MODEL_LABELS: Record<ChatModelKey, string> = {
   deepseek: "DeepSeek",
   gemini: "Gemini",
   glm: "GLM",
-  opus: "Opus",
+  opus4_6: "Opus 4.6",
+  opus4_7: "Opus 4.7",
 };
 
 interface ChatInputParams {
