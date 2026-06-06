@@ -24,7 +24,7 @@ export function BasicChatView({ chatSession }: BasicChatViewParams) {
     status,
     stop,
   } = useChatMessages(chatSession);
-  const [chatModel, setChatModel] = useState<ChatModelKey>("opus");
+  const [chatModel, setChatModel] = useState<ChatModelKey>("deepseek");
 
   function onContentEdit(
     newText: string,
