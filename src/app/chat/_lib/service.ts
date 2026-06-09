@@ -210,18 +210,23 @@ export async function constructChatResponse({
   const contentId = createId();
   // --send and stream result--
   logger.info("Chat generation request", { chatId, prompt, regenerate });
+
+  // Anthropic models via OpenRouter don't support the generic reasoning param —
+  // it gets translated to thinking.type.disabled which claude-fable and newer models reject.
+  const anthropicViaOpenrouter =
+    model === "fable" || model === "opus4_6" || model === "opus4_7";
+  const providerOptions = {
+    deepseek: { thinking: { enabled: true } },
+    ...(anthropicViaOpenrouter
+      ? {}
+      : { openrouter: { reasoning: { effort: "high" } } }),
+  };
+
   return streamText({
     maxOutputTokens,
     model: chatModels[model],
     prompt,
-    providerOptions: {
-      deepseek: {
-        thinking: { enabled: true },
-      },
-      openrouter: {
-        reasoning: { effort: "high" },
-      },
-    },
+    providerOptions,
     stopWhen: stepCountIs(maxSteps),
     temperature,
     tools: {
