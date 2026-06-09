@@ -72,6 +72,7 @@ interface ChatHistoryProps {
 
 const MODEL_LABELS: Record<ChatModelKey, string> = {
   deepseek: "DeepSeek",
+  fable: "Fable",
   gemini: "Gemini",
   glm: "GLM",
   opus4_6: "Opus 4.6",
