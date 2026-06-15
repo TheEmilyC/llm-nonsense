@@ -215,11 +215,14 @@ export async function constructChatResponse({
   // it gets translated to thinking.type.disabled which claude-fable and newer models reject.
   const anthropicViaOpenrouter =
     model === "fable" || model === "opus4_6" || model === "opus4_7";
+  // Gemini can think silently for a long time at "high" effort, which trips
+  // OpenRouter's upstream idle timeout before any tokens are streamed.
+  const reasoningEffort = model === "gemini" ? "medium" : "high";
   const providerOptions = {
     deepseek: { thinking: { enabled: true } },
     ...(anthropicViaOpenrouter
       ? {}
-      : { openrouter: { reasoning: { effort: "high" } } }),
+      : { openrouter: { reasoning: { effort: reasoningEffort } } }),
   };
 
   return streamText({
