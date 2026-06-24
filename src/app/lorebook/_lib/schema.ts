@@ -267,6 +267,14 @@ export const lorebookUpdateSuggestionSchema = z.discriminatedUnion(
       sourceFactIndices: z.array(z.number()),
       updateType: z.literal("no_change"),
     }),
+    z.object({
+      proposedContent: z
+        .string()
+        .describe("The full content for the new lorebook entry"),
+      reasoning: z.string(),
+      sourceFactIndices: z.array(z.number()),
+      updateType: z.literal("new_entry"),
+    }),
   ],
 );
 export type LorebookUpdateSuggestion = z.infer<
