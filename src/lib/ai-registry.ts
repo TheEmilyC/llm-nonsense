@@ -23,6 +23,7 @@ export const chatModels = {
   glm: registry.languageModel("openrouter:z-ai/glm-5"),
   glm5_2: registry.languageModel("openrouter:z-ai/glm-5.2"),
   kimi: registry.languageModel("openrouter:moonshotai/kimi-k2.6"),
+  minimax: registry.languageModel("openrouter:minimax/minimax-m3"),
   opus4_6: registry.languageModel("openrouter:anthropic/claude-opus-4.6"),
   opus4_7: registry.languageModel("openrouter:anthropic/claude-opus-4.7"),
 };

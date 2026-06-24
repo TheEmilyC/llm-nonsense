@@ -23,6 +23,7 @@ export const chatModelKeySchema = z.enum([
   "glm",
   "glm5_2",
   "kimi",
+  "minimax",
   "opus4_6",
   "opus4_7",
   "fable",
