@@ -21,6 +21,7 @@ export const chatModels = {
   fable: registry.languageModel("openrouter:anthropic/claude-fable-5"),
   gemini: registry.languageModel("openrouter:google/gemini-3.1-pro-preview"),
   glm: registry.languageModel("openrouter:z-ai/glm-5"),
+  glm5_2: registry.languageModel("openrouter:z-ai/glm-5.2"),
   kimi: registry.languageModel("openrouter:moonshotai/kimi-k2.6"),
   opus4_6: registry.languageModel("openrouter:anthropic/claude-opus-4.6"),
   opus4_7: registry.languageModel("openrouter:anthropic/claude-opus-4.7"),

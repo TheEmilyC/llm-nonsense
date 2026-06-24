@@ -21,6 +21,7 @@ export const chatModelKeySchema = z.enum([
   "deepseek",
   "gemini",
   "glm",
+  "glm5_2",
   "kimi",
   "opus4_6",
   "opus4_7",
