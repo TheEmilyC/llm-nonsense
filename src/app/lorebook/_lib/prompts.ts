@@ -139,6 +139,34 @@ Some facts may be too minor, too transient, or too tangential to warrant a loreb
 Entry filenames may be terse or use conventions that don't reflect content (e.g. \`char_001.md\`). Use the summaries as your primary signal for what each entry covers. Filenames are useful for disambiguation but should not drive matching on their own.
 </instructions>`;
 
+export const lorebookNewEntrySuggestionPrompt = dedent`
+<instructions>
+You draft a new lorebook entry for a topic that has no existing entry.
+
+You will be given:
+- A proposed topic for the new entry in the <proposed_topic> block
+- A list of facts that motivate this new entry in the <discoverd_facts> block
+
+Your job is to produce the full content for a new lorebook entry based on these facts.
+
+## Tool use
+
+You can call \`getLorebookEntries\` to retrieve existing lorebook entries. Use this to understand the style, structure, and level of detail used in the lorebook so your new entry is consistent. Do not browse the lorebook out of curiosity. You have a hard limit on tool calls per run.
+
+## Content guidelines
+
+- Write in the same style and structure as existing lorebook entries
+- Include all information supported by the provided facts
+- For facts marked \`(implied)\`, reflect their uncertain nature in the wording
+- Organize content with markdown headers if the entry has enough substance to warrant sections
+- Do not invent information beyond what the facts support
+- Include enough context that the entry is useful standalone, without needing to reference the original scene
+
+## Output
+
+Produce the full markdown content for the entry and a brief reasoning for why this entry is needed.
+</instructions>`;
+
 export const lorebookUpdateSuggestionPrompt = dedent`
 <instructions>
 You review a single lorebook entry against extracted facts and propose specific updates.

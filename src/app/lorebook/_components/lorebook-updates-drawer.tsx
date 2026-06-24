@@ -25,6 +25,7 @@ const updateTypeLabel: Record<string, string> = {
   append: "Append",
   conflict: "Conflict",
   modify: "Modify",
+  new_entry: "New Entry",
   no_change: "No Change",
 };
 
@@ -35,6 +36,7 @@ const updateTypeVariant: Record<
   append: "default",
   conflict: "destructive",
   modify: "secondary",
+  new_entry: "default",
   no_change: "outline",
 };
 
@@ -110,6 +112,14 @@ export function LorebookUpdatesDrawer({
                               </span>
                               <CopyButton text={suggestion.proposedContent} />
                             </div>
+                          </div>
+                        )}
+                        {suggestion.updateType === "new_entry" && (
+                          <div className="flex items-start gap-1">
+                            <p className="whitespace-pre-wrap flex-1">
+                              {suggestion.proposedContent}
+                            </p>
+                            <CopyButton text={suggestion.proposedContent} />
                           </div>
                         )}
                         {suggestion.updateType === "conflict" && (

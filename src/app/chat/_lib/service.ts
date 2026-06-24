@@ -211,10 +211,7 @@ export async function constructChatResponse({
   // --send and stream result--
   logger.info("Chat generation request", { chatId, prompt, regenerate });
 
-  // Anthropic models via OpenRouter don't support the generic reasoning param —
-  // it gets translated to thinking.type.disabled which claude-fable and newer models reject.
-  const anthropicViaOpenrouter =
-    model === "fable" || model === "opus4_6" || model === "opus4_7";
+  const anthropicViaOpenrouter = model === "fable";
   // Gemini can think silently for a long time at "high" effort, which trips
   // OpenRouter's upstream idle timeout before any tokens are streamed.
   const reasoningEffort = model === "gemini" ? "medium" : "high";

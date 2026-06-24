@@ -8,6 +8,7 @@ import {
 } from "@/app/lorebook/_lib/data";
 import { convertFilesToPrompt } from "@/app/lorebook/_lib/lorebook-scanning";
 import {
+  lorebookNewEntrySuggestionPrompt,
   lorebookToolPrompt,
   lorebookUpdateDiscoveryPrompt,
   lorebookUpdateSuggestionPrompt,
@@ -44,6 +45,12 @@ export interface GenerateMemoryArcResult {
   };
 }
 
+interface GenerateNewEntrySuggestionParams {
+  applicableFacts: string[];
+  lorebook: LorebookReady;
+  proposedTopic: string;
+}
+
 interface GenerateUpdateSuggestionParams {
   applicableFacts: string[];
   lorebook: LorebookReady;
@@ -64,7 +71,7 @@ export async function generateLorebookUpdates({
     lorebook,
   });
 
-  const results = await Promise.allSettled(
+  const existingEntryResults = Promise.allSettled(
     discoveredEntities.entries.map((entry) => {
       const applicableFacts = entry.relevantFactIndices.map(
         (i) => `(${facts[i].confidence}) ${facts[i].claim}`,
@@ -88,7 +95,22 @@ export async function generateLorebookUpdates({
     }),
   );
 
-  return results.flatMap((result) => {
+  const newEntryResults = Promise.allSettled(
+    discoveredEntities.newEntryNeeded.map((newEntry) => {
+      const applicableFacts = newEntry.relevantFactIndices.map(
+        (i) => `(${facts[i].confidence}) ${facts[i].claim}`,
+      );
+      return generateNewEntrySuggestion({
+        applicableFacts,
+        lorebook,
+        proposedTopic: newEntry.proposedTopic,
+      });
+    }),
+  );
+
+  const results = await Promise.all([existingEntryResults, newEntryResults]);
+
+  return results.flat().flatMap((result) => {
     if (result.status === "rejected") {
       logger.error("Failed to generate update suggestion", {
         reason: result.reason,
@@ -256,6 +278,74 @@ async function generateLorebookUpdateDiscovery({
       prompt,
     });
     return output;
+  } catch (err) {
+    throw new LlmError((err as Error).message);
+  }
+}
+
+async function generateNewEntrySuggestion({
+  applicableFacts,
+  lorebook,
+  proposedTopic,
+}: GenerateNewEntrySuggestionParams): Promise<{
+  entryFilename: string;
+  suggestions: LorebookUpdateSuggestion[];
+}> {
+  const promptBuilder = new PromptBuilder({
+    maxTokens: SIDE_PROMPT_TOKEN_LIMIT,
+    promptSkeleton: [
+      {
+        content: lorebookNewEntrySuggestionPrompt,
+        role: "system",
+        type: "CONTENT",
+      },
+      {
+        content: `<proposed_topic>${proposedTopic}</proposed_topic>`,
+        role: "user",
+        type: "CONTENT",
+      },
+      {
+        content: `<discoverd_facts>${applicableFacts.map((fact) => `- ${fact}`).join("\n")}</discoverd_facts>`,
+        role: "user",
+        type: "CONTENT",
+      },
+    ],
+  });
+  const prompt = promptBuilder.build();
+  logger.info("Lorebook new entry suggestion request", { prompt });
+  try {
+    const { output } = await generateText({
+      model: taskModels.lorebookUpdateSuggestion,
+      onFinish: (result) => {
+        logger.info("Lorebook new entry suggestion result", {
+          finisReasons: result.finishReason,
+          result: result.content,
+        });
+      },
+      output: Output.object({
+        schema: z.object({
+          content: z.string(),
+          reasoning: z.string(),
+        }),
+      }),
+      prompt,
+      stopWhen: stepCountIs(5),
+      tools: {
+        getLorebookEntries: makeGetLorebookEntriesTool(lorebook),
+      },
+    });
+
+    return {
+      entryFilename: proposedTopic,
+      suggestions: [
+        {
+          proposedContent: output.content,
+          reasoning: output.reasoning,
+          sourceFactIndices: applicableFacts.map((_, i) => i),
+          updateType: "new_entry" as const,
+        },
+      ],
+    };
   } catch (err) {
     throw new LlmError((err as Error).message);
   }
