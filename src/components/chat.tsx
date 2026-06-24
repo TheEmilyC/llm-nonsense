@@ -75,6 +75,7 @@ const MODEL_LABELS: Record<ChatModelKey, string> = {
   fable: "Fable",
   gemini: "Gemini",
   glm: "GLM",
+  kimi: "Kimi K2.6",
   opus4_6: "Opus 4.6",
   opus4_7: "Opus 4.7",
 };
