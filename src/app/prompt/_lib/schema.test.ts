@@ -74,6 +74,7 @@ describe("promptInjectTagSchema", () => {
     "LOREBOOK_CONSTANT",
     "PERSONA_DESCRIPTION",
     "WORLD_DESCRIPTION",
+    "GENERATED_FACTS",
   ] as const)("accepts valid tag: %s", (tag) => {
     expect(promptInjectTagSchema.safeParse(tag).success).toBe(true);
   });
