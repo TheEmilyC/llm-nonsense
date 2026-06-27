@@ -1,7 +1,11 @@
 import { MessageRole } from "@/app/_shared/schema";
 import { getLorebookEntryList } from "@/app/lorebook/_lib/data";
 import { convertFilesToPrompt } from "@/app/lorebook/_lib/lorebook-scanning";
-import { LorebookEntryIndex, LorebookReady } from "@/app/lorebook/_lib/schema";
+import {
+  LorebookEntryIndex,
+  LorebookFact,
+  LorebookReady,
+} from "@/app/lorebook/_lib/schema";
 import {
   ChatHistoryFragment,
   ContentFragment,
@@ -81,6 +85,14 @@ export class PromptBuilder {
         this.currentTokens += tokens;
       }
     }
+  }
+
+  addFactsToPrompt(facts: LorebookFact[]) {
+    if (facts.length === 0) return;
+    const content = facts
+      .map((f, i) => `${i + 1}. [${f.confidence}] ${f.claim}`)
+      .join("\n");
+    this.addToPrompt("GENERATED_FACTS", content);
   }
 
   async addLorebookToPrompt(lorebook: LorebookReady) {

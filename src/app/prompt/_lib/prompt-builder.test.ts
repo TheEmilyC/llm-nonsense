@@ -7,6 +7,7 @@ vi.mock("@/app/lorebook/_lib/data", () => ({
 import type { MessageRole } from "@/app/_shared/schema";
 import type {
   LorebookEntryIndex,
+  LorebookFact,
   LorebookIndex,
   LorebookReady,
   ObsidianFile,
@@ -560,6 +561,91 @@ describe("build — minDepth", () => {
     expect(built.find((m) => m.role === "assistant")?.content).toBe(
       "asst STRIP msg",
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PromptBuilder — addFactsToPrompt
+// ---------------------------------------------------------------------------
+
+function makeFact(
+  claim: string,
+  confidence: LorebookFact["confidence"] = "explicit",
+): LorebookFact {
+  return { claim, confidence };
+}
+
+describe("addFactsToPrompt", () => {
+  function makeBuilder() {
+    return new PromptBuilder({
+      maxTokens: 100_000,
+      promptSkeleton: [injectFrag("GENERATED_FACTS")],
+    });
+  }
+
+  function getInjectContent(builder: PromptBuilder): string {
+    const frag = builder.prompt.find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (f) => f.type === "INJECT" && (f as any).injectTag === "GENERATED_FACTS",
+    ) as undefined | { content: string };
+    return frag?.content ?? "";
+  }
+
+  it("does nothing when facts array is empty", () => {
+    const builder = makeBuilder();
+    builder.addFactsToPrompt([]);
+    expect(getInjectContent(builder)).toBe("");
+    expect(builder.currentTokens).toBe(0);
+  });
+
+  it("formats a single fact with index and confidence", () => {
+    const builder = makeBuilder();
+    builder.addFactsToPrompt([makeFact("The sky is blue")]);
+    expect(getInjectContent(builder)).toContain("1. [explicit] The sky is blue");
+  });
+
+  it("formats multiple facts as a numbered list", () => {
+    const builder = makeBuilder();
+    builder.addFactsToPrompt([
+      makeFact("First claim", "explicit"),
+      makeFact("Second claim", "implied"),
+      makeFact("Third claim", "explicit"),
+    ]);
+    const content = getInjectContent(builder);
+    expect(content).toContain("1. [explicit] First claim");
+    expect(content).toContain("2. [implied] Second claim");
+    expect(content).toContain("3. [explicit] Third claim");
+  });
+
+  it("tracks tokens for injected facts", () => {
+    const builder = makeBuilder();
+    builder.addFactsToPrompt([makeFact("A fact")]);
+    expect(builder.currentTokens).toBeGreaterThan(0);
+  });
+
+  it("does nothing when there is no GENERATED_FACTS fragment in the skeleton", () => {
+    const builder = new PromptBuilder({ maxTokens: 100, promptSkeleton: [] });
+    builder.addFactsToPrompt([makeFact("Orphan fact")]);
+    expect(builder.currentTokens).toBe(0);
+  });
+
+  it("appends on successive calls", () => {
+    const builder = makeBuilder();
+    builder.addFactsToPrompt([makeFact("Batch one")]);
+    builder.addFactsToPrompt([makeFact("Batch two")]);
+    const content = getInjectContent(builder);
+    expect(content).toContain("1. [explicit] Batch one");
+    expect(content).toContain("1. [explicit] Batch two");
+  });
+
+  it("throws when facts would exceed token limit", () => {
+    const builder = new PromptBuilder({
+      maxTokens: 5,
+      promptSkeleton: [injectFrag("GENERATED_FACTS")],
+    });
+    expect(() =>
+      builder.addFactsToPrompt([makeFact(tokens(10))]),
+    ).toThrow("Content exceeds token limit");
   });
 });
 

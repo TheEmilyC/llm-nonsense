@@ -384,6 +384,7 @@ export async function getStoryChatSession({
 
   return {
     character: chat.story.character,
+    facts: (chat.facts ?? []) as StoryChatSession["facts"],
     id: chat.id,
     lorebookId: chat.story.lorebookId ?? undefined,
     messages: chat.messages.map((msg) => ({

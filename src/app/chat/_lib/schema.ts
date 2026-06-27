@@ -142,6 +142,7 @@ export type SaveChatFactsActionParams = z.infer<
 
 export const storyChatSessionSchema = chatEntitySchema
   .pick({
+    facts: true,
     id: true,
     name: true,
   })

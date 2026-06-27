@@ -590,6 +590,9 @@ async function buildPromptFromChat({
   if (chat.world) {
     promptBuilder.addToPrompt("WORLD_DESCRIPTION", chat.world.description);
   }
+  if (chat.facts && chat.facts.length > 0) {
+    promptBuilder.addFactsToPrompt(chat.facts);
+  }
   if (lorebook) {
     if (chat.prompt.prefetch) {
       const entriesToFetch = await prefetchLorebook(lorebook, [

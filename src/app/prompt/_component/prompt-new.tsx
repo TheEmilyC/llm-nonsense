@@ -140,6 +140,13 @@ const DEFAULT_PROMPT: PromptFormValues = {
       type: "INJECT",
     },
     {
+      enabled: true,
+      injectTag: "GENERATED_FACTS",
+      name: "Generated Facts",
+      role: "system",
+      type: "INJECT",
+    },
+    {
       content: "</lore>",
       enabled: true,
       name: "</lore>",
