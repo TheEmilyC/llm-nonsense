@@ -80,6 +80,7 @@ const MODEL_LABELS: Record<ChatModelKey, string> = {
   minimax: "MiniMax M3",
   opus4_6: "Opus 4.6",
   opus4_7: "Opus 4.7",
+  opus4_8: "Opus 4.8",
 };
 
 interface ChatInputParams {
