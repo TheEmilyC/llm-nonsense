@@ -27,6 +27,7 @@ export const chatModelKeySchema = z.enum([
   "opus4_6",
   "opus4_7",
   "opus4_8",
+  "sonnet5",
   "fable",
 ]);
 export type ChatModelKey = z.infer<typeof chatModelKeySchema>;

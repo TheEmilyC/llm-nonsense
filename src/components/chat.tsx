@@ -81,6 +81,7 @@ const MODEL_LABELS: Record<ChatModelKey, string> = {
   opus4_6: "Opus 4.6",
   opus4_7: "Opus 4.7",
   opus4_8: "Opus 4.8",
+  sonnet5: "Sonnet 5",
 };
 
 interface ChatInputParams {
