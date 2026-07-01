@@ -202,7 +202,11 @@ export async function constructChatResponse({
 
   const { maxSteps, temperature, topK, topP } = chat.prompt;
   const maxOutputTokens =
-    chat.prompt.maxOutputTokens === 0 ? undefined : chat.prompt.maxOutputTokens;
+    chat.prompt.maxOutputTokens === 0
+      ? model === "fable"
+        ? 128000
+        : undefined
+      : chat.prompt.maxOutputTokens;
 
   // create IDs ahead of time to support multiple content generations per message cleanly
   const messageId =
