@@ -1,7 +1,12 @@
 // lib/ai/registry.ts
+import { createAnthropic } from "@ai-sdk/anthropic";
 import { createDeepSeek } from "@ai-sdk/deepseek";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { createProviderRegistry } from "ai";
+
+const anthropicProvider = createAnthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY || "",
+});
 
 const openRouterProvider = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY || "",
@@ -12,22 +17,23 @@ const deepseekProvider = createDeepSeek({
 });
 
 export const registry = createProviderRegistry({
+  anthropic: anthropicProvider,
   deepseek: deepseekProvider,
   openrouter: openRouterProvider,
 });
 
 export const chatModels = {
   deepseek: registry.languageModel("deepseek:deepseek-v4-pro"),
-  fable: registry.languageModel("openrouter:anthropic/claude-fable-5"),
+  fable: registry.languageModel("anthropic:claude-fable-5"),
   gemini: registry.languageModel("openrouter:google/gemini-3.1-pro-preview"),
   glm: registry.languageModel("openrouter:z-ai/glm-5"),
   glm5_2: registry.languageModel("openrouter:z-ai/glm-5.2"),
   kimi: registry.languageModel("openrouter:moonshotai/kimi-k2.6"),
   minimax: registry.languageModel("openrouter:minimax/minimax-m3"),
-  opus4_6: registry.languageModel("openrouter:anthropic/claude-opus-4.6"),
-  opus4_7: registry.languageModel("openrouter:anthropic/claude-opus-4.7"),
-  opus4_8: registry.languageModel("openrouter:anthropic/claude-opus-4.8"),
-  sonnet5: registry.languageModel("openrouter:anthropic/claude-sonnet-5"),
+  opus4_6: registry.languageModel("anthropic:claude-opus-4.6"),
+  opus4_7: registry.languageModel("anthropic:claude-opus-4.7"),
+  opus4_8: registry.languageModel("anthropic:claude-opus-4.8"),
+  sonnet5: registry.languageModel("anthropic:claude-sonnet-5"),
 };
 
 export const taskModels = {
