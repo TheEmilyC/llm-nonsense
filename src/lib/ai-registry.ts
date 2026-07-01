@@ -27,6 +27,7 @@ export const chatModels = {
   opus4_6: registry.languageModel("openrouter:anthropic/claude-opus-4.6"),
   opus4_7: registry.languageModel("openrouter:anthropic/claude-opus-4.7"),
   opus4_8: registry.languageModel("openrouter:anthropic/claude-opus-4.8"),
+  sonnet5: registry.languageModel("openrouter:anthropic/claude-sonnet-5"),
 };
 
 export const taskModels = {
