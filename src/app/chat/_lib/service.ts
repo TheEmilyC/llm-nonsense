@@ -211,16 +211,19 @@ export async function constructChatResponse({
   // --send and stream result--
   logger.info("Chat generation request", { chatId, prompt, regenerate });
 
-  const anthropicViaOpenrouter = model === "fable";
   // Gemini can think silently for a long time at "high" effort, which trips
   // OpenRouter's upstream idle timeout before any tokens are streamed.
   const reasoningEffort = model === "gemini" ? "medium" : "high";
   const providerOptions = {
     deepseek: { thinking: { enabled: true } },
-    ...(anthropicViaOpenrouter
-      ? {}
-      : { openrouter: { reasoning: { effort: reasoningEffort } } }),
+    ...(model !== "fable"
+      ? { openrouter: { reasoning: { effort: reasoningEffort } } }
+      : {}),
   };
+
+  // Fable doesn't support temperature/topK/topP
+  const samplingParams =
+    model === "fable" ? {} : { temperature, topK, topP };
 
   return streamText({
     maxOutputTokens,
@@ -228,15 +231,13 @@ export async function constructChatResponse({
     prompt,
     providerOptions,
     stopWhen: stepCountIs(maxSteps),
-    temperature,
+    ...samplingParams,
     tools: {
       rollDice: rollDiceTool,
       ...(lorebookRaw?.status === "READY" && {
         getLorebookEntries: makeGetLorebookEntriesTool(lorebookRaw),
       }),
     },
-    topK,
-    topP,
   }).toUIMessageStreamResponse<LlmnUIMessage>({
     generateMessageId: () => messageId,
     messageMetadata: ({ part }) => {
