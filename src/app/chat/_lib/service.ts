@@ -227,7 +227,7 @@ export async function constructChatResponse({
 
   // Fable doesn't support temperature/topK/topP
   const samplingParams =
-    model === "fable" ? {} : { temperature, topK, topP };
+    model === "fable" || model === "sonnet5" ? {} : { temperature, topK, topP };
 
   return streamText({
     maxOutputTokens,
