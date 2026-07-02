@@ -52,6 +52,16 @@ import { SIDE_PROMPT_TOKEN_LIMIT } from "@/lib/env-variables";
 import { AppError, LlmError, NotFoundError } from "@/lib/error";
 import { logger } from "@/lib/logger";
 
+const MODEL_MAX_OUTPUT_TOKENS: Partial<Record<ChatModelKey, number>> = {
+  fable: 128000,
+  opus4_6: 128000,
+  opus4_7: 128000,
+  opus4_8: 128000,
+  sonnet5: 64000,
+};
+
+const MODELS_WITHOUT_SAMPLING_PARAMS = new Set<ChatModelKey>(["fable", "sonnet5"]);
+
 export interface GenerateLorebookFactsParams {
   existingFacts?: LorebookFact[];
   lorebook?: LorebookReady;
@@ -203,9 +213,7 @@ export async function constructChatResponse({
   const { maxSteps, temperature, topK, topP } = chat.prompt;
   const maxOutputTokens =
     chat.prompt.maxOutputTokens === 0
-      ? model === "fable"
-        ? 128000
-        : undefined
+      ? MODEL_MAX_OUTPUT_TOKENS[model]
       : chat.prompt.maxOutputTokens;
 
   // create IDs ahead of time to support multiple content generations per message cleanly
@@ -225,9 +233,9 @@ export async function constructChatResponse({
       : {}),
   };
 
-  // Fable doesn't support temperature/topK/topP
-  const samplingParams =
-    model === "fable" || model === "sonnet5" ? {} : { temperature, topK, topP };
+  const samplingParams = MODELS_WITHOUT_SAMPLING_PARAMS.has(model)
+    ? {}
+    : { temperature, topK, topP };
 
   return streamText({
     maxOutputTokens,
