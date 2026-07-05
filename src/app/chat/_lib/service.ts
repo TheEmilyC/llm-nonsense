@@ -60,7 +60,11 @@ const MODEL_MAX_OUTPUT_TOKENS: Partial<Record<ChatModelKey, number>> = {
   sonnet5: 64000,
 };
 
-const MODELS_WITHOUT_SAMPLING_PARAMS = new Set<ChatModelKey>(["fable", "sonnet5"]);
+const MODELS_WITHOUT_SAMPLING_PARAMS = new Set<ChatModelKey>([
+  "fable",
+  "opus4_8",
+  "sonnet5",
+]);
 
 export interface GenerateLorebookFactsParams {
   existingFacts?: LorebookFact[];
