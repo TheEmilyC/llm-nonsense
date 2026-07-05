@@ -62,6 +62,7 @@ const MODEL_MAX_OUTPUT_TOKENS: Partial<Record<ChatModelKey, number>> = {
 
 const MODELS_WITHOUT_SAMPLING_PARAMS = new Set<ChatModelKey>([
   "fable",
+  "opus4_7",
   "opus4_8",
   "sonnet5",
 ]);
