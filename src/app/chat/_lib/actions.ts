@@ -162,7 +162,7 @@ export async function generateSummariesAction(
   const { chatId, messageIds } = parseResult.data;
 
   let cast: string | undefined;
-  let memory: undefined | { content: string; synopsis: string };
+  let memory: undefined | { content: string; synopsis: string } | { rawOutput: string };
   let facts:
     | undefined
     | { claim: string; confidence: "explicit" | "implied" }[];
