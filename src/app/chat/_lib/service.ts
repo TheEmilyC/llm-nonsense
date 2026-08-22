@@ -449,7 +449,7 @@ export async function generateLorebookFacts({
 export async function generateMemorySummary(
   chat: ChatForMemoryGen,
   lorebook?: LorebookReady,
-) {
+): Promise<{ content: string; synopsis: string } | { rawOutput: string }> {
   let lastMemoryContent: string | undefined;
   let lorebookForPrompt = lorebook;
 
@@ -500,7 +500,7 @@ export async function generateMemorySummary(
         }),
       },
     });
-    return output;
+    return output as { content: string; synopsis: string };
   } catch (err) {
     if (rawText) return { rawOutput: rawText };
     throw new LlmError((err as Error).message);
