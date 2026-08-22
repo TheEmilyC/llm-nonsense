@@ -475,10 +475,12 @@ export async function generateMemorySummary(
   });
   logger.info("Memory generation request", { prompt });
 
+  let rawText: string | undefined;
   try {
     const { output } = await generateText({
       model: taskModels.summary,
       onFinish: (result) => {
+        rawText = result.text;
         logger.info("Memory generation result", {
           finishReason: result.finishReason,
           result: result.content,
@@ -502,6 +504,7 @@ export async function generateMemorySummary(
     });
     return output;
   } catch (err) {
+    if (rawText) return { rawOutput: rawText };
     throw new LlmError((err as Error).message);
   }
 }

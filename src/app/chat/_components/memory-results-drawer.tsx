@@ -100,6 +100,20 @@ export function MemoryResultsDrawer({
 
         {data && (
           <div className="no-scrollbar overflow-y-auto px-4 pb-6 space-y-6">
+            {data.rawOutput && (
+              <section className="rounded-md border border-destructive/40 bg-destructive/5 p-3">
+                <p className="mb-2 text-xs font-medium text-destructive">
+                  Memory generation returned an unexpected format. Raw output shown below — copy and add it manually.
+                </p>
+                <div className="flex items-center justify-end mb-1">
+                  <CopyButton text={data.rawOutput} />
+                </div>
+                <pre className="whitespace-pre-wrap wrap-break-word text-xs text-foreground/80">
+                  {data.rawOutput}
+                </pre>
+              </section>
+            )}
+            {!data.rawOutput && (
             <section>
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
@@ -123,6 +137,7 @@ export function MemoryResultsDrawer({
                 {data.content}
               </Markdown>
             </section>
+            )}
 
             {data.cast && (
               <section>

@@ -208,6 +208,7 @@ export const generateSummariesActionResponseSchema = z.object({
   cast: z.string().optional(),
   content: z.string(),
   facts: lorebookFactSchema.array().optional(),
+  rawOutput: z.string().optional(),
   summary: z.string(),
 });
 export type GenerateSummariesActionResponse = z.infer<
