@@ -19,16 +19,16 @@ export const CHAT_CACHE_KEY = "chat";
 
 export const chatModelKeySchema = z.enum([
   "deepseek",
+  "fable",
   "gemini",
-  "glm",
   "glm5_2",
-  "kimi",
+  "hy3",
+  "kimi_k3",
   "minimax",
+  "mimo",
   "opus4_6",
-  "opus4_7",
   "opus4_8",
   "sonnet5",
-  "fable",
 ]);
 export type ChatModelKey = z.infer<typeof chatModelKeySchema>;
 

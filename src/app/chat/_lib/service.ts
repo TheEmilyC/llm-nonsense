@@ -55,14 +55,12 @@ import { logger } from "@/lib/logger";
 const MODEL_MAX_OUTPUT_TOKENS: Partial<Record<ChatModelKey, number>> = {
   fable: 128000,
   opus4_6: 128000,
-  opus4_7: 128000,
   opus4_8: 128000,
   sonnet5: 64000,
 };
 
 const MODELS_WITHOUT_SAMPLING_PARAMS = new Set<ChatModelKey>([
   "fable",
-  "opus4_7",
   "opus4_8",
   "sonnet5",
 ]);
