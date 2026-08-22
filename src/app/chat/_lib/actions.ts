@@ -183,9 +183,10 @@ export async function generateSummariesAction(
   return {
     data: {
       cast: cast ? cast : "Failed to generate",
-      content: memory ? memory.content : "Failed to generate",
+      content: memory && "content" in memory ? memory.content : "Failed to generate",
       facts,
-      summary: memory ? memory.synopsis : "Failed to generate",
+      rawOutput: memory && "rawOutput" in memory ? memory.rawOutput : undefined,
+      summary: memory && "synopsis" in memory ? memory.synopsis : "Failed to generate",
     },
     success: true,
   };

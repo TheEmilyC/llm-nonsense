@@ -55,14 +55,12 @@ import { logger } from "@/lib/logger";
 const MODEL_MAX_OUTPUT_TOKENS: Partial<Record<ChatModelKey, number>> = {
   fable: 128000,
   opus4_6: 128000,
-  opus4_7: 128000,
   opus4_8: 128000,
   sonnet5: 64000,
 };
 
 const MODELS_WITHOUT_SAMPLING_PARAMS = new Set<ChatModelKey>([
   "fable",
-  "opus4_7",
   "opus4_8",
   "sonnet5",
 ]);
@@ -475,10 +473,12 @@ export async function generateMemorySummary(
   });
   logger.info("Memory generation request", { prompt });
 
+  let rawText: string | undefined;
   try {
     const { output } = await generateText({
       model: taskModels.summary,
       onFinish: (result) => {
+        rawText = result.text;
         logger.info("Memory generation result", {
           finishReason: result.finishReason,
           result: result.content,
@@ -502,6 +502,7 @@ export async function generateMemorySummary(
     });
     return output;
   } catch (err) {
+    if (rawText) return { rawOutput: rawText };
     throw new LlmError((err as Error).message);
   }
 }
