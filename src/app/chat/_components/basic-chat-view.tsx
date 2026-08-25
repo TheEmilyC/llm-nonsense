@@ -20,7 +20,7 @@ export interface BasicChatViewParams {
 export function BasicChatView({ chatSession }: BasicChatViewParams) {
   const {
     handleSubmit,
-    message: { deleteMessage, editMessage, messages },
+    message: { deleteMessage, deletePart, editMessage, messages },
     status,
     stop,
   } = useChatMessages(chatSession);
@@ -29,10 +29,20 @@ export function BasicChatView({ chatSession }: BasicChatViewParams) {
   function onContentEdit(
     newText: string,
     messageId: string,
+    partIndex: number,
     contentId?: string,
   ) {
     if (!contentId) return;
-    editMessage(messageId, contentId, newText);
+    editMessage(messageId, contentId, partIndex, newText);
+  }
+
+  function onPartDelete(
+    messageId: string,
+    partIndex: number,
+    contentId?: string,
+  ) {
+    if (!contentId) return;
+    deletePart(messageId, contentId, partIndex);
   }
 
   return (
@@ -51,10 +61,18 @@ export function BasicChatView({ chatSession }: BasicChatViewParams) {
                   key={message.id}
                   message={message}
                   onDelete={() => deleteMessage(message.id)}
-                  onEdit={(newText) =>
+                  onDeletePart={(partIndex) =>
+                    onPartDelete(
+                      message.id,
+                      partIndex,
+                      message.metadata?.contentId,
+                    )
+                  }
+                  onEdit={(newText, partIndex) =>
                     onContentEdit(
                       newText,
                       message.id,
+                      partIndex,
                       message.metadata?.contentId,
                     )
                   }

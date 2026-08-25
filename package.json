@@ -9,9 +9,9 @@
     "start": "next start",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
-    "prisma": "pnpm dlx prisma",
-    "db-generate": "pnpm dlx prisma generate",
-    "db-migrate": "pnpm dlx prisma migrate dev --name",
+    "prisma": "prisma",
+    "db-generate": "prisma generate",
+    "db-migrate": "prisma migrate dev --name",
     "errorCheck": "npx tsc --noEmit 2>&1",
     "test": "vitest"
   },

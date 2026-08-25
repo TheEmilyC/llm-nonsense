@@ -197,14 +197,21 @@ export function useChatMessages({
   const editMessage = (
     messageId: string,
     contentId: string,
+    partIndex: number,
     newText: string,
   ) => {
     const updateParts = (parts: LlmnUIMessage["parts"]) =>
-      parts.map((p) => (p.type === "text" ? { ...p, text: newText } : p));
+      parts.map((p, i) =>
+        i === partIndex && p.type === "text" ? { ...p, text: newText } : p,
+      );
+
+    const target = messages.find((m) => m.id === messageId);
+    if (!target) return;
+    const updatedParts = updateParts(target.parts);
 
     setMessages(
       messages.map((m) =>
-        m.id === messageId ? { ...m, parts: updateParts(m.parts) } : m,
+        m.id === messageId ? { ...m, parts: updatedParts } : m,
       ),
     );
     setMessageSwipes((prev) =>
@@ -215,7 +222,41 @@ export function useChatMessages({
     startTransition(async () => {
       await updateMessageContentAction({
         id: contentId,
-        update: { parts: [{ text: newText, type: "text" }] },
+        update: { parts: updatedParts },
+      });
+    });
+  };
+
+  const deletePart = (
+    messageId: string,
+    contentId: string,
+    partIndex: number,
+  ) => {
+    const target = messages.find((m) => m.id === messageId);
+    if (!target) return;
+    const updatedParts = target.parts.filter((_, i) => i !== partIndex);
+
+    if (updatedParts.length === 0) {
+      deleteMessage(messageId);
+      return;
+    }
+
+    setMessages(
+      messages.map((m) =>
+        m.id === messageId ? { ...m, parts: updatedParts } : m,
+      ),
+    );
+    setMessageSwipes((prev) =>
+      prev.map((s) =>
+        s.id === messageId
+          ? { ...s, parts: s.parts.filter((_, i) => i !== partIndex) }
+          : s,
+      ),
+    );
+    startTransition(async () => {
+      await updateMessageContentAction({
+        id: contentId,
+        update: { parts: updatedParts },
       });
     });
   };
@@ -224,6 +265,7 @@ export function useChatMessages({
     handleSubmit,
     message: {
       deleteMessage,
+      deletePart,
       editMessage,
       insertBlankAssistantMessage,
       messages,

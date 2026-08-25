@@ -199,13 +199,26 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
   function onContentEdit(
     newText: string,
     messageId: string,
+    partIndex: number,
     contentId?: string,
   ) {
     if (!contentId) {
       toast.error("Message is missing content ID. Unable to update");
       return;
     }
-    messageControl.editMessage(messageId, contentId, newText);
+    messageControl.editMessage(messageId, contentId, partIndex, newText);
+  }
+
+  function onPartDelete(
+    messageId: string,
+    partIndex: number,
+    contentId?: string,
+  ) {
+    if (!contentId) {
+      toast.error("Message is missing content ID. Unable to update");
+      return;
+    }
+    messageControl.deletePart(messageId, contentId, partIndex);
   }
 
   return (
@@ -256,10 +269,18 @@ export function ChatView({ chatSession, lorebook }: ChatViewParams) {
                   }}
                   message={message}
                   onDelete={() => messageControl.deleteMessage(message.id)}
-                  onEdit={(newText) =>
+                  onDeletePart={(partIndex) =>
+                    onPartDelete(
+                      message.id,
+                      partIndex,
+                      message.metadata?.contentId,
+                    )
+                  }
+                  onEdit={(newText, partIndex) =>
                     onContentEdit(
                       newText,
                       message.id,
+                      partIndex,
                       message.metadata?.contentId,
                     )
                   }
