@@ -105,7 +105,8 @@ interface ChatMessageProps {
   };
   message: UIMessage;
   onDelete?: () => void;
-  onEdit?: (newText: string) => void;
+  onDeletePart?: (partIndex: number) => void;
+  onEdit?: (newText: string, partIndex: number) => void;
   onHide?: () => void;
   persona?: EntityProfile;
 }
@@ -219,6 +220,7 @@ export function ChatMessage({
   memory,
   message,
   onDelete,
+  onDeletePart,
   onEdit,
   onHide,
   persona,
@@ -226,6 +228,9 @@ export function ChatMessage({
   const isUser = message.role === "user";
   const [editingPartIndex, setEditingPartIndex] = useState<null | number>(null);
   const [editText, setEditText] = useState("");
+  const textPartCount = message.parts.filter(
+    (p) => p.type === "text",
+  ).length;
 
   const startEdit = (currentText: string, partIndex: number) => {
     setEditText(currentText);
@@ -233,7 +238,7 @@ export function ChatMessage({
   };
 
   const saveEdit = () => {
-    onEdit?.(editText);
+    if (editingPartIndex !== null) onEdit?.(editText, editingPartIndex);
     setEditingPartIndex(null);
   };
 
@@ -357,108 +362,117 @@ export function ChatMessage({
                   );
                 }
                 return (
-                  <MessageContent
-                    className="rounded-none bg-transparent p-0"
-                    key={partIndex}
-                    markdown
-                  >
-                    {part.text}
-                  </MessageContent>
+                  <div className="flex flex-col gap-1" key={partIndex}>
+                    <MessageContent
+                      className="rounded-none bg-transparent p-0"
+                      markdown
+                    >
+                      {part.text}
+                    </MessageContent>
+                    {!isStreaming && (
+                      <div className="flex gap-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
+                        <MessageAction tooltip="Edit">
+                          <button
+                            aria-label="Edit message part"
+                            className="p-1 hover:text-foreground transition-colors rounded-full text-muted-foreground"
+                            onClick={() => startEdit(part.text, partIndex)}
+                          >
+                            <EditIcon className="h-3.5 w-3.5" />
+                          </button>
+                        </MessageAction>
+                        {textPartCount > 1 && (
+                          <Tooltip>
+                            <ConfirmDialog
+                              description="This will permanently delete this part of the message."
+                              onConfirm={() => onDeletePart?.(partIndex)}
+                              title="Delete this part?"
+                              type="delete"
+                            >
+                              <TooltipTrigger asChild>
+                                <button
+                                  aria-label="Delete message part"
+                                  className="p-1 hover:text-destructive transition-colors rounded-full text-muted-foreground"
+                                >
+                                  <DeleteIcon className="h-3.5 w-3.5" />
+                                </button>
+                              </TooltipTrigger>
+                            </ConfirmDialog>
+                            <TooltipContent side="top">
+                              Delete part
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 );
               }
               return null;
             })}
             {!isStreaming && (
               <MessageActions className="mt-1 opacity-0 group-hover/msg:opacity-100 transition-opacity">
-                {(() => {
-                  const textPart = message.parts.findLast(
-                    (p) => p.type === "text",
-                  ) as undefined | { text: string; type: "text" };
-                  const textPartIndex = textPart
-                    ? message.parts.lastIndexOf(textPart)
-                    : -1;
-                  return (
-                    <>
-                      {textPart && (
-                        <MessageAction tooltip="Edit">
-                          <button
-                            aria-label="Edit Message"
-                            className="p-1 hover:text-foreground transition-colors rounded-full"
-                            onClick={() =>
-                              startEdit(textPart.text, textPartIndex)
-                            }
-                          >
-                            <EditIcon className="h-3.5 w-3.5" />
-                          </button>
-                        </MessageAction>
-                      )}
-                      <MessageAction
-                        tooltip={
-                          isHidden
-                            ? "Unhide (message will be sent to LLM)"
-                            : "Hide (message won't be sent to LLM)"
-                        }
-                      >
-                        <button
-                          aria-label={
-                            isHidden ? "Unhide message" : "Hide message"
-                          }
-                          className="p-1 hover:text-foreground transition-colors text-muted-foreground rounded-full"
-                          onClick={onHide}
-                        >
-                          {isHidden ? (
-                            <UnHideIcon className="h-3.5 w-3.5" />
-                          ) : (
-                            <HideIcon className="h-3.5 w-3.5" />
-                          )}
-                        </button>
-                      </MessageAction>
-                      <Tooltip>
-                        <ConfirmDialog
-                          description="This will permanently delete this message and all its swipes."
-                          onConfirm={onDelete}
-                          title="Delete message?"
-                          type="delete"
-                        >
-                          <TooltipTrigger asChild>
-                            <button className="p-1 hover:text-destructive transition-colors rounded-full">
-                              <DeleteIcon className="h-3.5 w-3.5" />
-                            </button>
-                          </TooltipTrigger>
-                        </ConfirmDialog>
-                        <TooltipContent side="top">Delete</TooltipContent>
-                      </Tooltip>
-                      <MessageAction tooltip="Memory Start">
-                        <button
-                          aria-label="Memory Start"
-                          className={cn(
-                            "p-1 hover:text-foreground transition-colors rounded-full",
-                            memory?.isMemoryStart
-                              ? "text-primary bg-primary/20"
-                              : "text-muted-foreground",
-                          )}
-                          onClick={memory?.onMemoryStart}
-                        >
-                          <RangeStartIcon className="h-3.5 w-3.5" />
-                        </button>
-                      </MessageAction>
-                      <MessageAction tooltip="Memory End">
-                        <button
-                          aria-label="Memory End"
-                          className={cn(
-                            "p-1 hover:text-foreground transition-colors rounded-full",
-                            memory?.isMemoryEnd
-                              ? "text-primary bg-primary/20"
-                              : "text-muted-foreground",
-                          )}
-                          onClick={memory?.onMemoryEnd}
-                        >
-                          <RangeEndIcon className="h-3.5 w-3.5" />
-                        </button>
-                      </MessageAction>
-                    </>
-                  );
-                })()}
+                <MessageAction
+                  tooltip={
+                    isHidden
+                      ? "Unhide (message will be sent to LLM)"
+                      : "Hide (message won't be sent to LLM)"
+                  }
+                >
+                  <button
+                    aria-label={isHidden ? "Unhide message" : "Hide message"}
+                    className="p-1 hover:text-foreground transition-colors text-muted-foreground rounded-full"
+                    onClick={onHide}
+                  >
+                    {isHidden ? (
+                      <UnHideIcon className="h-3.5 w-3.5" />
+                    ) : (
+                      <HideIcon className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                </MessageAction>
+                <Tooltip>
+                  <ConfirmDialog
+                    description="This will permanently delete this message and all its swipes."
+                    onConfirm={onDelete}
+                    title="Delete message?"
+                    type="delete"
+                  >
+                    <TooltipTrigger asChild>
+                      <button className="p-1 hover:text-destructive transition-colors rounded-full">
+                        <DeleteIcon className="h-3.5 w-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                  </ConfirmDialog>
+                  <TooltipContent side="top">Delete</TooltipContent>
+                </Tooltip>
+                <MessageAction tooltip="Memory Start">
+                  <button
+                    aria-label="Memory Start"
+                    className={cn(
+                      "p-1 hover:text-foreground transition-colors rounded-full",
+                      memory?.isMemoryStart
+                        ? "text-primary bg-primary/20"
+                        : "text-muted-foreground",
+                    )}
+                    onClick={memory?.onMemoryStart}
+                  >
+                    <RangeStartIcon className="h-3.5 w-3.5" />
+                  </button>
+                </MessageAction>
+                <MessageAction tooltip="Memory End">
+                  <button
+                    aria-label="Memory End"
+                    className={cn(
+                      "p-1 hover:text-foreground transition-colors rounded-full",
+                      memory?.isMemoryEnd
+                        ? "text-primary bg-primary/20"
+                        : "text-muted-foreground",
+                    )}
+                    onClick={memory?.onMemoryEnd}
+                  >
+                    <RangeEndIcon className="h-3.5 w-3.5" />
+                  </button>
+                </MessageAction>
               </MessageActions>
             )}
           </div>
